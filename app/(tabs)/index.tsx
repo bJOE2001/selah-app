@@ -1,14 +1,46 @@
-import { StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, StyleSheet } from 'react-native';
+import { DailyDashboard } from '../../src/daily-dashboard';
+import { ShareCardModal } from '../../src/share-card';
+import { useDevotional } from '../../src/devotional-core/hooks';
+import { COLORS } from '../../src/design-system/tokens/colors';
 
-import EditScreenInfo from '@/components/EditScreenInfo';
-import { Text, View } from '@/components/Themed';
+export default function HomeScreen() {
+  const [sharingId, setSharingId] = useState<string | null>(null);
+  const [customShareDevotional, setCustomShareDevotional] = useState<any | null>(null);
+  const { data: sharingDevotional } = useDevotional(sharingId);
 
-export default function TabOneScreen() {
+  const activeDevotional = customShareDevotional || sharingDevotional || null;
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Tab One</Text>
-      <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
-      <EditScreenInfo path="app/(tabs)/index.tsx" />
+      <DailyDashboard
+        onShareEntry={(id) => {
+          setCustomShareDevotional(null);
+          setSharingId(id);
+        }}
+        onShareQuote={(verse) => {
+          setSharingId(null);
+          setCustomShareDevotional({
+            id: 'quote-share',
+            rhemaReference: verse.reference,
+            rhemaText: verse.text,
+            reflection: `Today's Daily Verse: ${verse.theme}`,
+            motivation: 'Trusting God with this truth today.',
+            moodTags: [{ id: 1, value: 'peaceful', emoji: '🕊️', color: '#4A7C59' }],
+            applicationTasks: [],
+          });
+        }}
+      />
+
+      <ShareCardModal
+        visible={!!activeDevotional}
+        devotional={activeDevotional}
+        onClose={() => {
+          setSharingId(null);
+          setCustomShareDevotional(null);
+        }}
+      />
     </View>
   );
 }
@@ -16,16 +48,6 @@ export default function TabOneScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  separator: {
-    marginVertical: 30,
-    height: 1,
-    width: '80%',
+    backgroundColor: COLORS.paperBg,
   },
 });

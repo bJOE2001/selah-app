@@ -1,56 +1,176 @@
-import { useFonts } from 'expo-font';
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
+import 'react-native-get-random-values';
+import React, { useEffect, useState } from 'react';
+import { StatusBar } from 'expo-status-bar';
+import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
-import 'react-native-reanimated';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import {
+  useFonts,
+  PlayfairDisplay_400Regular,
+  PlayfairDisplay_700Bold,
+  PlayfairDisplay_400Regular_Italic,
+} from '@expo-google-fonts/playfair-display';
+import {
+  Lora_400Regular,
+  Lora_700Bold,
+  Lora_400Regular_Italic,
+} from '@expo-google-fonts/lora';
+import {
+  Caveat_400Regular,
+  Caveat_700Bold,
+} from '@expo-google-fonts/caveat';
 
-import { useColorScheme } from '@/components/useColorScheme';
+import { Platform, Appearance } from 'react-native';
+import * as NavigationBar from 'expo-navigation-bar';
+import * as SystemUI from 'expo-system-ui';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { initDatabase } from '../src/bible-data/db';
+import { useTheme } from '../src/design-system';
+import { usePrivacyAuthStore } from '../src/privacy-lock/store';
+import { LockScreen } from '../src/privacy-lock/components/LockScreen';
+import { COLORS } from '../src/design-system/tokens/colors';
 
-export {
-  // Catch any errors thrown by the Layout component.
-  ErrorBoundary,
-} from 'expo-router';
+// Prevent splash screen from auto-hiding
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
-export const unstable_settings = {
-  // Ensure that reloading on `/modal` keeps a back button present.
-  initialRouteName: '(tabs)',
-};
-
-// Prevent the splash screen from auto-hiding before asset loading is complete.
-SplashScreen.preventAutoHideAsync();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 export default function RootLayout() {
-  const [loaded, error] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+  const [dbReady, setDbReady] = useState(false);
+
+  const [fontsLoaded, fontError] = useFonts({
+    PlayfairDisplay_400Regular,
+    PlayfairDisplay_700Bold,
+    PlayfairDisplay_400Regular_Italic,
+    Lora_400Regular,
+    Lora_700Bold,
+    Lora_400Regular_Italic,
+    Caveat_400Regular,
+    Caveat_700Bold,
   });
 
-  // Expo Router uses Error Boundaries to catch errors in the navigation tree.
-  useEffect(() => {
-    if (error) throw error;
-  }, [error]);
+  const { isUnlocked, isLockEnabled } = usePrivacyAuthStore();
+  const { isDark, colors } = useTheme();
 
   useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
+    async function prepare() {
+      try {
+        Appearance.setColorScheme(isDark ? 'dark' : 'light');
+        if (Platform.OS === 'android') {
+          try {
+            await SystemUI.setBackgroundColorAsync(colors.paperBg);
+          } catch {}
+          try {
+            await NavigationBar.setButtonStyleAsync(isDark ? 'light' : 'dark');
+          } catch {}
+        }
+        await initDatabase();
+        setDbReady(true);
+      } catch (e) {
+        console.warn('Database initialization error:', e);
+        setDbReady(true);
+      }
     }
-  }, [loaded]);
+    prepare();
+  }, []);
 
-  if (!loaded) {
+  useEffect(() => {
+    Appearance.setColorScheme(isDark ? 'dark' : 'light');
+    if (Platform.OS === 'android') {
+      const syncNavBar = async () => {
+        try {
+          await SystemUI.setBackgroundColorAsync(colors.paperBg);
+        } catch {}
+        try {
+          await NavigationBar.setButtonStyleAsync(isDark ? 'light' : 'dark');
+        } catch {}
+      };
+      syncNavBar();
+    }
+  }, [colors.paperBg, isDark]);
+
+  useEffect(() => {
+    if ((fontsLoaded || fontError) && dbReady) {
+      SplashScreen.hideAsync().catch(() => {});
+    }
+  }, [fontsLoaded, fontError, dbReady]);
+
+  if (!fontsLoaded && !fontError) {
     return null;
   }
 
-  return <RootLayoutNav />;
-}
+  // Don't render any screens until the database is ready
+  if (!dbReady) {
+    return null;
+  }
 
-function RootLayoutNav() {
-  const colorScheme = useColorScheme();
+  // If privacy lock is enabled and app is locked, render LockScreen
+  if (isLockEnabled && !isUnlocked) {
+    return (
+      <SafeAreaProvider style={{ flex: 1, backgroundColor: colors.paperBg }}>
+        <QueryClientProvider client={queryClient}>
+          <StatusBar style={isDark ? 'light' : 'dark'} backgroundColor={colors.paperBg} />
+          <LockScreen />
+        </QueryClientProvider>
+      </SafeAreaProvider>
+    );
+  }
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-      </Stack>
-    </ThemeProvider>
+    <SafeAreaProvider style={{ flex: 1, backgroundColor: colors.paperBg }}>
+      <QueryClientProvider client={queryClient}>
+        <StatusBar style={isDark ? 'light' : 'dark'} backgroundColor={colors.paperBg} />
+        <Stack
+          screenOptions={{
+            headerStyle: {
+              backgroundColor: colors.paperBg,
+            },
+            headerTintColor: colors.inkPrimary,
+            headerShadowVisible: false,
+            contentStyle: {
+              backgroundColor: colors.paperBg,
+            },
+          }}
+        >
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="devotional/new"
+            options={{
+              title: 'New Devotion',
+              headerShown: false,
+              presentation: 'modal',
+            }}
+          />
+          <Stack.Screen
+            name="devotional/[id]"
+            options={{
+              title: 'Journal Entry',
+              headerShown: false,
+            }}
+          />
+          <Stack.Screen
+            name="share/[id]"
+            options={{
+              title: 'Share Card',
+              presentation: 'modal',
+            }}
+          />
+          <Stack.Screen
+            name="settings"
+            options={{
+              title: 'Settings',
+              headerShown: false,
+            }}
+          />
+        </Stack>
+      </QueryClientProvider>
+    </SafeAreaProvider>
   );
 }
