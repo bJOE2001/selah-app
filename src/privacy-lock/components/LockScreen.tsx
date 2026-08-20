@@ -22,11 +22,11 @@ export function LockScreen() {
 
       <View style={styles.content}>
         {/* Mascot Logo Icon */}
-        <View style={styles.iconContainer}>
+        <View style={[styles.iconContainer, { backgroundColor: isDark ? 'rgba(74, 124, 89, 0.22)' : 'rgba(74, 124, 89, 0.12)', borderColor: isDark ? 'rgba(74, 124, 89, 0.35)' : 'rgba(74, 124, 89, 0.22)' }]}>
           <Image
-            source={require('../../../assets/images/mascot-guardian-key.jpg')}
-            style={[styles.logoImage, { borderRadius: RADIUS.lg }]}
-            resizeMode="cover"
+            source={require('../../../assets/images/mascot-guardian-key-transparent.png')}
+            style={styles.logoImage}
+            resizeMode="contain"
           />
         </View>
 

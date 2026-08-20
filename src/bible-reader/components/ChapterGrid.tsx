@@ -14,7 +14,14 @@ export interface ChapterGridProps {
 export function ChapterGrid({ book, onSelectChapter }: ChapterGridProps) {
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
-  const chapters = Array.from({ length: book.chapter_count }, (_, i) => i + 1);
+  const rawChapters = Array.from({ length: book.chapter_count }, (_, i) => i + 1);
+  const numColumns = 5;
+  const remainder = rawChapters.length % numColumns;
+  const placeholdersNeeded = remainder === 0 ? 0 : numColumns - remainder;
+  const chapters: (number | null)[] = [
+    ...rawChapters,
+    ...Array(placeholdersNeeded).fill(null),
+  ];
 
   return (
     <View style={styles.container}>
@@ -25,32 +32,52 @@ export function ChapterGrid({ book, onSelectChapter }: ChapterGridProps) {
 
       <FlatList
         data={chapters}
-        keyExtractor={(item) => String(item)}
-        numColumns={5}
+        keyExtractor={(item, index) => (item !== null ? String(item) : `placeholder-${index}`)}
+        numColumns={numColumns}
         columnWrapperStyle={styles.columnWrapper}
         contentContainerStyle={[
           styles.gridContent,
           { paddingBottom: Math.max(insets.bottom, 16) + 110 },
         ]}
         showsVerticalScrollIndicator={false}
-        renderItem={({ item }) => (
-          <Pressable
-            onPress={() => onSelectChapter(item)}
-            style={({ pressed }) => [
-              styles.chapterTile,
-              {
-                backgroundColor: colors.cardBg,
-                borderColor: colors.paperLine,
-              },
-              pressed && {
-                backgroundColor: colors.brandGreenLight,
-                borderColor: colors.brandGreen,
-              },
-            ]}
-          >
-            <Text style={[styles.chapterNumber, { color: colors.inkPrimary }]}>{item}</Text>
-          </Pressable>
-        )}
+        renderItem={({ item }) => {
+          if (item === null) {
+            return (
+              <View
+                style={[
+                  styles.chapterTile,
+                  {
+                    opacity: 0,
+                    backgroundColor: 'transparent',
+                    borderColor: 'transparent',
+                    elevation: 0,
+                    shadowOpacity: 0,
+                  },
+                ]}
+                pointerEvents="none"
+              />
+            );
+          }
+
+          return (
+            <Pressable
+              onPress={() => onSelectChapter(item)}
+              style={({ pressed }) => [
+                styles.chapterTile,
+                {
+                  backgroundColor: colors.cardBg,
+                  borderColor: colors.paperLine,
+                },
+                pressed && {
+                  backgroundColor: colors.brandGreenLight,
+                  borderColor: colors.brandGreen,
+                },
+              ]}
+            >
+              <Text style={[styles.chapterNumber, { color: colors.inkPrimary }]}>{item}</Text>
+            </Pressable>
+          );
+        }}
       />
     </View>
   );

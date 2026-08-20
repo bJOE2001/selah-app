@@ -90,11 +90,11 @@ export function EntryTimeline({
 
           {/* Right: Writing Mascot with Ambient Halo */}
           <View style={styles.heroMascotArea}>
-            <View style={[styles.heroMascotHalo, { backgroundColor: isDark ? '#2A2520' : '#E8F0E4' }]} />
+            <View style={[styles.heroMascotHalo, { backgroundColor: isDark ? 'rgba(74, 124, 89, 0.20)' : 'rgba(74, 124, 89, 0.12)', borderColor: isDark ? 'rgba(74, 124, 89, 0.35)' : 'rgba(74, 124, 89, 0.22)' }]} />
             <Image
-              source={require('../../../assets/images/mascot-writing-journal.jpg')}
-              style={[styles.heroMascotImage, { borderRadius: 20 }]}
-              resizeMode="cover"
+              source={require('../../../assets/images/mascot-writing-journal-transparent.png')}
+              style={styles.heroMascotImage}
+              resizeMode="contain"
             />
           </View>
         </View>
@@ -178,11 +178,11 @@ export function EntryTimeline({
         ListEmptyComponent={
           <View style={styles.emptyStateContainer}>
             <View style={[styles.emptyCard, { backgroundColor: colors.cardBg, borderColor: colors.paperLine }]}>
-              <View style={styles.emptyMascotWrapper}>
+              <View style={[styles.emptyMascotWrapper, { backgroundColor: isDark ? 'rgba(74, 124, 89, 0.20)' : 'rgba(74, 124, 89, 0.12)', borderColor: isDark ? 'rgba(74, 124, 89, 0.35)' : 'rgba(74, 124, 89, 0.22)' }]}>
                 <Image
-                  source={require('../../../assets/images/mascot-writing-journal.jpg')}
+                  source={require('../../../assets/images/mascot-writing-journal-transparent.png')}
                   style={styles.emptyMascotImage}
-                  resizeMode="cover"
+                  resizeMode="contain"
                 />
               </View>
               <Text style={[styles.emptyTitle, { color: colors.inkPrimary }]}>No Devotional Entries Yet</Text>

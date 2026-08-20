@@ -62,7 +62,9 @@ export default function RootLayout() {
   useEffect(() => {
     async function prepare() {
       try {
-        Appearance.setColorScheme(isDark ? 'dark' : 'light');
+        if (typeof Appearance?.setColorScheme === 'function') {
+          Appearance.setColorScheme(isDark ? 'dark' : 'light');
+        }
         if (Platform.OS === 'android') {
           try {
             await SystemUI.setBackgroundColorAsync(colors.paperBg);
@@ -70,6 +72,8 @@ export default function RootLayout() {
           try {
             await NavigationBar.setButtonStyleAsync(isDark ? 'light' : 'dark');
           } catch {}
+        } else if (Platform.OS === 'web' && typeof document !== 'undefined') {
+          document.body.style.backgroundColor = colors.paperBg;
         }
         await initDatabase();
         setDbReady(true);
@@ -82,7 +86,9 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
-    Appearance.setColorScheme(isDark ? 'dark' : 'light');
+    if (typeof Appearance?.setColorScheme === 'function') {
+      Appearance.setColorScheme(isDark ? 'dark' : 'light');
+    }
     if (Platform.OS === 'android') {
       const syncNavBar = async () => {
         try {
@@ -93,6 +99,8 @@ export default function RootLayout() {
         } catch {}
       };
       syncNavBar();
+    } else if (Platform.OS === 'web' && typeof document !== 'undefined') {
+      document.body.style.backgroundColor = colors.paperBg;
     }
   }, [colors.paperBg, isDark]);
 

@@ -19,6 +19,10 @@ export interface BookPickerProps {
   onSelectBook: (book: Book) => void;
 }
 
+type GridBookItem =
+  | (Book & { isPlaceholder?: false })
+  | { id: number; isPlaceholder: true };
+
 export function BookPicker({ onSelectBook }: BookPickerProps) {
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
@@ -34,6 +38,13 @@ export function BookPicker({ onSelectBook }: BookPickerProps) {
       book.abbreviation.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesTestament && matchesQuery;
   });
+
+  const formattedBooks: GridBookItem[] = (() => {
+    if (filteredBooks.length % 2 !== 0) {
+      return [...filteredBooks, { id: -1, isPlaceholder: true }];
+    }
+    return filteredBooks;
+  })();
 
   return (
     <View style={styles.container}>
@@ -102,9 +113,9 @@ export function BookPicker({ onSelectBook }: BookPickerProps) {
       ) : null}
 
       {/* Book Grid */}
-      <FlatList
-        data={filteredBooks}
-        keyExtractor={(item) => String(item.id)}
+      <FlatList<GridBookItem>
+        data={formattedBooks}
+        keyExtractor={(item, index) => (item.isPlaceholder ? `placeholder-${index}` : String(item.id))}
         numColumns={2}
         columnWrapperStyle={styles.columnWrapper}
         contentContainerStyle={[
@@ -112,34 +123,54 @@ export function BookPicker({ onSelectBook }: BookPickerProps) {
           { paddingBottom: Math.max(insets.bottom, 16) + 110 },
         ]}
         showsVerticalScrollIndicator={false}
-        renderItem={({ item }) => (
-          <Pressable
-            onPress={() => onSelectBook(item)}
-            style={({ pressed }) => [
-              styles.bookCard,
-              {
-                backgroundColor: colors.cardBg,
-                borderColor: colors.paperLine,
-              },
-              pressed && {
-                backgroundColor: colors.brandGreenLight,
-                borderColor: colors.brandGreen,
-              },
-            ]}
-          >
-            <View style={[styles.bookAbbrevBadge, { backgroundColor: colors.brandGreenLight }]}>
-              <Text style={[styles.bookAbbrevText, { color: colors.brandGreen }]}>{item.abbreviation}</Text>
-            </View>
-            <View style={styles.bookInfo}>
-              <Text style={[styles.bookName, { color: colors.inkPrimary }]} numberOfLines={1}>
-                {item.name}
-              </Text>
-              <Text style={[styles.chapterCount, { color: colors.inkMuted }]}>
-                {item.chapter_count} {item.chapter_count === 1 ? 'chapter' : 'chapters'}
-              </Text>
-            </View>
-          </Pressable>
-        )}
+        renderItem={({ item }) => {
+          if (item.isPlaceholder) {
+            return (
+              <View
+                style={[
+                  styles.bookCard,
+                  {
+                    opacity: 0,
+                    backgroundColor: 'transparent',
+                    borderColor: 'transparent',
+                    elevation: 0,
+                    shadowOpacity: 0,
+                  },
+                ]}
+                pointerEvents="none"
+              />
+            );
+          }
+
+          return (
+            <Pressable
+              onPress={() => onSelectBook(item)}
+              style={({ pressed }) => [
+                styles.bookCard,
+                {
+                  backgroundColor: colors.cardBg,
+                  borderColor: colors.paperLine,
+                },
+                pressed && {
+                  backgroundColor: colors.brandGreenLight,
+                  borderColor: colors.brandGreen,
+                },
+              ]}
+            >
+              <View style={[styles.bookAbbrevBadge, { backgroundColor: colors.brandGreenLight }]}>
+                <Text style={[styles.bookAbbrevText, { color: colors.brandGreen }]}>{item.abbreviation}</Text>
+              </View>
+              <View style={styles.bookInfo}>
+                <Text style={[styles.bookName, { color: colors.inkPrimary }]} numberOfLines={1}>
+                  {item.name}
+                </Text>
+                <Text style={[styles.chapterCount, { color: colors.inkMuted }]}>
+                  {item.chapter_count} {item.chapter_count === 1 ? 'chapter' : 'chapters'}
+                </Text>
+              </View>
+            </Pressable>
+          );
+        }}
       />
     </View>
   );
@@ -198,11 +229,13 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    padding: SPACING.sm + 4,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    minHeight: 68,
     borderRadius: 16,
     borderWidth: 1,
     ...SHADOWS.subtle,
-    gap: SPACING.sm,
+    gap: 10,
   },
   bookAbbrevBadge: {
     width: 38,
@@ -210,6 +243,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
+    flexShrink: 0,
   },
   bookAbbrevText: {
     fontFamily: FONTS.bodyBold,
@@ -218,6 +252,7 @@ const styles = StyleSheet.create({
   },
   bookInfo: {
     flex: 1,
+    justifyContent: 'center',
   },
   bookName: {
     fontFamily: FONTS.sectionHeader,
@@ -227,6 +262,6 @@ const styles = StyleSheet.create({
   chapterCount: {
     fontFamily: FONTS.body,
     fontSize: 11,
-    marginTop: 1,
+    marginTop: 2,
   },
 });

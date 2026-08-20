@@ -225,11 +225,27 @@ export function SettingsScreen() {
               </Text>
             </View>
             <View style={styles.heroMascotArea}>
-              <View style={[styles.heroMascotHalo, { backgroundColor: isDark ? '#2A2520' : '#F2F7F2' }]} />
+              <View
+                style={[
+                  styles.heroMascotOuterRing,
+                  {
+                    borderColor: isDark ? 'rgba(74, 124, 89, 0.28)' : 'rgba(74, 124, 89, 0.18)',
+                  },
+                ]}
+              />
+              <View
+                style={[
+                  styles.heroMascotHalo,
+                  {
+                    backgroundColor: isDark ? 'rgba(74, 124, 89, 0.20)' : 'rgba(74, 124, 89, 0.12)',
+                    borderColor: isDark ? 'rgba(74, 124, 89, 0.38)' : 'rgba(74, 124, 89, 0.22)',
+                  },
+                ]}
+              />
               <Image
-                source={require('../../../assets/images/mascot-guardian-key.jpg')}
-                style={[styles.heroMascotImage, { borderRadius: 18 }]}
-                resizeMode="cover"
+                source={require('../../../assets/images/mascot-guardian-key-transparent.png')}
+                style={styles.heroMascotImage}
+                resizeMode="contain"
               />
             </View>
           </View>
@@ -608,7 +624,7 @@ export function SettingsScreen() {
           </View>
         </View>
 
-        {/* ═══════════ SECTION 6: ABOUT RHEMA ═══════════ */}
+        {/* ═══════════ SECTION 6: ABOUT SHEPHEMA ═══════════ */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Ionicons name="information-circle" size={16} color={colors.brandGreen} />
@@ -616,32 +632,68 @@ export function SettingsScreen() {
           </View>
 
           <View style={[styles.card, { backgroundColor: colors.cardBg, borderColor: colors.paperLine }]}>
+            {/* Header with App Logo & Devotional Buddy Badge */}
             <View style={styles.aboutHeader}>
-              <Image
-                source={require('../../../assets/images/app-icon.jpg')}
-                style={styles.aboutLogo}
-              />
-              <View>
+              <View style={styles.aboutLogoContainer}>
+                <Image
+                  source={require('../../../assets/images/app-icon.jpg')}
+                  style={styles.aboutLogo}
+                />
+              </View>
+              <View style={styles.aboutHeaderTextCol}>
+                <View style={[styles.aboutBuddyPill, { backgroundColor: colors.brandGreenLight, borderColor: colors.brandGreen + '35' }]}>
+                  <Ionicons name="sparkles" size={10} color={colors.brandGreen} />
+                  <Text style={[styles.aboutBuddyPillText, { color: colors.brandGreen }]}>Devotional Buddy</Text>
+                </View>
                 <Text style={[styles.aboutAppName, { color: colors.inkPrimary }]}>Shephema</Text>
                 <Text style={[styles.aboutVersion, { color: colors.inkSecondary }]}>Guided by God's Word • v1.0.0</Text>
               </View>
             </View>
 
-            <Text style={[styles.aboutDescription, { color: colors.inkSecondary }]}>
-              Shephema is your personal sanctuary for daily Scripture meditation, prayer reflections, and spiritual journaling.
-            </Text>
-
-            <View style={styles.aboutFeatureRow}>
-              <Ionicons name="shield-checkmark-outline" size={15} color={colors.brandGreen} />
-              <Text style={[styles.aboutFeatureText, { color: colors.inkSecondary }]}>
-                100% Private — all data stored locally on your device in SQLite.
+            {/* Mission Quote Highlight from Web */}
+            <View style={[styles.aboutQuoteBox, { backgroundColor: isDark ? 'rgba(82, 167, 82, 0.12)' : 'rgba(58, 125, 58, 0.08)', borderColor: colors.brandGreen + '30' }]}>
+              <Text style={[styles.aboutQuoteText, { color: colors.inkPrimary }]}>
+                "Your faithful devotional buddy — keeping you company in God's Word every single day."
               </Text>
             </View>
 
-            <View style={styles.aboutFeatureRow}>
-              <Ionicons name="cloud-offline-outline" size={15} color={colors.brandGreen} />
-              <Text style={[styles.aboutFeatureText, { color: colors.inkSecondary }]}>
-                Offline First — read Scripture and write devotionals anywhere without internet.
+            {/* Origin & Meaning of Shephema */}
+            <Text style={[styles.aboutDescription, { color: colors.inkSecondary }]}>
+              <Text style={{ fontWeight: '700', color: colors.inkPrimary }}>Shephema</Text> (from <Text style={{ fontStyle: 'italic', fontWeight: '700', color: colors.inkPrimary }}>"Sheep"</Text> + <Text style={{ fontStyle: 'italic', fontWeight: '700', color: colors.inkPrimary }}>"Rhema"</Text> — God's living Word) is designed to be the warm, encouraging <Text style={{ fontWeight: '700', color: colors.inkPrimary }}>devotional buddy</Text> for every believer. Whether you are doing morning quiet time, reflecting on a verse during lunch, or unwinding at night with prayer, Shephema is right there with you.
+            </Text>
+
+            <Text style={[styles.aboutDescription, { color: colors.inkSecondary, marginTop: -4 }]}>
+              Built with a classic paper notebook feel and powered 100% offline, your devotions and reflections stay private, peaceful, and always accessible on your journey with God.
+            </Text>
+
+            {/* Value Badges Grid (100% Offline, Private, No Ads, Free) */}
+            <View style={styles.aboutBadgesGrid}>
+              <View style={[styles.aboutBadgeItem, { backgroundColor: isDark ? '#26211C' : '#F5F0EA', borderColor: colors.paperLine }]}>
+                <Ionicons name="cloud-offline-outline" size={14} color={colors.brandGreen} />
+                <Text style={[styles.aboutBadgeText, { color: colors.inkPrimary }]}>100% Offline</Text>
+              </View>
+
+              <View style={[styles.aboutBadgeItem, { backgroundColor: isDark ? '#26211C' : '#F5F0EA', borderColor: colors.paperLine }]}>
+                <Ionicons name="shield-checkmark-outline" size={14} color={colors.brandGreen} />
+                <Text style={[styles.aboutBadgeText, { color: colors.inkPrimary }]}>Data Stays Private</Text>
+              </View>
+
+              <View style={[styles.aboutBadgeItem, { backgroundColor: isDark ? '#26211C' : '#F5F0EA', borderColor: colors.paperLine }]}>
+                <Ionicons name="ban-outline" size={14} color={colors.tapeRhema} />
+                <Text style={[styles.aboutBadgeText, { color: colors.inkPrimary }]}>No Ads Ever</Text>
+              </View>
+
+              <View style={[styles.aboutBadgeItem, { backgroundColor: isDark ? '#26211C' : '#F5F0EA', borderColor: colors.paperLine }]}>
+                <Ionicons name="heart-outline" size={14} color={colors.brandGold} />
+                <Text style={[styles.aboutBadgeText, { color: colors.inkPrimary }]}>Free Forever</Text>
+              </View>
+            </View>
+
+            {/* The R.R.M.A. Method Banner */}
+            <View style={[styles.rrmaBanner, { backgroundColor: isDark ? '#26221E' : '#F9F5EE', borderColor: colors.paperLine }]}>
+              <Text style={[styles.rrmaLabel, { color: colors.brandGreen }]}>✦ THE R.R.M.A. METHOD</Text>
+              <Text style={[styles.rrmaSub, { color: colors.inkSecondary }]}>
+                <Text style={{ fontWeight: '700', color: colors.tapeRhema }}>Rhema</Text> (Scripture) • <Text style={{ fontWeight: '700', color: colors.tapeReflection }}>Reflect</Text> (Meaning) • <Text style={{ fontWeight: '700', color: colors.tapeMotivation }}>Motivate</Text> (Heart) • <Text style={{ fontWeight: '700', color: colors.tapeApplication }}>Apply</Text> (Action)
               </Text>
             </View>
           </View>
@@ -758,23 +810,31 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
   heroMascotArea: {
-    width: 95,
-    height: 95,
+    width: 104,
+    height: 104,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
-    marginLeft: 4,
+    marginLeft: 6,
+  },
+  heroMascotOuterRing: {
+    position: 'absolute',
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 1,
   },
   heroMascotHalo: {
     position: 'absolute',
-    width: 85,
-    height: 85,
+    width: 86,
+    height: 86,
     borderRadius: 43,
-    top: 5,
+    borderWidth: 1.2,
   },
   heroMascotImage: {
-    width: '100%',
-    height: '100%',
+    width: 96,
+    height: 96,
+    zIndex: 2,
   },
 
   /* ── Sections ── */
@@ -937,36 +997,102 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.md,
-    marginBottom: SPACING.sm,
+    marginBottom: SPACING.md,
+  },
+  aboutLogoContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    overflow: 'hidden',
+    ...SHADOWS.subtle,
   },
   aboutLogo: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
+    width: '100%',
+    height: '100%',
+  },
+  aboutHeaderTextCol: {
+    flex: 1,
+  },
+  aboutBuddyPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: RADIUS.pill,
+    borderWidth: 0.8,
+    alignSelf: 'flex-start',
+    marginBottom: 3,
+  },
+  aboutBuddyPillText: {
+    fontFamily: FONTS.bodyBold,
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 0.4,
   },
   aboutAppName: {
     fontFamily: FONTS.sectionHeader,
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
   },
   aboutVersion: {
     fontFamily: FONTS.body,
     fontSize: 11,
   },
+  aboutQuoteBox: {
+    padding: SPACING.sm + 2,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: SPACING.sm + 4,
+  },
+  aboutQuoteText: {
+    fontFamily: FONTS.scriptureItalic,
+    fontSize: 12.5,
+    lineHeight: 17,
+    textAlign: 'center',
+  },
   aboutDescription: {
     fontFamily: FONTS.body,
     fontSize: 12,
     lineHeight: 18,
-    marginBottom: SPACING.md,
+    marginBottom: SPACING.sm + 2,
   },
-  aboutFeatureRow: {
+  aboutBadgesGrid: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    flexWrap: 'wrap',
     gap: 6,
-    marginBottom: 6,
+    marginVertical: SPACING.xs + 2,
   },
-  aboutFeatureText: {
+  aboutBadgeItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 9,
+    paddingVertical: 7,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
     flex: 1,
+    minWidth: '47%',
+  },
+  aboutBadgeText: {
+    fontFamily: FONTS.bodyBold,
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  rrmaBanner: {
+    marginTop: SPACING.sm,
+    padding: SPACING.sm + 2,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  rrmaLabel: {
+    fontFamily: FONTS.bodyBold,
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.6,
+    marginBottom: 2,
+  },
+  rrmaSub: {
     fontFamily: FONTS.body,
     fontSize: 11,
     lineHeight: 16,

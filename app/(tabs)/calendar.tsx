@@ -28,17 +28,19 @@ export default function CalendarTabScreen() {
   });
 
   const calendarTheme = useMemo(() => ({
-    backgroundColor: 'transparent',
+    backgroundColor: colors.cardBg,
     calendarBackground: colors.cardBg,
     textSectionTitleColor: colors.inkSecondary,
+    textSectionTitleDisabledColor: colors.inkPlaceholder,
     selectedDayBackgroundColor: colors.brandGreen,
     selectedDayTextColor: '#FFFFFF',
-    todayTextColor: colors.tapeRhema,
+    todayTextColor: colors.brandGreen,
     dayTextColor: colors.inkPrimary,
     textDisabledColor: colors.inkPlaceholder,
     dotColor: colors.tapeRhema,
     selectedDotColor: '#FFFFFF',
     arrowColor: colors.brandGreen,
+    disabledArrowColor: colors.inkPlaceholder,
     monthTextColor: colors.inkPrimary,
     indicatorColor: colors.brandGreen,
     textDayFontFamily: FONTS.body,
@@ -47,6 +49,53 @@ export default function CalendarTabScreen() {
     textDayFontSize: 14,
     textMonthFontSize: 16,
     textDayHeaderFontSize: 12,
+    'stylesheet.calendar.main': {
+      container: {
+        paddingLeft: 5,
+        paddingRight: 5,
+        backgroundColor: colors.cardBg,
+      },
+      monthView: {
+        backgroundColor: colors.cardBg,
+      },
+      week: {
+        marginVertical: 4,
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        backgroundColor: colors.cardBg,
+      },
+    },
+    'stylesheet.calendar.header': {
+      header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        paddingLeft: 10,
+        paddingRight: 10,
+        marginTop: 6,
+        alignItems: 'center',
+        backgroundColor: colors.cardBg,
+      },
+      monthText: {
+        fontSize: 16,
+        fontFamily: FONTS.sectionHeader,
+        fontWeight: '700',
+        color: colors.inkPrimary,
+        margin: 10,
+      },
+      arrow: {
+        padding: 10,
+      },
+      dayHeader: {
+        marginTop: 2,
+        marginBottom: 7,
+        width: 32,
+        textAlign: 'center',
+        fontSize: 12,
+        fontFamily: FONTS.bodyBold,
+        fontWeight: '600',
+        color: colors.inkSecondary,
+      },
+    },
   }), [colors]);
 
   // Build marked dates for calendar
@@ -164,13 +213,14 @@ export default function CalendarTabScreen() {
         {/* Calendar Card */}
         <View style={[styles.calendarCard, { backgroundColor: colors.cardBg, borderColor: colors.paperLine }]}>
           <Calendar
+            key={isDark ? 'calendar-dark' : 'calendar-light'}
             markedDates={markedDates}
             onDayPress={(day: any) => {
               const dateStr = day?.dateString || '';
               setSelectedDate(dateStr === selectedDate ? '' : dateStr);
             }}
             theme={calendarTheme}
-            style={styles.calendarInner}
+            style={[styles.calendarInner, { backgroundColor: colors.cardBg }]}
           />
         </View>
 

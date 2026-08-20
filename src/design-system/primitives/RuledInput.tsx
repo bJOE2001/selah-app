@@ -7,6 +7,7 @@ import {
   ViewStyle,
   NativeSyntheticEvent,
   TextInputContentSizeChangeEventData,
+  Platform,
 } from 'react-native';
 import { useTheme } from '../theme/useTheme';
 import { FONTS, LINE_HEIGHTS } from '../tokens/typography';
@@ -36,16 +37,20 @@ export function RuledInput({
   const handleContentSizeChange = (
     e: NativeSyntheticEvent<TextInputContentSizeChangeEventData>
   ) => {
-    const rawHeight = e.nativeEvent.contentSize.height;
-    const computedLines = Math.max(minLines, Math.ceil(rawHeight / lineHeight) + 1);
+    const rawHeight = e.nativeEvent?.contentSize?.height;
+    if (!rawHeight) return;
+    const textLines = (value || '').split('\n').length;
+    const measuredLines = Math.round(rawHeight / lineHeight);
+    const computedLines = Math.max(minLines, textLines, measuredLines);
     const newHeight = computedLines * lineHeight;
-    setContentHeight((prev) => (prev !== newHeight ? newHeight : prev));
+    setContentHeight((prev) => (Math.abs(prev - newHeight) >= lineHeight ? newHeight : prev));
   };
 
-  const totalLines = Math.max(minLines, Math.ceil(contentHeight / lineHeight));
+  const textLines = (value || '').split('\n').length;
+  const totalLines = Math.max(minLines, textLines, Math.round(contentHeight / lineHeight));
 
   return (
-    <View style={[styles.container, containerStyle]}>
+    <View style={[styles.container, { minHeight: totalLines * lineHeight }, containerStyle]}>
       {/* Background Ruled Lines */}
       <View style={styles.linesContainer} pointerEvents="none">
         {Array.from({ length: totalLines }).map((_, i) => (
@@ -70,6 +75,7 @@ export function RuledInput({
             lineHeight,
             minHeight: totalLines * lineHeight,
             color: colors.inkPrimary,
+            ...(Platform.OS === 'web' ? { outlineStyle: 'none' as any } : {}),
           },
         ]}
         value={value}
