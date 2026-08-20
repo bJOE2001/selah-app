@@ -111,7 +111,7 @@ export function SettingsScreen() {
       );
 
       const exportData = {
-        app: 'RHEMA Daily Devotional',
+        app: 'Shephema Devotional',
         version: '1.0.0',
         exportedAt: new Date().toISOString(),
         totalEntries: fullEntries.length,
@@ -217,7 +217,7 @@ export function SettingsScreen() {
             <View style={styles.heroTextCol}>
               <View style={[styles.appBadge, { backgroundColor: colors.brandGreenLight, borderColor: colors.brandGreen + '40' }]}>
                 <Ionicons name="sparkles" size={12} color={colors.brandGreen} />
-                <Text style={[styles.appBadgeText, { color: colors.brandGreen }]}>RHEMA DEVOTIONAL</Text>
+                <Text style={[styles.appBadgeText, { color: colors.brandGreen }]}>SHEPHEMA DEVOTIONAL</Text>
               </View>
               <Text style={[styles.heroHeadline, { color: colors.inkPrimary }]}>Preferences & Privacy</Text>
               <Text style={[styles.heroSubtitle, { color: colors.inkSecondary }]}>
@@ -227,9 +227,9 @@ export function SettingsScreen() {
             <View style={styles.heroMascotArea}>
               <View style={[styles.heroMascotHalo, { backgroundColor: isDark ? '#2A2520' : '#F2F7F2' }]} />
               <Image
-                source={require('../../../assets/images/mascot_waving_transparent.webp')}
-                style={styles.heroMascotImage}
-                resizeMode="contain"
+                source={require('../../../assets/images/mascot-guardian-key.jpg')}
+                style={[styles.heroMascotImage, { borderRadius: 18 }]}
+                resizeMode="cover"
               />
             </View>
           </View>
@@ -612,7 +612,7 @@ export function SettingsScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Ionicons name="information-circle" size={16} color={colors.brandGreen} />
-            <Text style={[styles.sectionTitle, { color: colors.inkMuted }]}>ABOUT RHEMA</Text>
+            <Text style={[styles.sectionTitle, { color: colors.inkMuted }]}>ABOUT SHEPHEMA</Text>
           </View>
 
           <View style={[styles.card, { backgroundColor: colors.cardBg, borderColor: colors.paperLine }]}>
@@ -622,13 +622,13 @@ export function SettingsScreen() {
                 style={styles.aboutLogo}
               />
               <View>
-                <Text style={[styles.aboutAppName, { color: colors.inkPrimary }]}>RHEMA Devotional</Text>
-                <Text style={[styles.aboutVersion, { color: colors.inkSecondary }]}>Version 1.0.0 (Offline First)</Text>
+                <Text style={[styles.aboutAppName, { color: colors.inkPrimary }]}>Shephema</Text>
+                <Text style={[styles.aboutVersion, { color: colors.inkSecondary }]}>Guided by God's Word • v1.0.0</Text>
               </View>
             </View>
 
             <Text style={[styles.aboutDescription, { color: colors.inkSecondary }]}>
-              RHEMA is your personal sanctuary for daily Scripture meditation, prayer reflections, and spiritual journaling.
+              Shephema is your personal sanctuary for daily Scripture meditation, prayer reflections, and spiritual journaling.
             </Text>
 
             <View style={styles.aboutFeatureRow}>

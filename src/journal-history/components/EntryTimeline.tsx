@@ -88,13 +88,13 @@ export function EntryTimeline({
             </View>
           </View>
 
-          {/* Right: Mascot with Halo */}
+          {/* Right: Writing Mascot with Ambient Halo */}
           <View style={styles.heroMascotArea}>
             <View style={[styles.heroMascotHalo, { backgroundColor: isDark ? '#2A2520' : '#E8F0E4' }]} />
             <Image
-              source={require('../../../assets/images/mascot-waving-nobg.png')}
-              style={styles.heroMascotImage}
-              resizeMode="contain"
+              source={require('../../../assets/images/mascot-writing-journal.jpg')}
+              style={[styles.heroMascotImage, { borderRadius: 20 }]}
+              resizeMode="cover"
             />
           </View>
         </View>
@@ -178,8 +178,12 @@ export function EntryTimeline({
         ListEmptyComponent={
           <View style={styles.emptyStateContainer}>
             <View style={[styles.emptyCard, { backgroundColor: colors.cardBg, borderColor: colors.paperLine }]}>
-              <View style={[styles.emptyIconCircle, { backgroundColor: colors.brandGreenLight }]}>
-                <Ionicons name="pencil-outline" size={28} color={colors.brandGreen} />
+              <View style={styles.emptyMascotWrapper}>
+                <Image
+                  source={require('../../../assets/images/mascot-writing-journal.jpg')}
+                  style={styles.emptyMascotImage}
+                  resizeMode="cover"
+                />
               </View>
               <Text style={[styles.emptyTitle, { color: colors.inkPrimary }]}>No Devotional Entries Yet</Text>
               <Text style={[styles.emptySubtitle, { color: colors.inkSecondary }]}>
@@ -414,13 +418,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     ...SHADOWS.card,
   },
-  emptyIconCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
+  emptyMascotWrapper: {
+    width: 110,
+    height: 110,
+    borderRadius: 22,
+    overflow: 'hidden',
     marginBottom: SPACING.md,
+    ...SHADOWS.subtle,
+  },
+  emptyMascotImage: {
+    width: '100%',
+    height: '100%',
   },
   emptyTitle: {
     fontFamily: FONTS.sectionHeader,

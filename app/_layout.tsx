@@ -20,7 +20,7 @@ import {
   Caveat_700Bold,
 } from '@expo-google-fonts/caveat';
 
-import { Platform, Appearance } from 'react-native';
+import { Platform, Appearance, View, Text, Image } from 'react-native';
 import * as NavigationBar from 'expo-navigation-bar';
 import * as SystemUI from 'expo-system-ui';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -102,13 +102,26 @@ export default function RootLayout() {
     }
   }, [fontsLoaded, fontError, dbReady]);
 
-  if (!fontsLoaded && !fontError) {
-    return null;
-  }
-
-  // Don't render any screens until the database is ready
-  if (!dbReady) {
-    return null;
+  // While fonts and database are preparing, display the Shephema splash icon
+  if ((!fontsLoaded && !fontError) || !dbReady) {
+    return (
+      <SafeAreaProvider style={{ flex: 1, backgroundColor: colors.paperBg }}>
+        <StatusBar style={isDark ? 'light' : 'dark'} backgroundColor={colors.paperBg} />
+        <View style={{ flex: 1, backgroundColor: colors.paperBg, justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+          <Image
+            source={require('../assets/images/app-icon.jpg')}
+            style={{ width: 108, height: 108, borderRadius: 24 }}
+            resizeMode="contain"
+          />
+          <Text style={{ fontSize: 20, fontWeight: '700', color: colors.inkPrimary, letterSpacing: 0.5 }}>
+            Shephema
+          </Text>
+          <Text style={{ fontSize: 13, color: colors.inkSecondary, fontStyle: 'italic' }}>
+            Guided by God's Word
+          </Text>
+        </View>
+      </SafeAreaProvider>
+    );
   }
 
   // If privacy lock is enabled and app is locked, render LockScreen

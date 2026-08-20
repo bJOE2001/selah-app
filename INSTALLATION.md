@@ -1,6 +1,8 @@
-# Rhema — Installation & Setup Guide
+# Shephema — Installation & Setup Guide
 
-Welcome to **Rhema**, an aesthetic devotional journaling and Scripture reader app built with **React Native**, **Expo SDK 54**, **Expo Router**, **TypeScript**, and **Expo SQLite**.
+> *Guided by God's Word*
+
+Welcome to **Shephema**, an aesthetic devotional journaling and Scripture reader app built with **React Native**, **Expo SDK 54**, **Expo Router**, **TypeScript**, and **Expo SQLite**.
 
 This guide walks you through setting up, configuring, and running the project from scratch on your local development machine.
 
@@ -44,7 +46,7 @@ npm install
 
 ### 3. Bible Database Setup
 
-Rhema includes a local SQLite database of the King James Version (KJV) Bible located at:
+Shephema includes a local SQLite database of the King James Version (KJV) Bible located at:
 ```
 assets/db/KJV.db (~33MB)
 ```
@@ -54,7 +56,7 @@ assets/db/KJV.db (~33MB)
   ```bash
   node scripts/build-bible-db.js
   ```
-  *(Requires Node.js with native build tools for `better-sqlite3`)*.
+  *(Uses Node.js 22+ built-in `node:sqlite` module with zero native C++ build tools required)*.
 
 ---
 
@@ -188,8 +190,8 @@ The app copies `assets/db/KJV.db` to the device's sandbox on first boot. If the 
 - **iOS Simulator:** In the top menu, go to **Features** ➔ **Face ID** / **Touch ID** ➔ **Enrolled**, then trigger **Matching Touch** / **Face**.
 - **Android Emulator:** Set up a fingerprint or PIN under **Settings** ➔ **Security** inside the emulator.
 
-### 4. `better-sqlite3` Build Errors during `npm install`
-`better-sqlite3` is a dev dependency used exclusively for Node.js backend seeding scripts (`scripts/build-bible-db.js`). It is **not** included in the mobile client bundle. If your platform has issues compiling native C++ addons for Node:
+### 4. Native Dependency Compilation Issues
+The project uses pure JavaScript/TypeScript packages for cross-platform compatibility and Node.js 22 built-in `node:sqlite` for backend seeding scripts. If you ever experience native build script issues during installation, use:
 ```bash
 npm install --ignore-scripts
 ```

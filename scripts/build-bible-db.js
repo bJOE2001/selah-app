@@ -1,7 +1,7 @@
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
-const Database = require('better-sqlite3');
+const { DatabaseSync } = require('node:sqlite');
 
 const DATA_URL = 'https://raw.githubusercontent.com/thiagobodruk/bible/master/json/en_kjv.json';
 
@@ -111,11 +111,11 @@ async function main() {
     fs.unlinkSync(dbPath);
   }
 
-  const db = new Database(dbPath);
+  const db = new DatabaseSync(dbPath);
 
   // Enable WAL and foreign keys
-  db.pragma('journal_mode = WAL');
-  db.pragma('foreign_keys = ON');
+  db.exec('PRAGMA journal_mode = WAL;');
+  db.exec('PRAGMA foreign_keys = ON;');
 
   console.log('Creating database tables...');
   db.exec(`
@@ -162,7 +162,8 @@ async function main() {
 
   let totalVerses = 0;
 
-  const insertAll = db.transaction(() => {
+  db.exec('BEGIN TRANSACTION;');
+  try {
     for (let i = 0; i < CANONICAL_BOOKS.length; i++) {
       const bookDef = CANONICAL_BOOKS[i];
       const rawBook = rawBooks[i];
@@ -181,9 +182,11 @@ async function main() {
         }
       }
     }
-  });
-
-  insertAll();
+    db.exec('COMMIT;');
+  } catch (err) {
+    db.exec('ROLLBACK;');
+    throw err;
+  }
 
   console.log(`Inserted ${CANONICAL_BOOKS.length} books and ${totalVerses} verses.`);
 

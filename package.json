@@ -1,5 +1,5 @@
 {
-  "name": "rhema-app",
+  "name": "shephema-app",
   "main": "expo-router/entry",
   "version": "1.0.0",
   "dependencies": {
@@ -39,10 +39,8 @@
     "zustand": "^5.0.3"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^9.6.0",
     "@types/react": "~19.1.10",
     "@types/uuid": "^10.0.0",
-    "better-sqlite3": "^13.0.3",
     "typescript": "^5.3.3"
   },
   "scripts": {

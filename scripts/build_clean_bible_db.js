@@ -1,11 +1,11 @@
-const Database = require('better-sqlite3');
+const { DatabaseSync } = require('node:sqlite');
 const fs = require('fs');
 const path = require('path');
 
 const userDbPath = path.join(__dirname, '..', 'KJV.db');
 const destDbPath = path.join(__dirname, '..', 'assets', 'db', 'bible-kjv.db');
 
-const userDb = new Database(userDbPath);
+const userDb = new DatabaseSync(userDbPath);
 
 // 66 Canonical Books metadata
 const CANONICAL = [
@@ -82,7 +82,7 @@ if (fs.existsSync(destDbPath)) {
   fs.unlinkSync(destDbPath);
 }
 
-const destDb = new Database(destDbPath);
+const destDb = new DatabaseSync(destDbPath);
 
 // Create standard tables
 destDb.exec(`
@@ -147,7 +147,8 @@ const userVersesStmt = userDb.prepare(`
 
 let totalVerses = 0;
 
-const buildTx = destDb.transaction(() => {
+destDb.exec('BEGIN TRANSACTION;');
+try {
   for (const c of CANONICAL) {
     insertBook.run(c.id, c.testId, c.name, c.abbrev, c.chapters);
 
@@ -160,9 +161,11 @@ const buildTx = destDb.transaction(() => {
       totalVerses++;
     }
   }
-});
-
-buildTx();
+  destDb.exec('COMMIT;');
+} catch (err) {
+  destDb.exec('ROLLBACK;');
+  throw err;
+}
 
 console.log(`\n🎉 DONE! Clean SQLite database built with ${totalVerses} unique verses across all 66 books!`);
 

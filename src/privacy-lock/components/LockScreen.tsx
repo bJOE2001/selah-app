@@ -24,14 +24,14 @@ export function LockScreen() {
         {/* Mascot Logo Icon */}
         <View style={styles.iconContainer}>
           <Image
-            source={require('../../../assets/images/app-icon.jpg')}
-            style={styles.logoImage}
-            resizeMode="contain"
+            source={require('../../../assets/images/mascot-guardian-key.jpg')}
+            style={[styles.logoImage, { borderRadius: RADIUS.lg }]}
+            resizeMode="cover"
           />
         </View>
 
-        <Text style={[styles.title, { color: colors.inkPrimary }]}>Rhema</Text>
-        <Text style={[styles.subtitle, { color: colors.inkSecondary }]}>Your private sanctuary of Scripture & prayer</Text>
+        <Text style={[styles.title, { color: colors.inkPrimary }]}>Shephema</Text>
+        <Text style={[styles.subtitle, { color: colors.inkSecondary }]}>Guided by God's Word</Text>
 
         <View style={[styles.lockBadge, { backgroundColor: colors.chipBg, borderColor: colors.chipBorder }]}>
           <Ionicons name="lock-closed" size={24} color={colors.brandGreen} />

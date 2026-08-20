@@ -1,5 +1,6 @@
 import React, { forwardRef } from 'react';
 import { View, Text, StyleSheet, Image } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Devotional } from '../../devotional-core/types';
 import { COLORS } from '../../design-system/tokens/colors';
 import { FONTS } from '../../design-system/tokens/typography';
@@ -7,8 +8,13 @@ import { SPACING, RADIUS, SHADOWS } from '../../design-system/tokens/spacing';
 
 export type CardTheme = 'classic' | 'minimal' | 'midnight';
 
+export type ShareableDevotional = Partial<Devotional> & {
+  isVerseOfTheDay?: boolean;
+  themeName?: string;
+};
+
 export interface ShareCardCanvasProps {
-  devotional: Devotional;
+  devotional: ShareableDevotional;
   theme?: CardTheme;
 }
 
@@ -17,31 +23,55 @@ export const ShareCardCanvas = forwardRef<View, ShareCardCanvasProps>(
     const isMidnight = theme === 'midnight';
     const isMinimal = theme === 'minimal';
 
-    const bgColors = {
-      classic: COLORS.paperBg,
-      minimal: '#FFFFFF',
-      midnight: '#1A1816',
-    };
+    // Theme color palettes
+    const palette = {
+      classic: {
+        bg: '#F9F6F0',
+        frameBorder: '#E2D9CC',
+        accent: '#8B3A2B',
+        accentGold: '#C59B27',
+        textPrimary: '#241E1A',
+        textSecondary: '#6B5E55',
+        badgeBg: '#F0E8DC',
+        reflectionBg: 'rgba(0, 0, 0, 0.03)',
+        reflectionBorder: 'rgba(139, 58, 43, 0.2)',
+      },
+      minimal: {
+        bg: '#FFFFFF',
+        frameBorder: '#EAEAEA',
+        accent: '#2E6F40',
+        accentGold: '#D97706',
+        textPrimary: '#111827',
+        textSecondary: '#6B7280',
+        badgeBg: '#F0FDF4',
+        reflectionBg: 'rgba(0, 0, 0, 0.02)',
+        reflectionBorder: 'rgba(46, 111, 64, 0.2)',
+      },
+      midnight: {
+        bg: '#151311',
+        frameBorder: '#2E2822',
+        accent: '#E0B042',
+        accentGold: '#F59E0B',
+        textPrimary: '#F5EFEB',
+        textSecondary: '#A89F95',
+        badgeBg: '#282117',
+        reflectionBg: 'rgba(255, 255, 255, 0.05)',
+        reflectionBorder: 'rgba(224, 176, 66, 0.25)',
+      },
+    }[theme];
 
-    const textColors = {
-      classic: COLORS.inkPrimary,
-      minimal: '#111111',
-      midnight: '#F5EFEB',
-    };
-
-    const accentColors = {
-      classic: COLORS.tapeRhema,
-      minimal: COLORS.brandGreen,
-      midnight: '#D4A84B',
-    };
-
-    const dateFormatted = new Date(devotional.createdAt).toLocaleDateString('en-US', {
+    // Safe Date Parsing
+    const parsedDate = devotional.createdAt ? new Date(devotional.createdAt) : new Date();
+    const validDate = !isNaN(parsedDate.getTime()) ? parsedDate : new Date();
+    const dateFormatted = validDate.toLocaleDateString('en-US', {
       month: 'long',
       day: 'numeric',
       year: 'numeric',
     });
 
-    const reflectionText = devotional.reflection || devotional.motivation || devotional.application || '';
+    const isVOTD = devotional.isVerseOfTheDay || devotional.id === 'verse-of-the-day' || devotional.id === 'quote-share';
+    const themeTag = devotional.themeName;
+    const reflectionText = !isVOTD ? (devotional.reflection || devotional.motivation || devotional.application || '') : '';
 
     return (
       <View
@@ -49,93 +79,91 @@ export const ShareCardCanvas = forwardRef<View, ShareCardCanvasProps>(
         collapsable={false}
         style={[
           styles.container,
-          { backgroundColor: bgColors[theme] },
+          { backgroundColor: palette.bg },
           isMidnight && styles.containerMidnight,
         ]}
       >
-        {/* Subtle Ornamental Frame */}
-        <View
-          style={[
-            styles.innerFrame,
-            { borderColor: accentColors[theme] + '40' },
-          ]}
-        >
-          {/* Header Badge */}
+        {/* Decorative Outer Border Frame */}
+        <View style={[styles.innerFrame, { borderColor: palette.frameBorder }]}>
+          {/* Top Header Bar */}
           <View style={styles.header}>
             <View style={styles.logoRow}>
               <Image
                 source={require('../../../assets/images/app-icon.jpg')}
                 style={styles.logoIcon}
               />
-              <Text
-                style={[
-                  styles.appName,
-                  { color: textColors[theme] },
-                ]}
-              >
-                RHEMA
+              <View>
+                <Text style={[styles.appName, { color: palette.textPrimary }]}>
+                  SHEPHEMA
+                </Text>
+                <Text style={[styles.appTaglineSub, { color: palette.textSecondary }]}>
+                  Guided by God's Word
+                </Text>
+              </View>
+            </View>
+
+            <View style={[styles.dateBadge, { backgroundColor: palette.badgeBg, borderColor: palette.frameBorder }]}>
+              <Ionicons name="calendar-outline" size={10} color={palette.textSecondary} />
+              <Text style={[styles.dateText, { color: palette.textSecondary }]}>
+                {dateFormatted}
               </Text>
             </View>
-            <Text style={[styles.dateText, { color: textColors[theme] + '80' }]}>
-              {dateFormatted}
-            </Text>
           </View>
 
-          {/* Rhema Scripture Body */}
-          <View style={styles.quoteContainer}>
-            <Text
-              style={[
-                styles.quoteMark,
-                { color: accentColors[theme] },
-              ]}
-            >
-              “
-            </Text>
-            <Text
-              style={[
-                styles.verseText,
-                { color: textColors[theme] },
-              ]}
-            >
+          {/* Verse of the Day Badge / Theme Pill */}
+          {isVOTD ? (
+            <View style={styles.votdHeaderRow}>
+              <View style={[styles.votdBadge, { backgroundColor: palette.badgeBg, borderColor: palette.accent + '40' }]}>
+                <Ionicons name="sparkles" size={12} color={palette.accent} />
+                <Text style={[styles.votdBadgeText, { color: palette.accent }]}>
+                  VERSE OF THE DAY
+                </Text>
+              </View>
+
+              {themeTag ? (
+                <View style={[styles.themePill, { backgroundColor: palette.badgeBg, borderColor: palette.frameBorder }]}>
+                  <Text style={[styles.themePillText, { color: palette.textSecondary }]}>
+                    ✦ {themeTag}
+                  </Text>
+                </View>
+              ) : null}
+            </View>
+          ) : null}
+
+          {/* Scripture Quote Centerpiece */}
+          <View style={[styles.quoteContainer, isVOTD && styles.quoteContainerVOTD]}>
+            <Text style={[styles.quoteMark, { color: palette.accent }]}>“</Text>
+            <Text style={[styles.verseText, { color: palette.textPrimary }]}>
               {devotional.rhemaText}
             </Text>
-            <Text
-              style={[
-                styles.referenceText,
-                { color: accentColors[theme] },
-              ]}
-            >
-              — {devotional.rhemaReference}
-            </Text>
+            <View style={styles.referenceRow}>
+              <View style={[styles.referenceLine, { backgroundColor: palette.accent + '30' }]} />
+              <Text style={[styles.referenceText, { color: palette.accent }]}>
+                {devotional.rhemaReference}
+              </Text>
+            </View>
           </View>
 
-          {/* Reflection Takeaway Box */}
+          {/* Devotional Reflection (shown for personal journal entries) */}
           {reflectionText ? (
             <View
               style={[
                 styles.reflectionBox,
                 {
-                  backgroundColor: isMidnight
-                    ? 'rgba(255,255,255,0.06)'
-                    : 'rgba(0,0,0,0.03)',
-                  borderColor: accentColors[theme] + '25',
+                  backgroundColor: palette.reflectionBg,
+                  borderColor: palette.reflectionBorder,
                 },
               ]}
             >
+              <View style={styles.reflectionHeader}>
+                <Ionicons name="pencil" size={11} color={palette.accent} />
+                <Text style={[styles.reflectionLabel, { color: palette.accent }]}>
+                  DAILY REFLECTION
+                </Text>
+              </View>
               <Text
-                style={[
-                  styles.reflectionLabel,
-                  { color: accentColors[theme] },
-                ]}
-              >
-                DAILY REFLECTION
-              </Text>
-              <Text
-                style={[
-                  styles.reflectionContentText,
-                  { color: textColors[theme] },
-                ]}
-                numberOfLines={3}
+                style={[styles.reflectionContentText, { color: palette.textPrimary }]}
+                numberOfLines={4}
               >
                 {reflectionText}
               </Text>
@@ -143,12 +171,15 @@ export const ShareCardCanvas = forwardRef<View, ShareCardCanvasProps>(
           ) : null}
 
           {/* Footer Branding */}
-          <View style={styles.footer}>
-            <Text style={[styles.footerVerseTag, { color: accentColors[theme] }]}>
-              ✦ Scripture & Devotion
-            </Text>
-            <Text style={[styles.watermark, { color: textColors[theme] + '50' }]}>
-              rhema.app
+          <View style={[styles.footer, { borderTopColor: palette.frameBorder }]}>
+            <View style={styles.footerBrandRow}>
+              <Ionicons name="book-outline" size={12} color={palette.accent} />
+              <Text style={[styles.footerVerseTag, { color: palette.accent }]}>
+                Holy Scripture
+              </Text>
+            </View>
+            <Text style={[styles.watermark, { color: palette.textSecondary }]}>
+              shephema.app
             </Text>
           </View>
         </View>
@@ -160,8 +191,8 @@ export const ShareCardCanvas = forwardRef<View, ShareCardCanvasProps>(
 const styles = StyleSheet.create({
   container: {
     width: 340,
-    minHeight: 460,
-    borderRadius: RADIUS.lg,
+    minHeight: 480,
+    borderRadius: 24,
     padding: SPACING.base,
     ...SHADOWS.card,
   },
@@ -172,82 +203,160 @@ const styles = StyleSheet.create({
   innerFrame: {
     flex: 1,
     borderWidth: 1.5,
-    borderRadius: RADIUS.md,
-    padding: SPACING.lg,
+    borderRadius: 18,
+    padding: SPACING.base + 2,
     justifyContent: 'space-between',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: SPACING.md,
+    marginBottom: SPACING.sm,
   },
   logoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.xs + 2,
+    gap: 8,
   },
   logoIcon: {
-    width: 22,
-    height: 22,
-    borderRadius: 4,
+    width: 28,
+    height: 28,
+    borderRadius: 7,
   },
   appName: {
     fontFamily: FONTS.bodyBold,
-    fontSize: 13,
-    letterSpacing: 1.5,
+    fontSize: 12,
+    letterSpacing: 1.2,
     fontWeight: '800',
+    lineHeight: 14,
+  },
+  appTaglineSub: {
+    fontFamily: FONTS.body,
+    fontSize: 9,
+    fontStyle: 'italic',
+    lineHeight: 11,
+  },
+  dateBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: RADIUS.pill,
+    borderWidth: 0.8,
   },
   dateText: {
-    fontFamily: FONTS.body,
-    fontSize: 11,
+    fontFamily: FONTS.bodyBold,
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  votdHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 4,
+    marginBottom: 6,
+  },
+  votdBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: RADIUS.pill,
+    borderWidth: 1,
+  },
+  votdBadgeText: {
+    fontFamily: FONTS.bodyBold,
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+  },
+  themePill: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: RADIUS.pill,
+    borderWidth: 0.8,
+  },
+  themePillText: {
+    fontFamily: FONTS.bodyBold,
+    fontSize: 10,
+    fontWeight: '600',
   },
   quoteContainer: {
+    marginVertical: SPACING.sm,
+    justifyContent: 'center',
+  },
+  quoteContainerVOTD: {
     marginVertical: SPACING.md,
+    paddingVertical: SPACING.xs,
   },
   quoteMark: {
     fontFamily: FONTS.scriptureBold,
-    fontSize: 42,
-    lineHeight: 42,
-    marginBottom: -10,
+    fontSize: 38,
+    lineHeight: 32,
+    marginBottom: -8,
+    opacity: 0.8,
   },
   verseText: {
     fontFamily: FONTS.scriptureDisplay,
-    fontSize: 19,
-    lineHeight: 28,
+    fontSize: 18,
+    lineHeight: 27,
     fontStyle: 'italic',
+    letterSpacing: -0.2,
+  },
+  referenceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    marginTop: SPACING.sm,
+    gap: 8,
+  },
+  referenceLine: {
+    flex: 1,
+    height: 1,
   },
   referenceText: {
-    fontFamily: FONTS.scriptureBold,
+    fontFamily: FONTS.sectionHeader,
     fontSize: 14,
-    marginTop: SPACING.sm,
-    textAlign: 'right',
     fontWeight: '700',
+    letterSpacing: 0.3,
   },
   reflectionBox: {
     padding: SPACING.md,
-    borderRadius: RADIUS.sm,
+    borderRadius: RADIUS.md,
     borderWidth: 1,
-    marginVertical: SPACING.sm,
+    marginVertical: SPACING.xs,
+  },
+  reflectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginBottom: 4,
   },
   reflectionLabel: {
     fontFamily: FONTS.bodyBold,
     fontSize: 9,
-    letterSpacing: 1.2,
+    letterSpacing: 1,
     fontWeight: '800',
-    marginBottom: 4,
   },
   reflectionContentText: {
     fontFamily: FONTS.userInput,
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 15,
+    lineHeight: 21,
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: SPACING.md,
+    marginTop: SPACING.sm,
     paddingTop: SPACING.sm,
+    borderTopWidth: 0.8,
+  },
+  footerBrandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   footerVerseTag: {
     fontFamily: FONTS.bodyBold,
@@ -258,5 +367,7 @@ const styles = StyleSheet.create({
   watermark: {
     fontFamily: FONTS.body,
     fontSize: 10,
+    fontWeight: '600',
+    letterSpacing: 0.3,
   },
 });

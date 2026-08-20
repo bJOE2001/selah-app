@@ -142,9 +142,14 @@ export function NotebookEditor({ onSaveSuccess }: NotebookEditorProps) {
         <ScrollView
           ref={scrollRef}
           style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingBottom: 380 },
+          ]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          automaticallyAdjustKeyboardInsets={true}
         >
           {/* ═══════════════ 1. RHEMA SECTION ═══════════════ */}
           <TapeHeader label="✦  R H E M A" color={colors.tapeRhema} />
@@ -183,6 +188,11 @@ export function NotebookEditor({ onSaveSuccess }: NotebookEditorProps) {
             <RuledInput
               value={reflection}
               onChangeText={setReflection}
+              onFocus={() => {
+                setTimeout(() => {
+                  scrollRef.current?.scrollTo({ y: 160, animated: true });
+                }, 100);
+              }}
               placeholder="Write your reflections, insights, and what God is speaking through this Scripture..."
               minLines={6}
             />
@@ -197,6 +207,11 @@ export function NotebookEditor({ onSaveSuccess }: NotebookEditorProps) {
             <RuledInput
               value={motivation}
               onChangeText={setMotivation}
+              onFocus={() => {
+                setTimeout(() => {
+                  scrollRef.current?.scrollTo({ y: 400, animated: true });
+                }, 100);
+              }}
               placeholder="How does this truth move your heart today? What encouragement are you receiving..."
               minLines={4}
             />
@@ -211,6 +226,11 @@ export function NotebookEditor({ onSaveSuccess }: NotebookEditorProps) {
             <RuledInput
               value={application}
               onChangeText={setApplication}
+              onFocus={() => {
+                setTimeout(() => {
+                  scrollRef.current?.scrollTo({ y: 640, animated: true });
+                }, 100);
+              }}
               placeholder="Write how you will live out this verse today..."
               minLines={4}
             />

@@ -1,8 +1,8 @@
-# Rhema 📖✨
+# Shephema 📖✨
 
-> An aesthetic devotional journaling and Scripture reader app crafted with a classic paper notebook aesthetic.
+> *Guided by God's Word* — An aesthetic devotional journaling and Scripture reader app crafted with a classic paper notebook aesthetic.
 
-Rhema is a mobile application built with **React Native**, **Expo SDK 54**, and **Expo SQLite**, designed for thoughtful Scripture meditation, structured devotional reflection (R.R.M.A. method), habit tracking, and aesthetic shareable cards.
+Shephema is a mobile application built with **React Native**, **Expo SDK 54**, and **Expo SQLite**, designed for thoughtful Scripture meditation, structured devotional reflection (R.R.M.A. method), habit tracking, and aesthetic shareable cards.
 
 ---
 

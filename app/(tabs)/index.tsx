@@ -22,12 +22,19 @@ export default function HomeScreen() {
         onShareQuote={(verse) => {
           setSharingId(null);
           setCustomShareDevotional({
-            id: 'quote-share',
+            id: 'verse-of-the-day',
+            rhemaVerseId: 0,
             rhemaReference: verse.reference,
             rhemaText: verse.text,
-            reflection: `Today's Daily Verse: ${verse.theme}`,
-            motivation: 'Trusting God with this truth today.',
-            moodTags: [{ id: 1, value: 'peaceful', emoji: '🕊️', color: '#4A7C59' }],
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            isDraft: false,
+            isVerseOfTheDay: true,
+            themeName: verse.theme,
+            reflection: '',
+            motivation: '',
+            application: '',
+            moodTags: [],
             applicationTasks: [],
           });
         }}

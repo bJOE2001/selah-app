@@ -7,19 +7,20 @@ import {
   Pressable,
   ScrollView,
   Alert,
+  ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
-import { Devotional } from '../../devotional-core/types';
-import { ShareCardCanvas, CardTheme } from './ShareCardCanvas';
-import { COLORS } from '../../design-system/tokens/colors';
+import { ShareCardCanvas, CardTheme, ShareableDevotional } from './ShareCardCanvas';
+import { useTheme } from '../../design-system';
 import { FONTS } from '../../design-system/tokens/typography';
 import { SPACING, RADIUS, SHADOWS } from '../../design-system/tokens/spacing';
 
 export interface ShareCardModalProps {
   visible: boolean;
-  devotional: Devotional | null;
+  devotional: ShareableDevotional | null;
   onClose: () => void;
 }
 
@@ -31,6 +32,7 @@ export function ShareCardModal({
   const [theme, setTheme] = useState<CardTheme>('classic');
   const [isExporting, setIsExporting] = useState(false);
   const cardRef = useRef<View>(null);
+  const { colors, isDark } = useTheme();
 
   if (!devotional) return null;
 
@@ -39,69 +41,107 @@ export function ShareCardModal({
 
     try {
       setIsExporting(true);
+
+      // On Web platform handling
+      if (Platform.OS === 'web') {
+        Alert.alert(
+          'Aesthetic Card Ready',
+          `"${devotional.rhemaText}" — ${devotional.rhemaReference}\n\n(Share card capture is optimized on Android and iOS devices).`
+        );
+        setIsExporting(false);
+        return;
+      }
+
       const uri = await captureRef(cardRef, {
         format: 'png',
         quality: 1.0,
+        result: 'tmpfile',
       });
 
       const isAvailable = await Sharing.isAvailableAsync();
       if (isAvailable) {
         await Sharing.shareAsync(uri, {
           mimeType: 'image/png',
-          dialogTitle: 'Share Devotional Verse',
+          dialogTitle: 'Share Aesthetic Scripture Card',
+          UTI: 'public.png',
         });
       } else {
-        Alert.alert('Sharing Unavailable', 'Sharing is not supported on this platform.');
+        Alert.alert('Image Saved', 'The scripture card image was prepared successfully.');
       }
     } catch (error) {
       console.error('Failed to capture card:', error);
-      Alert.alert('Share Error', 'Could not generate share image.');
+      Alert.alert('Share Error', 'Could not generate share image. Please try again.');
     } finally {
       setIsExporting(false);
     }
   };
 
+  const isVOTD = devotional.isVerseOfTheDay || devotional.id === 'verse-of-the-day';
+
   return (
     <Modal
       visible={visible}
       transparent
-      animationType="slide"
+      animationType="fade"
       onRequestClose={onClose}
     >
       <View style={styles.overlay}>
-        <View style={styles.content}>
-          {/* Top Bar */}
+        <Pressable style={styles.backdropPressable} onPress={onClose} />
+
+        <View style={[styles.content, { backgroundColor: colors.paperBg, borderColor: colors.paperLine }]}>
+          {/* Header Bar */}
           <View style={styles.topBar}>
-            <Text style={styles.title}>Share Aesthetic Card</Text>
-            <Pressable onPress={onClose} hitSlop={8}>
-              <Ionicons name="close-circle" size={24} color={COLORS.inkPlaceholder} />
+            <View style={styles.titleGroup}>
+              <View style={[styles.sparkleIconBox, { backgroundColor: colors.brandGreenLight }]}>
+                <Ionicons name="sparkles" size={14} color={colors.brandGreen} />
+              </View>
+              <View>
+                <Text style={[styles.title, { color: colors.inkPrimary }]}>
+                  {isVOTD ? 'Share Verse of the Day' : 'Share Aesthetic Card'}
+                </Text>
+                <Text style={[styles.subtitle, { color: colors.inkSecondary }]}>
+                  Choose a style and export as a high-resolution image
+                </Text>
+              </View>
+            </View>
+
+            <Pressable onPress={onClose} hitSlop={10} style={[styles.closeBtn, { backgroundColor: colors.chipBg }]}>
+              <Ionicons name="close" size={18} color={colors.inkSecondary} />
             </Pressable>
           </View>
 
           {/* Theme Selector Tabs */}
-          <View style={styles.themeSelector}>
-            {(['classic', 'minimal', 'midnight'] as CardTheme[]).map((t) => (
+          <View style={[styles.themeSelector, { backgroundColor: isDark ? '#1F1B17' : '#EFE9DE' }]}>
+            {([
+              { key: 'classic', label: '📜 Classic Paper' },
+              { key: 'minimal', label: '🤍 Clean Modern' },
+              { key: 'midnight', label: '🌙 Midnight Onyx' },
+            ] as { key: CardTheme; label: string }[]).map((t) => (
               <Pressable
-                key={t}
-                onPress={() => setTheme(t)}
+                key={t.key}
+                onPress={() => setTheme(t.key)}
                 style={[
                   styles.themeTab,
-                  theme === t && styles.themeTabActive,
+                  theme === t.key && [
+                    styles.themeTabActive,
+                    { backgroundColor: colors.brandGreen },
+                  ],
                 ]}
               >
                 <Text
                   style={[
                     styles.themeTabText,
-                    theme === t && styles.themeTabTextActive,
+                    { color: colors.inkSecondary },
+                    theme === t.key && styles.themeTabTextActive,
                   ]}
                 >
-                  {t.charAt(0).toUpperCase() + t.slice(1)}
+                  {t.label}
                 </Text>
               </Pressable>
             ))}
           </View>
 
-          {/* Preview Canvas */}
+          {/* Preview Canvas Container */}
           <ScrollView
             contentContainerStyle={styles.canvasContainer}
             showsVerticalScrollIndicator={false}
@@ -113,18 +153,23 @@ export function ShareCardModal({
             />
           </ScrollView>
 
-          {/* Share CTA */}
+          {/* Action CTA Button */}
           <Pressable
             onPress={handleShare}
             style={[
               styles.shareButton,
+              { backgroundColor: colors.brandGreen },
               isExporting && styles.shareButtonDisabled,
             ]}
             disabled={isExporting}
           >
-            <Ionicons name="share-outline" size={20} color="#FFFFFF" />
+            {isExporting ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <Ionicons name="share-social" size={18} color="#FFFFFF" />
+            )}
             <Text style={styles.shareButtonText}>
-              {isExporting ? 'Generating Graphic...' : 'Export & Share Image'}
+              {isExporting ? 'Generating Aesthetic Graphic...' : 'Export & Share Image'}
             </Text>
           </Pressable>
         </View>
@@ -136,69 +181,97 @@ export function ShareCardModal({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(44, 37, 32, 0.6)',
+    backgroundColor: 'rgba(20, 16, 12, 0.72)',
     justifyContent: 'flex-end',
   },
+  backdropPressable: {
+    flex: 1,
+  },
   content: {
-    backgroundColor: COLORS.paperBg,
-    borderTopLeftRadius: RADIUS.xl,
-    borderTopRightRadius: RADIUS.xl,
-    padding: SPACING.lg,
-    maxHeight: '90%',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    borderTopWidth: 1,
+    paddingHorizontal: SPACING.base,
+    paddingTop: SPACING.base,
+    paddingBottom: SPACING.xl,
+    maxHeight: '92%',
     ...SHADOWS.card,
   },
   topBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: SPACING.md,
+    marginBottom: SPACING.sm + 2,
+  },
+  titleGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+  },
+  sparkleIconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   title: {
     fontFamily: FONTS.sectionHeader,
-    fontSize: 18,
-    color: COLORS.inkPrimary,
+    fontSize: 16,
     fontWeight: '700',
+    letterSpacing: -0.2,
+  },
+  subtitle: {
+    fontFamily: FONTS.body,
+    fontSize: 11,
+    marginTop: 1,
+  },
+  closeBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   themeSelector: {
     flexDirection: 'row',
-    backgroundColor: COLORS.chipBg,
     borderRadius: RADIUS.pill,
     padding: 3,
-    marginBottom: SPACING.md,
+    marginBottom: SPACING.sm,
+    gap: 2,
   },
   themeTab: {
     flex: 1,
-    paddingVertical: SPACING.sm,
+    paddingVertical: 7,
     alignItems: 'center',
+    justifyContent: 'center',
     borderRadius: RADIUS.pill,
   },
   themeTabActive: {
-    backgroundColor: COLORS.brandGreen,
     ...SHADOWS.subtle,
   },
   themeTabText: {
-    fontFamily: FONTS.body,
-    fontSize: 13,
-    color: COLORS.inkSecondary,
-    fontWeight: '600',
+    fontFamily: FONTS.bodyBold,
+    fontSize: 11,
+    fontWeight: '700',
   },
   themeTabTextActive: {
     color: '#FFFFFF',
-    fontWeight: '700',
   },
   canvasContainer: {
     alignItems: 'center',
-    paddingVertical: SPACING.sm,
-    paddingBottom: SPACING.lg,
+    paddingVertical: SPACING.xs,
+    paddingBottom: SPACING.md,
   },
   shareButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.tapeRhema,
-    paddingVertical: SPACING.base,
+    paddingVertical: 14,
     borderRadius: RADIUS.pill,
-    gap: SPACING.sm,
+    gap: 8,
+    marginTop: 4,
     ...SHADOWS.card,
   },
   shareButtonDisabled: {
@@ -209,5 +282,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#FFFFFF',
     fontWeight: '700',
+    letterSpacing: 0.3,
   },
 });
