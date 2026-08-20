@@ -11,6 +11,7 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.shephema.app",
       "adaptiveIcon": {
         "backgroundColor": "#FBF9F5",
         "foregroundImage": "./assets/images/app-icon.jpg",
@@ -37,6 +38,12 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "0010f319-b7c0-487b-a157-c31d903b8019"
+      }
     }
   }
 }
