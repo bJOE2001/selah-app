@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../design-system';
 import { FONTS } from '../../design-system/tokens/typography';
@@ -71,11 +72,11 @@ export function DashboardHeader({}: DashboardHeaderProps) {
 
           {/* Right Column: Large Mascot with Ambient Halo */}
           <View style={styles.mascotArea}>
-            <View style={[styles.mascotHalo, { backgroundColor: isDark ? '#2A2520' : '#F2F7F2' }]} />
+            <View style={[styles.mascotHalo, { backgroundColor: isDark ? 'rgba(74, 124, 89, 0.20)' : 'rgba(74, 124, 89, 0.12)', borderColor: isDark ? 'rgba(74, 124, 89, 0.35)' : 'rgba(74, 124, 89, 0.22)' }]} />
             <Image
               source={require('../../../assets/images/mascot_waving_transparent.webp')}
               style={styles.mascotImage}
-              resizeMode="contain"
+              contentFit="contain"
             />
           </View>
         </View>
