@@ -31,6 +31,7 @@ export function ShareCardModal({
 }: ShareCardModalProps) {
   const insets = useSafeAreaInsets();
   const [theme, setTheme] = useState<CardTheme>('classic');
+  const [includeReflection, setIncludeReflection] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
   const cardRef = useRef<View>(null);
   const { colors, isDark } = useTheme();
@@ -79,6 +80,9 @@ export function ShareCardModal({
   };
 
   const isVOTD = devotional.isVerseOfTheDay || devotional.id === 'verse-of-the-day';
+  const hasReflection = Boolean(
+    devotional.reflection || devotional.motivation || devotional.application
+  );
 
   return (
     <Modal
@@ -152,6 +156,68 @@ export function ShareCardModal({
             ))}
           </View>
 
+          {/* Optional Reflection Toggle Segment */}
+          {hasReflection && !isVOTD ? (
+            <View
+              style={[
+                styles.reflectionSegmentRow,
+                { backgroundColor: isDark ? '#1F1B17' : '#EFE9DE' },
+              ]}
+            >
+              <Pressable
+                onPress={() => setIncludeReflection(true)}
+                style={[
+                  styles.reflectionSegmentBtn,
+                  includeReflection && [
+                    styles.reflectionSegmentActive,
+                    { backgroundColor: colors.brandGreen },
+                  ],
+                ]}
+              >
+                <Ionicons
+                  name="create-outline"
+                  size={12}
+                  color={includeReflection ? '#FFFFFF' : colors.inkSecondary}
+                />
+                <Text
+                  style={[
+                    styles.reflectionSegmentText,
+                    { color: colors.inkSecondary },
+                    includeReflection && styles.reflectionSegmentTextActive,
+                  ]}
+                >
+                  With Reflection
+                </Text>
+              </Pressable>
+
+              <Pressable
+                onPress={() => setIncludeReflection(false)}
+                style={[
+                  styles.reflectionSegmentBtn,
+                  !includeReflection && [
+                    styles.reflectionSegmentActive,
+                    { backgroundColor: colors.brandGreen },
+                  ],
+                ]}
+              >
+                <Ionicons
+                  name="book-outline"
+                  size={12}
+                  color={!includeReflection ? '#FFFFFF' : colors.inkSecondary}
+                />
+                <Text
+                  style={[
+                    styles.reflectionSegmentText,
+                    { color: colors.inkSecondary },
+                    !includeReflection && styles.reflectionSegmentTextActive,
+                  ]}
+                >
+                  Scripture Only
+                </Text>
+              </Pressable>
+            </View>
+          ) : null}
+
           {/* Preview Canvas Container */}
           <ScrollView
             style={styles.canvasScrollView}
@@ -162,6 +228,7 @@ export function ShareCardModal({
               ref={cardRef}
               devotional={devotional}
               theme={theme}
+              includeReflection={includeReflection}
             />
           </ScrollView>
 
@@ -268,6 +335,33 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   themeTabTextActive: {
+    color: '#FFFFFF',
+  },
+  reflectionSegmentRow: {
+    flexDirection: 'row',
+    borderRadius: RADIUS.pill,
+    padding: 3,
+    marginBottom: SPACING.sm,
+    gap: 3,
+  },
+  reflectionSegmentBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+    paddingVertical: 7,
+    borderRadius: RADIUS.pill,
+  },
+  reflectionSegmentActive: {
+    ...SHADOWS.subtle,
+  },
+  reflectionSegmentText: {
+    fontFamily: FONTS.bodyBold,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  reflectionSegmentTextActive: {
     color: '#FFFFFF',
   },
   canvasScrollView: {

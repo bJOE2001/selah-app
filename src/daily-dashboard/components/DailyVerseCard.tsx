@@ -215,10 +215,9 @@ export const CURATED_DAILY_VERSES: DailyVerse[] = [
 
 export interface DailyVerseCardProps {
   onShareVerse?: (verse: DailyVerse) => void;
-  onReflectVerse?: (verse: DailyVerse) => void;
 }
 
-export function DailyVerseCard({ onShareVerse, onReflectVerse }: DailyVerseCardProps) {
+export function DailyVerseCard({ onShareVerse }: DailyVerseCardProps) {
   const { colors, isDark } = useTheme();
   const dayOfYear = Math.floor(Date.now() / (1000 * 60 * 60 * 24));
   const currentVerse = CURATED_DAILY_VERSES[dayOfYear % CURATED_DAILY_VERSES.length];
@@ -258,45 +257,26 @@ export function DailyVerseCard({ onShareVerse, onReflectVerse }: DailyVerseCardP
           </Text>
         </View>
 
-        {/* Bottom Footer: Reference + Action Buttons */}
+        {/* Bottom Footer: Reference + Optional Share Action */}
         <View style={styles.footerRow}>
           <Text style={[styles.referenceText, { color: colors.brandGreen }]}>— {currentVerse.reference}</Text>
 
-          <View style={styles.actionsRow}>
-            {onReflectVerse ? (
-              <Pressable
-                style={[
-                  styles.reflectBtn,
-                  {
-                    backgroundColor: colors.brandGreenLight,
-                    borderColor: colors.brandGreen + '35',
-                  },
-                ]}
-                onPress={() => onReflectVerse(currentVerse)}
-                hitSlop={6}
-              >
-                <Ionicons name="pencil" size={13} color={colors.brandGreen} />
-                <Text style={[styles.reflectBtnText, { color: colors.brandGreen }]}>Reflect</Text>
-              </Pressable>
-            ) : null}
-
-            {onShareVerse ? (
-              <Pressable
-                style={[
-                  styles.shareBtn,
-                  {
-                    backgroundColor: isDark ? '#1C1916' : '#F5EFE6',
-                    borderColor: colors.paperLine,
-                  },
-                ]}
-                onPress={() => onShareVerse(currentVerse)}
-                hitSlop={6}
-              >
-                <Ionicons name="share-social-outline" size={13} color={colors.inkSecondary} />
-                <Text style={[styles.shareBtnText, { color: colors.inkSecondary }]}>Share</Text>
-              </Pressable>
-            ) : null}
-          </View>
+          {onShareVerse ? (
+            <Pressable
+              style={[
+                styles.shareBtn,
+                {
+                  backgroundColor: isDark ? '#1C1916' : '#F5EFE6',
+                  borderColor: colors.paperLine,
+                },
+              ]}
+              onPress={() => onShareVerse(currentVerse)}
+              hitSlop={6}
+            >
+              <Ionicons name="share-social-outline" size={15} color={colors.inkSecondary} />
+              <Text style={[styles.shareBtnText, { color: colors.inkSecondary }]}>Share</Text>
+            </Pressable>
+          ) : null}
         </View>
       </View>
     </View>
@@ -359,31 +339,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginTop: 4,
-    gap: 8,
   },
   referenceText: {
     fontFamily: FONTS.sectionHeader,
     fontSize: 13,
-    fontWeight: '700',
-    flex: 1,
-  },
-  actionsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  reflectBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    borderWidth: 1,
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-    borderRadius: RADIUS.pill,
-  },
-  reflectBtnText: {
-    fontFamily: FONTS.bodyBold,
-    fontSize: 11,
     fontWeight: '700',
   },
   shareBtn: {

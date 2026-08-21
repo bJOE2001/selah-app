@@ -106,11 +106,6 @@ export function DailyDashboard({ onShareEntry, onShareQuote }: DailyDashboardPro
         {/* 3. Verse of the Day Card */}
         <DailyVerseCard
           onShareVerse={onShareQuote}
-          onReflectVerse={(verse) => {
-            reset();
-            setRhema(0, verse.text, verse.reference);
-            router.push('/devotional/new');
-          }}
         />
 
         {/* 4. Bento Action Hub: Begin Devotion & Holy Scripture */}

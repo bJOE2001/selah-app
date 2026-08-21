@@ -16,10 +16,11 @@ export type ShareableDevotional = Partial<Devotional> & {
 export interface ShareCardCanvasProps {
   devotional: ShareableDevotional;
   theme?: CardTheme;
+  includeReflection?: boolean;
 }
 
 export const ShareCardCanvas = forwardRef<View, ShareCardCanvasProps>(
-  ({ devotional, theme = 'classic' }, ref) => {
+  ({ devotional, theme = 'classic', includeReflection = true }, ref) => {
     const isMidnight = theme === 'midnight';
     const isMinimal = theme === 'minimal';
 
@@ -71,7 +72,8 @@ export const ShareCardCanvas = forwardRef<View, ShareCardCanvasProps>(
 
     const isVOTD = devotional.isVerseOfTheDay || devotional.id === 'verse-of-the-day' || devotional.id === 'quote-share';
     const themeTag = devotional.themeName;
-    const reflectionText = !isVOTD ? (devotional.reflection || devotional.motivation || devotional.application || '') : '';
+    const rawReflection = devotional.reflection || devotional.motivation || devotional.application || '';
+    const reflectionText = (!isVOTD && includeReflection) ? rawReflection : '';
 
     return (
       <View
