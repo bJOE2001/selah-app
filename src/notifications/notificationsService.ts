@@ -3,20 +3,20 @@ import Constants, { ExecutionEnvironment } from 'expo-constants';
 
 const MORNING_NOTIFICATION_ID = 'morning-devotion-reminder';
 const EVENING_NOTIFICATION_ID = 'evening-reflection-reminder';
+const TEST_NOTIFICATION_ID = 'test-shepema-reminder';
 const DEVOTIONAL_CHANNEL_ID = 'daily-devotional-habits';
 
-const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+export const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
 
 function getNotificationsModule(): typeof import('expo-notifications') | null {
-  if (isExpoGo) {
-    return null;
-  }
   try {
     return require('expo-notifications');
-  } catch {
+  } catch (err) {
+    console.warn('expo-notifications module not found:', err);
     return null;
   }
 }
+
 
 /**
  * Configure default foreground notification behavior
@@ -44,12 +44,20 @@ export function configureNotificationHandler() {
         sound: 'default',
         vibrationPattern: [0, 250, 250, 250],
         lightColor: '#2D6A4F',
+        enableLights: true,
+        enableVibrate: true,
+        showBadge: true,
+        lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
       }).catch(() => {});
     }
   } catch (err) {
     // Gracefully handle in constrained environments
   }
 }
+
+// Automatically configure handler on module initialization
+configureNotificationHandler();
+
 
 /**
  * Request notification permissions from user
@@ -187,19 +195,15 @@ export async function syncEveningReminder(enabled: boolean, timeStr: string): Pr
   }
 }
 
-/**
- * Sync all user reminder preferences on app startup
- */
 export async function syncAllReminders(settings: {
   morningReminderEnabled: boolean;
   morningReminderTime: string;
   eveningReminderEnabled: boolean;
   eveningReminderTime: string;
 }): Promise<void> {
-  if (settings.morningReminderEnabled) {
-    await syncMorningReminder(true, settings.morningReminderTime);
-  }
-  if (settings.eveningReminderEnabled) {
-    await syncEveningReminder(true, settings.eveningReminderTime);
-  }
+  await syncMorningReminder(settings.morningReminderEnabled, settings.morningReminderTime);
+  await syncEveningReminder(settings.eveningReminderEnabled, settings.eveningReminderTime);
 }
+
+
+

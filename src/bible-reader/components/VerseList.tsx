@@ -9,11 +9,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Verse, Book } from '../../bible-data/types';
-import {
-  useChapterHighlights,
-  HIGHLIGHT_COLORS,
-  getHighlightStyle,
-} from '../../bible-data/highlights';
+import { useChapterHighlights, HIGHLIGHT_COLORS, getHighlightStyle } from '../../bible-data/highlights';
+import { useSettingsStore, ScriptureFontSize } from '../../settings/store';
 import { useTheme } from '../../design-system';
 import { FONTS } from '../../design-system/tokens/typography';
 import { SPACING, RADIUS, SHADOWS } from '../../design-system/tokens/spacing';
@@ -25,6 +22,13 @@ export interface VerseListProps {
   onSelectRhema: (verse: Verse, reference: string) => void;
 }
 
+const FONT_SIZE_MAP: Record<ScriptureFontSize, number> = {
+  S: 14,
+  M: 17,
+  L: 20,
+  XL: 23,
+};
+
 export function VerseList({
   book,
   chapter,
@@ -33,8 +37,12 @@ export function VerseList({
 }: VerseListProps) {
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
+  const settingsFontSize = useSettingsStore((s) => s.fontSize);
   const [selectedVerseIds, setSelectedVerseIds] = useState<number[]>([]);
-  const [fontSize, setFontSize] = useState<number>(17); // 14 (S), 17 (M), 20 (L), 23 (XL)
+  const [fontSizeOffset, setFontSizeOffset] = useState<number>(0);
+
+  const baseFontSize = FONT_SIZE_MAP[settingsFontSize] || 17;
+  const fontSize = Math.max(12, Math.min(28, baseFontSize + fontSizeOffset));
 
   const verseIds = useMemo(() => verses.map((v) => v.id), [verses]);
   const { highlights, applyHighlight, clearHighlight } = useChapterHighlights(verseIds);
@@ -147,7 +155,7 @@ export function VerseList({
         {/* Text Size Control */}
         <View style={[styles.fontSizeControls, { backgroundColor: isDark ? '#1C1916' : '#F5EFE6', borderColor: colors.paperLine }]}>
           <Pressable
-            onPress={() => setFontSize((s) => Math.max(14, s - 2))}
+            onPress={() => setFontSizeOffset((o) => Math.max(-4, o - 2))}
             style={styles.fontBtn}
             hitSlop={6}
           >
@@ -155,7 +163,7 @@ export function VerseList({
           </Pressable>
           <View style={[styles.fontDivider, { backgroundColor: colors.paperLine }]} />
           <Pressable
-            onPress={() => setFontSize((s) => Math.min(24, s + 2))}
+            onPress={() => setFontSizeOffset((o) => Math.min(8, o + 2))}
             style={styles.fontBtn}
             hitSlop={6}
           >

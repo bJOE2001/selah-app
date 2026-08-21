@@ -10,6 +10,7 @@ import {
   Platform,
 } from 'react-native';
 import { useTheme } from '../theme/useTheme';
+import { useSettingsStore } from '../../settings/store';
 import { FONTS, LINE_HEIGHTS } from '../tokens/typography';
 import { SPACING } from '../tokens/spacing';
 
@@ -32,6 +33,7 @@ export function RuledInput({
   ...props
 }: RuledInputProps) {
   const { colors } = useTheme();
+  const paperLined = useSettingsStore((s) => s.paperLined);
   const [contentHeight, setContentHeight] = useState<number>(minLines * lineHeight);
 
   const handleContentSizeChange = (
@@ -52,20 +54,22 @@ export function RuledInput({
   return (
     <View style={[styles.container, { minHeight: totalLines * lineHeight }, containerStyle]}>
       {/* Background Ruled Lines */}
-      <View style={styles.linesContainer} pointerEvents="none">
-        {Array.from({ length: totalLines }).map((_, i) => (
-          <View
-            key={`line-${i}`}
-            style={[
-              styles.ruledLine,
-              {
-                top: (i + 1) * lineHeight,
-                backgroundColor: colors.paperLine,
-              },
-            ]}
-          />
-        ))}
-      </View>
+      {paperLined ? (
+        <View style={styles.linesContainer} pointerEvents="none">
+          {Array.from({ length: totalLines }).map((_, i) => (
+            <View
+              key={`line-${i}`}
+              style={[
+                styles.ruledLine,
+                {
+                  top: (i + 1) * lineHeight,
+                  backgroundColor: colors.paperLine,
+                },
+              ]}
+            />
+          ))}
+        </View>
+      ) : null}
 
       {/* Foreground TextInput */}
       <TextInput
