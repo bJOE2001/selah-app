@@ -264,7 +264,17 @@ export async function deleteDevotional(
   db: SQLiteDatabase,
   id: string,
 ): Promise<void> {
-  await db.runAsync("DELETE FROM devotionals WHERE id = ?;", [id]);
+  await db.withTransactionAsync(async () => {
+    await db.runAsync(
+      "DELETE FROM devotional_mood_tags WHERE devotional_id = ?;",
+      [id],
+    );
+    await db.runAsync(
+      "DELETE FROM application_tasks WHERE devotional_id = ?;",
+      [id],
+    );
+    await db.runAsync("DELETE FROM devotionals WHERE id = ?;", [id]);
+  });
 }
 
 /**

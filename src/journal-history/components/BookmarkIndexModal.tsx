@@ -145,10 +145,16 @@ export function BookmarkIndexModal({
                     {/* Entry Info */}
                     <View style={styles.entryInfoCol}>
                       <View style={styles.entryTitleRow}>
-                        <Text style={[styles.rhemaRef, { color: colors.tapeRhema }]}>
+                        <Text
+                          style={[styles.rhemaRef, { color: colors.tapeRhema }]}
+                          numberOfLines={1}
+                        >
                           {item.entry.rhemaReference}
                         </Text>
-                        <Text style={[styles.dateText, { color: colors.inkMuted }]}>
+                        <Text
+                          style={[styles.dateText, { color: colors.inkMuted }]}
+                          numberOfLines={1}
+                        >
                           {dateStr}
                         </Text>
                       </View>
@@ -279,6 +285,7 @@ const styles = StyleSheet.create({
     borderWidth: 0.8,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
   pageBadgeText: {
     fontFamily: FONTS.bodyBold,
@@ -288,19 +295,23 @@ const styles = StyleSheet.create({
   },
   entryInfoCol: {
     flex: 1,
+    minWidth: 0,
     gap: 2,
   },
   entryTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: 8,
   },
   rhemaRef: {
+    flex: 1,
     fontFamily: FONTS.scriptureBold,
     fontSize: 13,
     fontWeight: '700',
   },
   dateText: {
+    flexShrink: 0,
     fontFamily: FONTS.body,
     fontSize: 10,
   },
@@ -317,6 +328,8 @@ const styles = StyleSheet.create({
   rightAction: {
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
+    marginLeft: 2,
   },
   turnArrowBtn: {
     width: 28,

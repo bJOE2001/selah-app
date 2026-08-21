@@ -17,7 +17,10 @@ import { ScriptureCard } from "../../design-system/primitives/ScriptureCard";
 import { TapeHeader } from "../../design-system/primitives/TapeHeader";
 import { RADIUS, SHADOWS, SPACING } from "../../design-system/tokens/spacing";
 import { FONTS } from "../../design-system/tokens/typography";
-import { useSaveDevotional } from "../../devotional-core/hooks";
+import {
+  useDeleteDevotional,
+  useSaveDevotional,
+} from "../../devotional-core/hooks";
 import { useDraftStore } from "../../devotional-core/store";
 import { ChangeRhemaModal } from "./ChangeRhemaModal";
 
@@ -48,6 +51,36 @@ export function NotebookEditor({ onSaveSuccess }: NotebookEditorProps) {
   } = useDraftStore();
 
   const saveMutation = useSaveDevotional();
+  const deleteMutation = useDeleteDevotional();
+
+  const handleDelete = () => {
+    if (!editingDevotionalId) return;
+    promptModal.confirm({
+      title: "Delete Devotion?",
+      message:
+        "Are you sure you want to delete this devotional entry? This action cannot be undone.",
+      confirmText: "Delete Entry",
+      cancelText: "Keep Writing",
+      isDestructive: true,
+      onConfirm: async () => {
+        try {
+          await deleteMutation.mutateAsync(editingDevotionalId);
+          reset();
+          toast.success(
+            "Devotion Deleted",
+            "Your devotional entry has been deleted.",
+          );
+          router.replace("/(tabs)/journal");
+        } catch (err) {
+          console.error("Failed to delete devotional:", err);
+          toast.error(
+            "Delete Error",
+            "Could not delete this entry. Please try again.",
+          );
+        }
+      },
+    });
+  };
 
   const handleSave = async () => {
     if (!rhemaText || !rhemaReference) {
@@ -151,20 +184,43 @@ export function NotebookEditor({ onSaveSuccess }: NotebookEditorProps) {
             </Text>
           </Pressable>
 
-          <Pressable
-            onPress={handleSave}
-            style={[
-              styles.saveButton,
-              { backgroundColor: colors.brandGreen },
-              saveMutation.isPending && styles.saveButtonDisabled,
-            ]}
-            disabled={saveMutation.isPending}
-          >
-            <Ionicons name="bookmark-outline" size={18} color="#FFFFFF" />
-            <Text style={styles.saveButtonText}>
-              {saveMutation.isPending ? "Saving..." : "Save Devotion"}
-            </Text>
-          </Pressable>
+          <View style={styles.topRightActions}>
+            {editingDevotionalId ? (
+              <Pressable
+                onPress={handleDelete}
+                style={[
+                  styles.deleteButton,
+                  {
+                    backgroundColor: isDark ? "#2A1816" : "#FDF2F0",
+                    borderColor: colors.tapeRhema + "40",
+                  },
+                ]}
+                hitSlop={8}
+                accessibilityLabel="Delete Devotion"
+              >
+                <Ionicons
+                  name="trash-outline"
+                  size={16}
+                  color={colors.tapeRhema}
+                />
+              </Pressable>
+            ) : null}
+
+            <Pressable
+              onPress={handleSave}
+              style={[
+                styles.saveButton,
+                { backgroundColor: colors.brandGreen },
+                saveMutation.isPending && styles.saveButtonDisabled,
+              ]}
+              disabled={saveMutation.isPending}
+            >
+              <Ionicons name="bookmark-outline" size={18} color="#FFFFFF" />
+              <Text style={styles.saveButtonText}>
+                {saveMutation.isPending ? "Saving..." : "Save Devotion"}
+              </Text>
+            </Pressable>
+          </View>
         </View>
 
         <ScrollView
@@ -287,7 +343,7 @@ export function NotebookEditor({ onSaveSuccess }: NotebookEditorProps) {
             <Text
               style={[styles.sectionSubtitle, { color: colors.inkSecondary }]}
             >
-              What is God revealing to you? Deep dive into the meaning & context
+              What is God saying to you through this verse?
             </Text>
             <RuledInput
               value={reflection}
@@ -297,7 +353,7 @@ export function NotebookEditor({ onSaveSuccess }: NotebookEditorProps) {
                   scrollRef.current?.scrollTo({ y: 160, animated: true });
                 }, 100);
               }}
-              placeholder="Write your reflections, insights, and what God is speaking through this Scripture..."
+              placeholder="Write your personal reflections here..."
               minLines={6}
             />
           </View>
@@ -311,7 +367,7 @@ export function NotebookEditor({ onSaveSuccess }: NotebookEditorProps) {
             <Text
               style={[styles.sectionSubtitle, { color: colors.inkSecondary }]}
             >
-              Spiritual encouragement, emotional takeaway, and heart shift
+              What encouragement do you find in this scripture?
             </Text>
             <RuledInput
               value={motivation}
@@ -321,7 +377,7 @@ export function NotebookEditor({ onSaveSuccess }: NotebookEditorProps) {
                   scrollRef.current?.scrollTo({ y: 400, animated: true });
                 }, 100);
               }}
-              placeholder="How does this truth move your heart today? What encouragement are you receiving..."
+              placeholder="Write what touched your heart today..."
               minLines={4}
             />
           </View>
@@ -335,7 +391,7 @@ export function NotebookEditor({ onSaveSuccess }: NotebookEditorProps) {
             <Text
               style={[styles.sectionSubtitle, { color: colors.inkSecondary }]}
             >
-              How will you apply this truth in your daily walk today?
+              How will you put this verse into practice today?
             </Text>
             <RuledInput
               value={application}
@@ -345,7 +401,7 @@ export function NotebookEditor({ onSaveSuccess }: NotebookEditorProps) {
                   scrollRef.current?.scrollTo({ y: 640, animated: true });
                 }, 100);
               }}
-              placeholder="Write how you will live out this verse today..."
+              placeholder="Write your action steps or prayer commitments..."
               minLines={4}
             />
           </View>
@@ -396,6 +452,19 @@ const styles = StyleSheet.create({
   toolbarButtonText: {
     fontFamily: FONTS.body,
     fontSize: 14,
+  },
+  topRightActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SPACING.sm,
+  },
+  deleteButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
   },
   saveButton: {
     flexDirection: "row",

@@ -11,9 +11,10 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { DevotionalSummary } from '../../devotional-core/types';
+import { useDeleteDevotional } from '../../devotional-core/hooks';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { EntryCard } from './EntryCard';
-import { useTheme } from '../../design-system';
+import { useTheme, promptModal, toast } from '../../design-system';
 import { FONTS } from '../../design-system/tokens/typography';
 import { SPACING, RADIUS, SHADOWS } from '../../design-system/tokens/spacing';
 
@@ -37,6 +38,26 @@ export function EntryTimeline({
   const { colors, isDark } = useTheme();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterMode, setFilterMode] = useState<'all' | 'bookmarked'>('all');
+  const deleteMutation = useDeleteDevotional();
+
+  const handleDeleteEntry = (entry: DevotionalSummary) => {
+    promptModal.confirm({
+      title: 'Delete Devotional Entry?',
+      message: `Are you sure you want to delete "${entry.rhemaReference}"? This entry will be permanently removed from your journal.`,
+      confirmText: 'Delete Entry',
+      cancelText: 'Keep Entry',
+      isDestructive: true,
+      onConfirm: async () => {
+        try {
+          await deleteMutation.mutateAsync(entry.id);
+          toast.success('Entry Deleted', 'The devotional entry has been deleted.');
+        } catch (err) {
+          console.error('Failed to delete entry:', err);
+          toast.error('Error', 'Could not delete this entry. Please try again.');
+        }
+      },
+    });
+  };
 
   const bookmarkedCount = entries.filter((e) => e.isBookmarked).length;
 
@@ -237,25 +258,19 @@ export function EntryTimeline({
             entry={item}
             onPress={() => onSelectEntry(item.id)}
             onShare={() => onShareEntry(item.id)}
+            onDelete={() => handleDeleteEntry(item)}
           />
         )}
         ListEmptyComponent={
           <View style={styles.emptyStateContainer}>
             <View style={[styles.emptyCard, { backgroundColor: colors.cardBg, borderColor: colors.paperLine }]}>
-              <View style={[styles.emptyMascotWrapper, { backgroundColor: isDark ? 'rgba(74, 124, 89, 0.20)' : 'rgba(74, 124, 89, 0.12)', borderColor: isDark ? 'rgba(74, 124, 89, 0.35)' : 'rgba(74, 124, 89, 0.22)' }]}>
-                <Image
-                  source={require('../../../assets/images/mascot-writing-journal-transparent.png')}
-                  style={styles.emptyMascotImage}
-                  resizeMode="contain"
-                />
-              </View>
-              <Text style={[styles.emptyTitle, { color: colors.inkPrimary }]}>No Devotional Entries Yet</Text>
+              <Text style={[styles.emptyTitle, { color: colors.inkPrimary }]}>No Devotional Yet</Text>
               <Text style={[styles.emptySubtitle, { color: colors.inkSecondary }]}>
-                Open Scripture and begin your{'\n'}daily devotional journey today.
+                Open Scripture and begin your{'\n'}daily devotional journey.
               </Text>
               <Pressable onPress={onStartNew} style={[styles.startNewButton, { backgroundColor: colors.brandGreen }]}>
                 <Ionicons name="add-circle-outline" size={20} color="#FFFFFF" />
-                <Text style={styles.startNewButtonText}>Begin Today's Devotion</Text>
+                <Text style={styles.startNewButtonText}>Start a New Devotion</Text>
               </Pressable>
             </View>
           </View>

@@ -30,7 +30,6 @@ export default function HomeScreen() {
             updatedAt: new Date().toISOString(),
             isDraft: false,
             isVerseOfTheDay: true,
-            themeName: verse.theme,
             reflection: '',
             motivation: '',
             application: '',

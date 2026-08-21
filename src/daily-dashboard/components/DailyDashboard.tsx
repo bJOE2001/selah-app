@@ -24,7 +24,7 @@ export function DailyDashboard({ onShareEntry, onShareQuote }: DailyDashboardPro
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
   const { data: entries } = useRecentDevotionals(20);
-  const { reset } = useDraftStore();
+  const { reset, setRhema } = useDraftStore();
 
   const now = new Date();
   const formattedDate = now.toLocaleDateString('en-US', {
@@ -106,6 +106,11 @@ export function DailyDashboard({ onShareEntry, onShareQuote }: DailyDashboardPro
         {/* 3. Verse of the Day Card */}
         <DailyVerseCard
           onShareVerse={onShareQuote}
+          onReflectVerse={(verse) => {
+            reset();
+            setRhema(0, verse.text, verse.reference);
+            router.push('/devotional/new');
+          }}
         />
 
         {/* 4. Bento Action Hub: Begin Devotion & Holy Scripture */}

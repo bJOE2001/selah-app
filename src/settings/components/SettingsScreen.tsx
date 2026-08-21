@@ -802,16 +802,6 @@ export function SettingsScreen() {
                 <Ionicons name="shield-checkmark-outline" size={14} color={colors.brandGreen} />
                 <Text style={[styles.aboutBadgeText, { color: colors.inkPrimary }]}>Data Stays Private</Text>
               </View>
-
-              <View style={[styles.aboutBadgeItem, { backgroundColor: isDark ? '#26211C' : '#F5F0EA', borderColor: colors.paperLine }]}>
-                <Ionicons name="ban-outline" size={14} color={colors.tapeRhema} />
-                <Text style={[styles.aboutBadgeText, { color: colors.inkPrimary }]}>No Ads Ever</Text>
-              </View>
-
-              <View style={[styles.aboutBadgeItem, { backgroundColor: isDark ? '#26211C' : '#F5F0EA', borderColor: colors.paperLine }]}>
-                <Ionicons name="heart-outline" size={14} color={colors.brandGold} />
-                <Text style={[styles.aboutBadgeText, { color: colors.inkPrimary }]}>Free Forever</Text>
-              </View>
             </View>
 
             {/* The R.R.M.A. Method Banner */}

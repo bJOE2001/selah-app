@@ -160,7 +160,7 @@ export function TableOfContentsModal({
                 </View>
                 <View style={styles.shortcutTextCol}>
                   <Text style={[styles.shortcutTitle, { color: colors.brandGreen }]}>
-                    Write Today
+                    Write
                   </Text>
                   <Text style={[styles.shortcutSub, { color: colors.inkSecondary }]}>
                     Fresh blank page (Page {entries.length + 1})

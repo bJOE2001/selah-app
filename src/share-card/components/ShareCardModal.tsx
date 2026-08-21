@@ -10,6 +10,7 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { ShareCardCanvas, CardTheme, ShareableDevotional } from './ShareCardCanvas';
@@ -28,6 +29,7 @@ export function ShareCardModal({
   devotional,
   onClose,
 }: ShareCardModalProps) {
+  const insets = useSafeAreaInsets();
   const [theme, setTheme] = useState<CardTheme>('classic');
   const [isExporting, setIsExporting] = useState(false);
   const cardRef = useRef<View>(null);
@@ -88,7 +90,16 @@ export function ShareCardModal({
       <View style={styles.overlay}>
         <Pressable style={styles.backdropPressable} onPress={onClose} />
 
-        <View style={[styles.content, { backgroundColor: colors.paperBg, borderColor: colors.paperLine }]}>
+        <View
+          style={[
+            styles.content,
+            {
+              backgroundColor: colors.paperBg,
+              borderColor: colors.paperLine,
+              paddingBottom: Math.max(insets.bottom, 24) + 16,
+            },
+          ]}
+        >
           {/* Header Bar */}
           <View style={styles.topBar}>
             <View style={styles.titleGroup}>
@@ -143,6 +154,7 @@ export function ShareCardModal({
 
           {/* Preview Canvas Container */}
           <ScrollView
+            style={styles.canvasScrollView}
             contentContainerStyle={styles.canvasContainer}
             showsVerticalScrollIndicator={false}
           >
@@ -193,7 +205,6 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     paddingHorizontal: SPACING.base,
     paddingTop: SPACING.base,
-    paddingBottom: SPACING.xl,
     maxHeight: '92%',
     ...SHADOWS.card,
   },
@@ -259,10 +270,13 @@ const styles = StyleSheet.create({
   themeTabTextActive: {
     color: '#FFFFFF',
   },
+  canvasScrollView: {
+    flexShrink: 1,
+  },
   canvasContainer: {
     alignItems: 'center',
     paddingVertical: SPACING.xs,
-    paddingBottom: SPACING.md,
+    paddingBottom: SPACING.sm,
   },
   shareButton: {
     flexDirection: 'row',
@@ -271,7 +285,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: RADIUS.pill,
     gap: 8,
-    marginTop: 4,
+    marginTop: 8,
     ...SHADOWS.card,
   },
   shareButtonDisabled: {

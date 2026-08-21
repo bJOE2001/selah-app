@@ -158,7 +158,7 @@ export const ShareCardCanvas = forwardRef<View, ShareCardCanvasProps>(
               <View style={styles.reflectionHeader}>
                 <Ionicons name="pencil" size={11} color={palette.accent} />
                 <Text style={[styles.reflectionLabel, { color: palette.accent }]}>
-                  DAILY REFLECTION
+                  REFLECTION
                 </Text>
               </View>
               <Text
@@ -253,7 +253,7 @@ const styles = StyleSheet.create({
   votdHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
     marginTop: 4,
     marginBottom: 6,
   },

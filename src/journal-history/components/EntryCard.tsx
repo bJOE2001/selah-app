@@ -10,9 +10,10 @@ export interface EntryCardProps {
   entry: DevotionalSummary;
   onPress: () => void;
   onShare?: () => void;
+  onDelete?: () => void;
 }
 
-export function EntryCard({ entry, onPress, onShare }: EntryCardProps) {
+export function EntryCard({ entry, onPress, onShare, onDelete }: EntryCardProps) {
   const { colors } = useTheme();
   const dateObj = new Date(entry.createdAt);
   const formattedDate = dateObj.toLocaleDateString('en-US', {
@@ -57,10 +58,24 @@ export function EntryCard({ entry, onPress, onShare }: EntryCardProps) {
                 e.stopPropagation();
                 onShare();
               }}
-              style={styles.shareIconButton}
+              style={styles.actionIconButton}
               hitSlop={8}
+              accessibilityLabel="Share Devotional"
             >
-              <Ionicons name="share-social-outline" size={18} color={colors.inkSecondary} />
+              <Ionicons name="share-social-outline" size={17} color={colors.inkSecondary} />
+            </Pressable>
+          ) : null}
+          {onDelete ? (
+            <Pressable
+              onPress={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+              style={styles.actionIconButton}
+              hitSlop={8}
+              accessibilityLabel="Delete Devotional"
+            >
+              <Ionicons name="trash-outline" size={16} color={colors.tapeRhema} />
             </Pressable>
           ) : null}
         </View>
@@ -123,6 +138,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.sm,
+  },
+  actionIconButton: {
+    padding: 3,
   },
   shareIconButton: {
     padding: 2,

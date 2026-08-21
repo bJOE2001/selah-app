@@ -22,7 +22,7 @@ export interface EditJournalCoverModalProps {
 }
 
 const PRESET_TITLES = [
-  'My Devotional Notebook',
+  'My Devotional Journal',
   'Daily Walk with Jesus',
   'Prayer & Reflection Journal',
   'Grace & Growth Journal',
@@ -83,7 +83,7 @@ export function EditJournalCoverModal({
   };
 
   const handleReset = () => {
-    setTitle('My Devotional Notebook');
+    setTitle('My Devotional Journal');
     setSubtitle('Thy word is a lamp unto my feet, and a light unto my path.');
     setVerseRef('Psalm 119:105');
   };
@@ -160,7 +160,7 @@ export function EditJournalCoverModal({
                 ]}
                 value={title}
                 onChangeText={setTitle}
-                placeholder="e.g. My Devotional Notebook"
+                placeholder="e.g. My Devotional Journal"
                 placeholderTextColor={colors.inkPlaceholder}
                 maxLength={40}
               />
@@ -279,7 +279,7 @@ export function EditJournalCoverModal({
                 PREVIEW
               </Text>
               <Text style={[styles.previewTitle, { color: colors.inkPrimary }]}>
-                {title || 'My Devotional Notebook'}
+                {title || 'My Devotional Journal'}
               </Text>
               {subtitle ? (
                 <Text style={[styles.previewQuote, { color: colors.inkSecondary }]}>

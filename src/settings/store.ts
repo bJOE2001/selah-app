@@ -44,7 +44,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   eveningReminderEnabled: false,
   eveningReminderTime: '09:00 PM',
   paperLined: true,
-  journalCoverTitle: 'My Devotional Notebook',
+  journalCoverTitle: 'My Devotional Journal',
   journalCoverSubtitle: 'Thy word is a lamp unto my feet, and a light unto my path.',
   journalCoverVerseRef: 'Psalm 119:105',
 

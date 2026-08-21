@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getUserDatabase } from '../bible-data/db';
 import * as queries from './queries';
-import { DevotionalDraft } from './types';
+import { DevotionalDraft, DevotionalSummary } from './types';
 
 export function useMoodTags() {
   return useQuery({
@@ -85,9 +85,15 @@ export function useDeleteDevotional() {
       const db = await getUserDatabase();
       return queries.deleteDevotional(db, id);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['devotionals'] });
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+    onSuccess: async (_, deletedId) => {
+      // Synchronously remove deleted entry from all active cached lists
+      queryClient.setQueriesData<DevotionalSummary[]>(
+        { queryKey: ['devotionals'] },
+        (old) => (old ? old.filter((item) => item.id !== deletedId) : [])
+      );
+      await queryClient.invalidateQueries({ queryKey: ['devotionals'] });
+      await queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      await queryClient.invalidateQueries({ queryKey: ['devotional'] });
     },
   });
 }

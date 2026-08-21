@@ -13,10 +13,13 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { toast, useTheme } from "../../design-system";
+import { promptModal, toast, useTheme } from "../../design-system";
 import { RADIUS, SHADOWS, SPACING } from "../../design-system/tokens/spacing";
 import { FONTS } from "../../design-system/tokens/typography";
-import { useToggleBookmarkDevotional } from "../../devotional-core/hooks";
+import {
+  useDeleteDevotional,
+  useToggleBookmarkDevotional,
+} from "../../devotional-core/hooks";
 import { DevotionalSummary } from "../../devotional-core/types";
 import { useSettingsStore } from "../../settings/store";
 import { BookmarkIndexModal, BookmarkItemData } from "./BookmarkIndexModal";
@@ -48,6 +51,7 @@ export function NotebookBookView({
   const [isBookmarkIndexOpen, setIsBookmarkIndexOpen] = useState(false);
   const [isNavigatorOpen, setIsNavigatorOpen] = useState(false);
   const toggleBookmarkMutation = useToggleBookmarkDevotional();
+  const deleteMutation = useDeleteDevotional();
 
   const { journalCoverTitle, journalCoverSubtitle, journalCoverVerseRef } =
     useSettingsStore();
@@ -69,7 +73,7 @@ export function NotebookBookView({
     entries.forEach((e) => {
       if (e.isBookmarked) map[e.id] = true;
     });
-    setBookmarkedIds((prev) => ({ ...map, ...prev }));
+    setBookmarkedIds(map);
   }, [entries]);
 
   // Chronological sorting: Oldest entry at Page 1, Latest entry at Page N
@@ -130,13 +134,12 @@ export function NotebookBookView({
   };
 
   const turnToPage = (targetIndex: number) => {
-    if (targetIndex >= 0 && targetIndex < totalPages) {
-      flatListRef.current?.scrollToIndex({
-        index: targetIndex,
-        animated: true,
-      });
-      setCurrentPageIndex(targetIndex);
-    }
+    const validIndex = Math.max(0, Math.min(targetIndex, totalPages - 1));
+    flatListRef.current?.scrollToOffset({
+      offset: validIndex * SCREEN_WIDTH,
+      animated: true,
+    });
+    setCurrentPageIndex(validIndex);
   };
 
   const toggleBookmark = (id: string) => {
@@ -154,6 +157,28 @@ export function NotebookBookView({
     } else {
       toast.info("Bookmark Removed", "Unfolded the page corner.");
     }
+  };
+
+  const handleDeletePage = (entry: DevotionalSummary, pageNumber: number) => {
+    promptModal.confirm({
+      title: "Delete Journal Page?",
+      message: `Are you sure you want to delete Page ${pageNumber} (${entry.rhemaReference})?\n\nThis entry will be permanently removed from your journal.`,
+      confirmText: "Delete Page",
+      cancelText: "Keep Page",
+      isDestructive: true,
+      onConfirm: async () => {
+        try {
+          const targetIndex = Math.max(0, pageNumber - 1);
+          turnToPage(targetIndex);
+
+          await deleteMutation.mutateAsync(entry.id);
+          toast.success("Page Deleted", "The devotional entry has been removed.");
+        } catch (err) {
+          console.error("Failed to delete entry:", err);
+          toast.error("Error", "Could not delete this entry. Please try again.");
+        }
+      },
+    });
   };
 
   const renderCoverPage = () => (
@@ -319,7 +344,7 @@ export function NotebookBookView({
               ]}
             >
               <Ionicons name="create-outline" size={15} color="#FFFFFF" />
-              <Text style={styles.writeTodayBtnText}>Write Today</Text>
+              <Text style={styles.writeTodayBtnText}>Write</Text>
             </Pressable>
           </View>
         </View>
@@ -369,23 +394,45 @@ export function NotebookBookView({
                 </Text>
               </View>
 
-              <Pressable
-                onPress={() => onShareEntry(entry.id)}
-                style={[
-                  styles.miniShareBtn,
-                  {
-                    backgroundColor: colors.cardBg,
-                    borderColor: colors.paperLine,
-                  },
-                ]}
-                hitSlop={6}
-              >
-                <Ionicons
-                  name="share-social-outline"
-                  size={15}
-                  color={colors.inkSecondary}
-                />
-              </Pressable>
+              <View style={styles.folioActionsRow}>
+                <Pressable
+                  onPress={() => onShareEntry(entry.id)}
+                  style={[
+                    styles.miniHeaderBtn,
+                    {
+                      backgroundColor: colors.cardBg,
+                      borderColor: colors.paperLine,
+                    },
+                  ]}
+                  hitSlop={6}
+                  accessibilityLabel="Share Entry"
+                >
+                  <Ionicons
+                    name="share-social-outline"
+                    size={15}
+                    color={colors.inkSecondary}
+                  />
+                </Pressable>
+
+                <Pressable
+                  onPress={() => handleDeletePage(entry, pageNumber)}
+                  style={[
+                    styles.miniHeaderBtn,
+                    {
+                      backgroundColor: colors.cardBg,
+                      borderColor: colors.paperLine,
+                    },
+                  ]}
+                  hitSlop={6}
+                  accessibilityLabel="Delete Page"
+                >
+                  <Ionicons
+                    name="trash-outline"
+                    size={15}
+                    color={colors.tapeRhema}
+                  />
+                </Pressable>
+              </View>
             </View>
 
             {/* 1. R — RHEMA (Scripture) */}
@@ -560,9 +607,10 @@ export function NotebookBookView({
                 <Text
                   style={[styles.editPageBtnText, { color: colors.brandGreen }]}
                 >
-                  Open
+                  Edit
                 </Text>
               </Pressable>
+
             </View>
           </ScrollView>
         </View>
@@ -657,7 +705,7 @@ export function NotebookBookView({
               <Text
                 style={[styles.blankSectionHeader, { color: colors.inkMuted }]}
               >
-                READY FOR TODAY'S REFLECTION
+                READY FOR TODAY'S DEVOTION
               </Text>
 
               {/* RHEMA */}
@@ -688,7 +736,7 @@ export function NotebookBookView({
                 <Text
                   style={[styles.blankStepHint, { color: colors.inkSecondary }]}
                 >
-                  Receive God's Word & Scripture
+                  
                 </Text>
               </View>
 
@@ -723,7 +771,7 @@ export function NotebookBookView({
                 <Text
                   style={[styles.blankStepHint, { color: colors.inkSecondary }]}
                 >
-                  Meditate on what God is saying
+                  
                 </Text>
               </View>
 
@@ -758,7 +806,7 @@ export function NotebookBookView({
                 <Text
                   style={[styles.blankStepHint, { color: colors.inkSecondary }]}
                 >
-                  Record spiritual takeaway & courage
+                  
                 </Text>
               </View>
 
@@ -793,7 +841,7 @@ export function NotebookBookView({
                 <Text
                   style={[styles.blankStepHint, { color: colors.inkSecondary }]}
                 >
-                  Action steps & prayer commitments
+                  
                 </Text>
               </View>
             </View>
@@ -808,8 +856,7 @@ export function NotebookBookView({
                 ]}
               >
                 <Ionicons name="create-outline" size={15} color="#FFFFFF" />
-                <Text style={styles.startDevotionBtnText}>Write Today</Text>
-                <Ionicons name="arrow-forward" size={14} color="#FFFFFF" />
+                <Text style={styles.startDevotionBtnText}>Write</Text>
               </Pressable>
             </View>
           </ScrollView>
@@ -846,7 +893,12 @@ export function NotebookBookView({
       <FlatList
         ref={flatListRef}
         data={pages}
-        keyExtractor={(_, idx) => `page_${idx}`}
+        extraData={entries}
+        keyExtractor={(item) =>
+          item.type === "entry" && item.data
+            ? `entry_${item.data.id}`
+            : `${item.type}_${item.index}`
+        }
         renderItem={renderPageItem}
         horizontal
         pagingEnabled
@@ -1268,6 +1320,20 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.body,
     fontSize: 12,
   },
+  folioActionsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginRight: 32, // Leave room for Dog-Ear fold
+  },
+  miniHeaderBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   miniShareBtn: {
     width: 28,
     height: 28,
@@ -1275,7 +1341,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 28, // Leave room for Dog-Ear
   },
   scriptureBox: {
     borderRadius: 12,
@@ -1331,19 +1396,36 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
   },
   pageBottomActions: {
-    marginTop: SPACING.sm,
-    alignItems: "flex-start",
+    marginTop: SPACING.md,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
   },
   editPageBtn: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
     borderRadius: RADIUS.pill,
     borderWidth: 1,
   },
   editPageBtnText: {
+    fontFamily: FONTS.bodyBold,
+    fontSize: 11,
+    fontWeight: "700",
+  },
+  deletePageBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: RADIUS.pill,
+    borderWidth: 1,
+  },
+  deletePageBtnText: {
     fontFamily: FONTS.bodyBold,
     fontSize: 11,
     fontWeight: "700",
