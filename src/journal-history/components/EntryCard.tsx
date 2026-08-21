@@ -37,11 +37,17 @@ export function EntryCard({ entry, onPress, onShare }: EntryCardProps) {
         pressed && styles.cardPressed,
       ]}
     >
-      {/* Top Header: Date & Mood Emojis */}
+      {/* Top Header: Date & Mood Emojis & Bookmark Ribbon */}
       <View style={styles.header}>
         <View style={styles.dateBlock}>
           <Text style={[styles.weekdayText, { color: colors.brandGreen }]}>{formattedWeekday}</Text>
           <Text style={[styles.dateText, { color: colors.inkSecondary }]}>{formattedDate}</Text>
+          {entry.isBookmarked ? (
+            <View style={[styles.bookmarkedBadge, { backgroundColor: colors.tapeRhema + '18', borderColor: colors.tapeRhema + '45' }]}>
+              <Ionicons name="bookmark" size={10} color={colors.tapeRhema} />
+              <Text style={[styles.bookmarkedBadgeText, { color: colors.tapeRhema }]}>Bookmarked</Text>
+            </View>
+          ) : null}
         </View>
 
         <View style={styles.rightActions}>
@@ -143,4 +149,20 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 20,
   },
+  bookmarkedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: RADIUS.pill,
+    borderWidth: 0.8,
+    marginLeft: 6,
+  },
+  bookmarkedBadgeText: {
+    fontFamily: FONTS.bodyBold,
+    fontSize: 9,
+    fontWeight: '700',
+  },
 });
+

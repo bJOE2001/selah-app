@@ -6,7 +6,6 @@ import {
   Modal,
   Pressable,
   ScrollView,
-  Alert,
   ActivityIndicator,
   Platform,
 } from 'react-native';
@@ -14,7 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { ShareCardCanvas, CardTheme, ShareableDevotional } from './ShareCardCanvas';
-import { useTheme } from '../../design-system';
+import { useTheme, promptModal, toast } from '../../design-system';
 import { FONTS } from '../../design-system/tokens/typography';
 import { SPACING, RADIUS, SHADOWS } from '../../design-system/tokens/spacing';
 
@@ -44,9 +43,9 @@ export function ShareCardModal({
 
       // On Web platform handling
       if (Platform.OS === 'web') {
-        Alert.alert(
+        promptModal.info(
           'Aesthetic Card Ready',
-          `"${devotional.rhemaText}" — ${devotional.rhemaReference}\n\n(Share card capture is optimized on Android and iOS devices).`
+          `"${devotional.rhemaText}" — ${devotional.rhemaReference}\n\n(Note: Native image snapshot is optimized on Android and iOS devices).`
         );
         setIsExporting(false);
         return;
@@ -65,12 +64,13 @@ export function ShareCardModal({
           dialogTitle: 'Share Aesthetic Scripture Card',
           UTI: 'public.png',
         });
+        toast.success('Card Shared', 'Scripture card shared successfully.');
       } else {
-        Alert.alert('Image Saved', 'The scripture card image was prepared successfully.');
+        toast.success('Image Saved', 'The scripture card was prepared successfully.');
       }
     } catch (error) {
       console.error('Failed to capture card:', error);
-      Alert.alert('Share Error', 'Could not generate share image. Please try again.');
+      toast.error('Share Error', 'Could not generate share image. Please try again.');
     } finally {
       setIsExporting(false);
     }

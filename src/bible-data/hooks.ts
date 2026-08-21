@@ -66,14 +66,15 @@ export function useVerse(verseId: number) {
   });
 }
 
-export function useVerseSearch(searchTerm: string) {
+export function useVerseSearch(searchTerm: string, translationId: string = 'kjv') {
   return useQuery({
-    queryKey: ['bible', 'search', searchTerm],
+    queryKey: ['bible', 'search', searchTerm, translationId],
     queryFn: async () => {
       const db = await getUserDatabase();
-      return queries.searchVerses(db, searchTerm);
+      return queries.searchVerses(db, searchTerm, translationId);
     },
     enabled: searchTerm.trim().length >= 2,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 }
+

@@ -129,11 +129,6 @@ export default function CalendarTabScreen() {
     return entries.filter((e) => e.createdAt.startsWith(selectedDate));
   }, [entries, selectedDate]);
 
-  // Count entries per month for stats
-  const totalMarkedDays = Object.keys(markedDates).filter(
-    (k) => markedDates[k]?.marked
-  ).length;
-
   return (
     <View style={[styles.container, { backgroundColor: colors.paperBg }]}>
       {/* Top App Bar */}
@@ -142,7 +137,7 @@ export default function CalendarTabScreen() {
           <View style={[styles.brandIconCircle, { backgroundColor: colors.brandGreenLight }]}>
             <Ionicons name="calendar" size={13} color={colors.brandGreen} />
           </View>
-          <Text style={[styles.brandTitle, { color: colors.inkPrimary }]}>CALENDAR</Text>
+          <Text style={[styles.brandTitle, { color: colors.inkPrimary }]}>DEVOTIONAL CALENDAR</Text>
         </View>
 
         <View style={styles.topRightActions}>
@@ -169,47 +164,6 @@ export default function CalendarTabScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Stats Banner Card */}
-        <View style={[styles.statsCard, { backgroundColor: colors.cardBg, borderColor: colors.paperLine }]}>
-          <View style={styles.statsInner}>
-            <View style={styles.statItem}>
-              <View style={[styles.statIconCircle, { backgroundColor: colors.brandGreenLight }]}>
-                <Ionicons name="calendar-outline" size={16} color={colors.brandGreen} />
-              </View>
-              <View>
-                <Text style={[styles.statNumber, { color: colors.inkPrimary }]}>{totalMarkedDays}</Text>
-                <Text style={[styles.statLabel, { color: colors.inkMuted }]}>Days Active</Text>
-              </View>
-            </View>
-
-            <View style={[styles.statVerticalDivider, { backgroundColor: colors.paperLine }]} />
-
-            <View style={styles.statItem}>
-              <View style={[styles.statIconCircle, { backgroundColor: isDark ? '#33201D' : '#FFF3ED' }]}>
-                <Ionicons name="book-outline" size={16} color={colors.tapeRhema} />
-              </View>
-              <View>
-                <Text style={[styles.statNumber, { color: colors.inkPrimary }]}>{(entries || []).length}</Text>
-                <Text style={[styles.statLabel, { color: colors.inkMuted }]}>Total Entries</Text>
-              </View>
-            </View>
-
-            <View style={[styles.statVerticalDivider, { backgroundColor: colors.paperLine }]} />
-
-            <View style={styles.statItem}>
-              <View style={[styles.statIconCircle, { backgroundColor: isDark ? '#332918' : '#FFF8ED' }]}>
-                <Ionicons name="flame" size={16} color="#FF7043" />
-              </View>
-              <View>
-                <Text style={[styles.statNumber, { color: colors.inkPrimary }]}>
-                  {Math.max(1, (entries || []).length)}
-                </Text>
-                <Text style={[styles.statLabel, { color: colors.inkMuted }]}>Streak</Text>
-              </View>
-            </View>
-          </View>
-        </View>
-
         {/* Calendar Card */}
         <View style={[styles.calendarCard, { backgroundColor: colors.cardBg, borderColor: colors.paperLine }]}>
           <Calendar
@@ -365,45 +319,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: SPACING.base,
     paddingTop: SPACING.xs,
-  },
-
-  /* ── Stats Card ── */
-  statsCard: {
-    borderRadius: 20,
-    borderWidth: 1,
-    padding: SPACING.md,
-    marginBottom: SPACING.md,
-    ...SHADOWS.card,
-  },
-  statsInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-  },
-  statItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.xs + 2,
-  },
-  statIconCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  statNumber: {
-    fontFamily: FONTS.bodyBold,
-    fontSize: 15,
-    fontWeight: '800',
-  },
-  statLabel: {
-    fontFamily: FONTS.body,
-    fontSize: 10,
-  },
-  statVerticalDivider: {
-    width: 1,
-    height: 28,
   },
 
   /* ── Calendar Card ── */

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   Pressable,
   FlatList,
   TextInput,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -14,7 +15,8 @@ import {
   BibleTranslation,
 } from '../../bible-data/translations';
 import { useTranslationStore } from '../../bible-data/translationStore';
-import { useTheme } from '../../design-system';
+import { useDownloadStore } from '../../bible-data/downloadStore';
+import { useTheme, promptModal, toast } from '../../design-system';
 import { FONTS } from '../../design-system/tokens/typography';
 import { SPACING, RADIUS, SHADOWS } from '../../design-system/tokens/spacing';
 
@@ -29,15 +31,49 @@ export function TranslationPickerModal({
 }: TranslationPickerModalProps) {
   const { colors, isDark } = useTheme();
   const { selectedTranslation, setTranslation } = useTranslationStore();
+  const {
+    downloadedTranslations,
+    activeDownloads,
+    initDownloads,
+    download,
+    deleteDownload,
+    isDownloaded,
+  } = useDownloadStore();
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
 
-  const categories = ['All', 'Popular English', 'Literal & Study', 'Historical & Classic', 'International'];
+  useEffect(() => {
+    if (visible) {
+      initDownloads();
+    }
+  }, [visible, initDownloads]);
+
+  const categories = [
+    'All',
+    'Downloaded',
+    'Popular English',
+    'Literal & Study',
+    'Historical & Classic',
+    'International',
+  ];
+
+  const downloadedCount = useMemo(() => {
+    // KJV + any in downloadedTranslations
+    const count = Object.keys(downloadedTranslations).length + 1; // +1 for KJV
+    return count;
+  }, [downloadedTranslations]);
 
   const filteredTranslations = useMemo(() => {
     return BIBLE_TRANSLATIONS.filter((t) => {
-      const matchesCategory =
-        selectedCategory === 'All' || t.category === selectedCategory;
+      const isDownloadedVersion = isDownloaded(t.id);
+      let matchesCategory = true;
+      if (selectedCategory === 'Downloaded') {
+        matchesCategory = isDownloadedVersion;
+      } else if (selectedCategory !== 'All') {
+        matchesCategory = t.category === selectedCategory;
+      }
+
       const q = searchQuery.toLowerCase().trim();
       const matchesSearch =
         !q ||
@@ -47,11 +83,81 @@ export function TranslationPickerModal({
         t.description.toLowerCase().includes(q);
       return matchesCategory && matchesSearch;
     });
-  }, [searchQuery, selectedCategory]);
+  }, [searchQuery, selectedCategory, downloadedTranslations, isDownloaded]);
 
   const handleSelect = (translation: BibleTranslation) => {
-    setTranslation(translation);
-    onClose();
+    const downloaded = isDownloaded(translation.id);
+    if (downloaded) {
+      setTranslation(translation);
+      onClose();
+      toast.success(
+        `Switched to ${translation.code}`,
+        `${translation.name} is active for offline reading.`
+      );
+      return;
+    }
+
+    // If not downloaded, prompt user with custom modal
+    promptModal.confirm({
+      title: `Download ${translation.name}?`,
+      message: `This translation (${translation.approximateSizeMB || '3.8 MB'}) needs to be downloaded once for 100% offline access.`,
+      confirmText: 'Download Now',
+      cancelText: 'Not Now',
+      onConfirm: async () => {
+        try {
+          toast.info(`Downloading ${translation.code}...`, 'Saving complete translation offline.');
+          await download(translation);
+          setTranslation(translation);
+          toast.success(
+            'Download Complete',
+            `${translation.name} is now ready for offline reading!`
+          );
+        } catch (err: any) {
+          toast.error('Download Failed', err?.message || 'Could not download translation.');
+        }
+      },
+    });
+  };
+
+  const handleStartDownload = async (translation: BibleTranslation, e: any) => {
+    e.stopPropagation();
+    try {
+      toast.info(`Downloading ${translation.code}...`, 'Fetching full scripture dataset.');
+      await download(translation);
+      toast.success(
+        'Download Complete',
+        `${translation.name} is now available offline!`
+      );
+    } catch (err: any) {
+      toast.error('Download Failed', err?.message || 'Could not download Bible version.');
+    }
+  };
+
+  const handleDelete = (translation: BibleTranslation, e: any) => {
+    e.stopPropagation();
+    if (translation.id.toLowerCase() === 'kjv') return;
+
+    promptModal.confirm({
+      title: `Delete ${translation.code}?`,
+      message: `Remove ${translation.name} from offline storage? You can download it again anytime.`,
+      confirmText: 'Delete Version',
+      cancelText: 'Keep Version',
+      isDestructive: true,
+      onConfirm: async () => {
+        try {
+          await deleteDownload(translation.id);
+          if (selectedTranslation.id.toLowerCase() === translation.id.toLowerCase()) {
+            setTranslation('kjv');
+          }
+          toast.success(
+            'Version Removed',
+            `${translation.name} deleted from offline storage.`
+          );
+        } catch (err) {
+          toast.error('Error', 'Could not delete translation.');
+        }
+      },
+    });
   };
 
   return (
@@ -75,11 +181,13 @@ export function TranslationPickerModal({
           <View style={styles.header}>
             <View style={styles.headerTitleGroup}>
               <View style={[styles.iconCircle, { backgroundColor: colors.brandGreenLight }]}>
-                <Ionicons name="globe-outline" size={16} color={colors.brandGreen} />
+                <Ionicons name="cloud-download-outline" size={16} color={colors.brandGreen} />
               </View>
               <View>
-                <Text style={[styles.headerTitle, { color: colors.inkPrimary }]}>Bible Translations</Text>
-                <Text style={[styles.headerSubtitle, { color: colors.inkMuted }]}>Select your preferred Scripture version</Text>
+                <Text style={[styles.headerTitle, { color: colors.inkPrimary }]}>Offline Bible Versions</Text>
+                <Text style={[styles.headerSubtitle, { color: colors.inkMuted }]}>
+                  {downloadedCount} {downloadedCount === 1 ? 'version' : 'versions'} ready offline
+                </Text>
               </View>
             </View>
 
@@ -111,7 +219,7 @@ export function TranslationPickerModal({
             <Ionicons name="search" size={16} color={colors.inkPlaceholder} />
             <TextInput
               style={[styles.searchInput, { color: colors.inkPrimary }]}
-              placeholder="Search translation (e.g. KJV, WEB, ASV)..."
+              placeholder="Search version (e.g. NLT, ESV, NIV, WEB)..."
               placeholderTextColor={colors.inkPlaceholder}
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -135,6 +243,8 @@ export function TranslationPickerModal({
               contentContainerStyle={styles.categoryList}
               renderItem={({ item }) => {
                 const isActive = selectedCategory === item;
+                const isDownloadedPill = item === 'Downloaded';
+
                 return (
                   <Pressable
                     onPress={() => setSelectedCategory(item)}
@@ -150,15 +260,24 @@ export function TranslationPickerModal({
                       },
                     ]}
                   >
-                    <Text
-                      style={[
-                        styles.categoryText,
-                        { color: colors.inkSecondary },
-                        isActive && { color: '#FFFFFF', fontWeight: '700' },
-                      ]}
-                    >
-                      {item}
-                    </Text>
+                    <View style={styles.pillContent}>
+                      {isDownloadedPill ? (
+                        <Ionicons
+                          name="checkmark-circle"
+                          size={12}
+                          color={isActive ? '#FFFFFF' : colors.brandGreen}
+                        />
+                      ) : null}
+                      <Text
+                        style={[
+                          styles.categoryText,
+                          { color: colors.inkSecondary },
+                          isActive && { color: '#FFFFFF', fontWeight: '700' },
+                        ]}
+                      >
+                        {item} {isDownloadedPill ? `(${downloadedCount})` : ''}
+                      </Text>
+                    </View>
                   </Pressable>
                 );
               }}
@@ -172,7 +291,12 @@ export function TranslationPickerModal({
             contentContainerStyle={styles.listContainer}
             showsVerticalScrollIndicator={false}
             renderItem={({ item }) => {
-              const isSelected = selectedTranslation.id === item.id;
+              const isSelected = selectedTranslation.id.toLowerCase() === item.id.toLowerCase();
+              const downloaded = isDownloaded(item.id);
+              const downloadState = activeDownloads[item.id.toLowerCase()];
+              const isDownloading = downloadState?.isDownloading;
+              const progress = downloadState?.progress || 0;
+
               return (
                 <Pressable
                   onPress={() => handleSelect(item)}
@@ -214,34 +338,95 @@ export function TranslationPickerModal({
 
                     <View style={styles.cardInfo}>
                       <View style={styles.titleRow}>
-                        <Text style={[styles.translationName, { color: colors.inkPrimary }]}>{item.name}</Text>
+                        <Text style={[styles.translationName, { color: colors.inkPrimary }]}>
+                          {item.name}
+                        </Text>
+                      </View>
+
+                      {/* Status & Size Badges */}
+                      <View style={styles.badgeRow}>
                         {item.isBuiltInOffline ? (
                           <View style={[styles.offlineBadge, { backgroundColor: colors.brandGreenLight }]}>
-                            <Text style={[styles.offlineBadgeText, { color: colors.brandGreen }]}>OFFLINE</Text>
+                            <Ionicons name="checkmark-circle" size={9} color={colors.brandGreen} />
+                            <Text style={[styles.offlineBadgeText, { color: colors.brandGreen }]}>BUNDLED OFFLINE</Text>
+                          </View>
+                        ) : downloaded ? (
+                          <View style={[styles.downloadedBadge, { backgroundColor: isDark ? 'rgba(74, 124, 89, 0.25)' : '#E8F5E9' }]}>
+                            <Ionicons name="checkmark-circle" size={9} color={colors.brandGreen} />
+                            <Text style={[styles.downloadedBadgeText, { color: colors.brandGreen }]}>
+                              DOWNLOADED • {item.approximateSizeMB || '3.8 MB'}
+                            </Text>
                           </View>
                         ) : (
-                          <View style={[styles.cachedBadge, { backgroundColor: isDark ? '#332D27' : '#F0EFEB' }]}>
-                            <Text style={[styles.cachedBadgeText, { color: colors.inkMuted }]}>AUTO-SAVED</Text>
+                          <View style={[styles.availableBadge, { backgroundColor: isDark ? '#26221D' : '#F4EFEA' }]}>
+                            <Ionicons name="cloud-outline" size={9} color={colors.inkMuted} />
+                            <Text style={[styles.availableBadgeText, { color: colors.inkMuted }]}>
+                              AVAILABLE • {item.approximateSizeMB || '3.8 MB'}
+                            </Text>
                           </View>
                         )}
                       </View>
+
                       <Text style={[styles.translationDesc, { color: colors.inkMuted }]} numberOfLines={2}>
                         {item.description}
                       </Text>
+
+                      {/* Download Progress Bar if downloading */}
+                      {isDownloading ? (
+                        <View style={styles.downloadProgressWrapper}>
+                          <View style={styles.progressBarTrack}>
+                            <View
+                              style={[
+                                styles.progressBarFill,
+                                {
+                                  width: `${progress}%`,
+                                  backgroundColor: colors.brandGreen,
+                                },
+                              ]}
+                            />
+                          </View>
+                          <Text style={[styles.progressText, { color: colors.brandGreen }]}>
+                            {downloadState?.statusText || `Downloading ${progress}%...`}
+                          </Text>
+                        </View>
+                      ) : null}
                     </View>
                   </View>
 
-                  <View style={styles.checkSlot}>
-                    {isSelected ? (
-                      <View style={[styles.activeCheckCircle, { backgroundColor: colors.brandGreen }]}>
-                        <Ionicons name="checkmark" size={12} color="#FFFFFF" />
+                  {/* Right Actions Slot */}
+                  <View style={styles.cardRightSlot}>
+                    {isDownloading ? (
+                      <View style={styles.spinnerSlot}>
+                        <ActivityIndicator size="small" color={colors.brandGreen} />
+                      </View>
+                    ) : downloaded ? (
+                      <View style={styles.downloadedActions}>
+                        {isSelected ? (
+                          <View style={[styles.activeCheckCircle, { backgroundColor: colors.brandGreen }]}>
+                            <Ionicons name="checkmark" size={12} color="#FFFFFF" />
+                          </View>
+                        ) : null}
+
+                        {!item.isBuiltInOffline ? (
+                          <Pressable
+                            onPress={(e) => handleDelete(item, e)}
+                            style={[styles.deleteBtn, { backgroundColor: isDark ? '#33201D' : '#FFF0ED' }]}
+                            hitSlop={8}
+                            accessibilityLabel={`Delete ${item.name}`}
+                          >
+                            <Ionicons name="trash-outline" size={14} color={colors.tapeRhema} />
+                          </Pressable>
+                        ) : null}
                       </View>
                     ) : (
-                      <Ionicons
-                        name="chevron-forward"
-                        size={16}
-                        color={colors.inkPlaceholder}
-                      />
+                      <Pressable
+                        onPress={(e) => handleStartDownload(item, e)}
+                        style={[styles.downloadPillBtn, { backgroundColor: colors.brandGreenLight, borderColor: colors.brandGreen + '50' }]}
+                        hitSlop={6}
+                      >
+                        <Ionicons name="arrow-down-circle-outline" size={14} color={colors.brandGreen} />
+                        <Text style={[styles.downloadPillBtnText, { color: colors.brandGreen }]}>Download</Text>
+                      </Pressable>
                     )}
                   </View>
                 </Pressable>
@@ -335,6 +520,11 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.pill,
     borderWidth: 1,
   },
+  pillContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
   categoryText: {
     fontFamily: FONTS.bodyBold,
     fontSize: 11,
@@ -356,7 +546,7 @@ const styles = StyleSheet.create({
   },
   cardLeft: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     flex: 1,
     gap: 10,
   },
@@ -366,6 +556,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
+    marginTop: 2,
   },
   codeBadgeText: {
     fontFamily: FONTS.bodyBold,
@@ -379,14 +570,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    marginBottom: 2,
+    marginBottom: 3,
   },
   translationName: {
     fontFamily: FONTS.sectionHeader,
     fontSize: 14,
     fontWeight: '700',
   },
+  badgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 4,
+  },
   offlineBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
@@ -397,12 +597,29 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 0.5,
   },
-  cachedBadge: {
+  downloadedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
   },
-  cachedBadgeText: {
+  downloadedBadgeText: {
+    fontFamily: FONTS.bodyBold,
+    fontSize: 8,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  availableBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  availableBadgeText: {
     fontFamily: FONTS.bodyBold,
     fontSize: 8,
     fontWeight: '800',
@@ -413,8 +630,37 @@ const styles = StyleSheet.create({
     fontSize: 11,
     lineHeight: 15,
   },
-  checkSlot: {
-    marginLeft: 6,
+  downloadProgressWrapper: {
+    marginTop: 6,
+    gap: 3,
+  },
+  progressBarTrack: {
+    height: 4,
+    backgroundColor: 'rgba(0, 0, 0, 0.08)',
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    borderRadius: 2,
+  },
+  progressText: {
+    fontFamily: FONTS.bodyBold,
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  cardRightSlot: {
+    marginLeft: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  spinnerSlot: {
+    padding: 6,
+  },
+  downloadedActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   activeCheckCircle: {
     width: 20,
@@ -423,4 +669,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  deleteBtn: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  downloadPillBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: RADIUS.pill,
+    borderWidth: 1,
+  },
+  downloadPillBtnText: {
+    fontFamily: FONTS.bodyBold,
+    fontSize: 10,
+    fontWeight: '800',
+  },
 });
+

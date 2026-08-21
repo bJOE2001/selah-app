@@ -20,6 +20,11 @@ export interface SettingsState {
   // Appearance
   paperLined: boolean;
 
+  // Journal Cover Customization
+  journalCoverTitle: string;
+  journalCoverSubtitle: string;
+  journalCoverVerseRef: string;
+
   // Actions
   setThemeMode: (mode: ThemeMode) => void;
   setFontSize: (size: ScriptureFontSize) => void;
@@ -27,6 +32,7 @@ export interface SettingsState {
   setMorningReminder: (enabled: boolean, time?: string) => void;
   setEveningReminder: (enabled: boolean, time?: string) => void;
   setPaperLined: (enabled: boolean) => void;
+  setJournalCover: (title: string, subtitle?: string, verseRef?: string) => void;
 }
 
 export const useSettingsStore = create<SettingsState>((set) => ({
@@ -38,6 +44,9 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   eveningReminderEnabled: false,
   eveningReminderTime: '09:00 PM',
   paperLined: true,
+  journalCoverTitle: 'My Devotional Notebook',
+  journalCoverSubtitle: 'Thy word is a lamp unto my feet, and a light unto my path.',
+  journalCoverVerseRef: 'Psalm 119:105',
 
   setThemeMode: (themeMode) => set({ themeMode }),
   setFontSize: (fontSize) => set({ fontSize }),
@@ -53,4 +62,12 @@ export const useSettingsStore = create<SettingsState>((set) => ({
       eveningReminderTime: time || state.eveningReminderTime,
     })),
   setPaperLined: (paperLined) => set({ paperLined }),
+  setJournalCover: (title, subtitle, verseRef) =>
+    set((state) => ({
+      journalCoverTitle: title.trim() || state.journalCoverTitle,
+      journalCoverSubtitle:
+        subtitle !== undefined ? subtitle.trim() : state.journalCoverSubtitle,
+      journalCoverVerseRef:
+        verseRef !== undefined ? verseRef.trim() : state.journalCoverVerseRef,
+    })),
 }));

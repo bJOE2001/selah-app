@@ -22,8 +22,9 @@ export async function getBookById(db: SQLiteDatabase, bookId: number): Promise<B
 /**
  * Get all verses in a given book and chapter for a specific translation (default KJV)
  *
- * For KJV: reads directly from KJV.db (KJV_verses table, book_id 1-66).
- * For NLT, NIV, ESV, WEB, etc.: checks SQLite cached_verses first, and fetches & caches from API if needed.
+ * - For KJV: reads directly from KJV.db (bundled offline database).
+ * - For other translations (NLT, ESV, NIV, etc.): reads directly from local downloaded_verses table.
+ * - If not downloaded, returns empty array so UI can prompt user to download.
  */
 export async function getChapterVerses(
   db: SQLiteDatabase,
@@ -36,7 +37,7 @@ export async function getChapterVerses(
   const bookName = book?.name || '';
   const bookAbbrev = book?.abbreviation || '';
 
-  // 1. If KJV, read directly from the KJV.db Bible database
+  // 1. If KJV, read directly from the bundled KJV.db database
   if (normId === 'kjv') {
     try {
       const bibleDb = await getBibleDatabase();
@@ -57,6 +58,7 @@ export async function getChapterVerses(
       if (verses && verses.length > 0) {
         return verses.map((v) => ({
           ...v,
+          id: (v.book_id * 1000000) + (v.chapter * 1000) + v.verse,
           book_name: bookName,
           book_abbrev: bookAbbrev,
         }));
@@ -67,25 +69,41 @@ export async function getChapterVerses(
     return [];
   }
 
-  // 2. Ensure cached_verses table exists defensively
+  // 2. For non-KJV translations, query downloaded_verses table
   try {
-    await db.execAsync(`
-      CREATE TABLE IF NOT EXISTS cached_verses (
-        id TEXT PRIMARY KEY,
-        translation_id TEXT NOT NULL,
-        book_id INTEGER NOT NULL,
-        book_name TEXT NOT NULL,
-        chapter INTEGER NOT NULL,
-        verse INTEGER NOT NULL,
-        text TEXT NOT NULL
-      );
-      CREATE INDEX IF NOT EXISTS idx_cached_verses_lookup ON cached_verses(translation_id, book_id, chapter);
-    `);
-  } catch {}
+    const downloaded = await db.getAllAsync<{
+      id: string;
+      book_id: number;
+      chapter: number;
+      verse: number;
+      text: string;
+      book_name: string;
+    }>(
+      `SELECT id, book_id, chapter, verse, text, book_name
+       FROM downloaded_verses
+       WHERE translation_id = ? AND book_id = ? AND chapter = ?
+       ORDER BY verse ASC;`,
+      [normId, bookId, chapter]
+    );
 
-  // 3. For non-KJV translations (like NLT), check SQLite cached_verses table first
+    if (downloaded && downloaded.length > 0) {
+      return downloaded.map((v) => ({
+        id: (bookId * 1000000) + (chapter * 1000) + v.verse,
+        book_id: v.book_id,
+        chapter: v.chapter,
+        verse: v.verse,
+        text: v.text,
+        book_name: v.book_name || bookName,
+        book_abbrev: bookAbbrev,
+      }));
+    }
+  } catch (err) {
+    console.warn('Downloaded verses lookup error:', err);
+  }
+
+  // 3. Backward-compatibility check: check legacy cached_verses if exists
   try {
-    const cached = await db.getAllAsync<{
+    const legacyCached = await db.getAllAsync<{
       id: string;
       book_id: number;
       chapter: number;
@@ -100,8 +118,8 @@ export async function getChapterVerses(
       [normId, bookId, chapter]
     );
 
-    if (cached && cached.length > 0) {
-      return cached.map((v) => ({
+    if (legacyCached && legacyCached.length > 0) {
+      return legacyCached.map((v) => ({
         id: (bookId * 1000000) + (chapter * 1000) + v.verse,
         book_id: v.book_id,
         chapter: v.chapter,
@@ -111,95 +129,10 @@ export async function getChapterVerses(
         book_abbrev: bookAbbrev,
       }));
     }
-  } catch (err) {
-    console.warn('Cached verses lookup warning:', err);
-  }
+  } catch {}
 
-  // 4. If not cached, fetch from live API (Primary: Bolls Life, Secondary: Bible-API) and cache in SQLite
-  const translationMeta = getTranslation(normId);
-  const apiCode = translationMeta.apiIdentifier || normId.toUpperCase();
-
-  let fetchedVersesList: { verse: number; text: string }[] = [];
-
-  // 4a. Try Bolls Life API (Supports NLT, NIV, ESV, NKJV, NASB, etc.)
-  try {
-    const bollsUrl = `https://bolls.life/get-chapter/${encodeURIComponent(apiCode.toUpperCase())}/${bookId}/${chapter}/`;
-    const response = await fetch(bollsUrl);
-    if (response.ok) {
-      const data = await response.json();
-      if (Array.isArray(data) && data.length > 0) {
-        fetchedVersesList = data.map((d: any) => ({
-          verse: Number(d.verse),
-          text: String(d.text || '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim(),
-        }));
-      }
-    }
-  } catch (bollsErr) {
-    console.warn(`Bolls Life fetch error for ${apiCode}:`, bollsErr);
-  }
-
-  // 4b. If Bolls Life didn't return data, try Bible-API.com
-  if (fetchedVersesList.length === 0 && bookName) {
-    try {
-      const bibleApiUrl = `https://bible-api.com/${encodeURIComponent(bookName)}+${chapter}?translation=${encodeURIComponent(normId)}`;
-      const response = await fetch(bibleApiUrl);
-      if (response.ok) {
-        const data = await response.json();
-        if (data && Array.isArray(data.verses) && data.verses.length > 0) {
-          fetchedVersesList = data.verses.map((rawVerse: any) => ({
-            verse: Number(rawVerse.verse),
-            text: String(rawVerse.text || '').replace(/\s+/g, ' ').trim(),
-          }));
-        }
-      }
-    } catch (apiErr) {
-      console.warn(`Bible-API fetch error for ${normId}:`, apiErr);
-    }
-  }
-
-  // If verses were retrieved, persist to SQLite cache and return
-  if (fetchedVersesList.length > 0) {
-    const resultVerses: Verse[] = [];
-
-    try {
-      await db.withTransactionAsync(async () => {
-        for (const item of fetchedVersesList) {
-          const recordId = generateId();
-          await db.runAsync(
-            `INSERT OR REPLACE INTO cached_verses (id, translation_id, book_id, book_name, chapter, verse, text)
-             VALUES (?, ?, ?, ?, ?, ?, ?);`,
-            [recordId, normId, bookId, bookName, chapter, item.verse, item.text]
-          );
-
-          resultVerses.push({
-            id: (bookId * 1000000) + (chapter * 1000) + item.verse,
-            book_id: bookId,
-            chapter: chapter,
-            verse: item.verse,
-            text: item.text,
-            book_name: bookName,
-            book_abbrev: bookAbbrev,
-          });
-        }
-      });
-
-      return resultVerses;
-    } catch (saveErr) {
-      console.warn('Error saving fetched verses to cache:', saveErr);
-      return fetchedVersesList.map((item) => ({
-        id: (bookId * 1000000) + (chapter * 1000) + item.verse,
-        book_id: bookId,
-        chapter: chapter,
-        verse: item.verse,
-        text: item.text,
-        book_name: bookName,
-        book_abbrev: bookAbbrev,
-      }));
-    }
-  }
-
-  // 5. Graceful offline fallback: Return KJV if offline/unreachable
-  return getChapterVerses(db, bookId, chapter, 'kjv');
+  // 4. Not downloaded yet - return empty array (UI handles prompt)
+  return [];
 }
 
 /**
@@ -211,6 +144,38 @@ export async function getVerseById(
 ): Promise<Verse | null> {
   try {
     const bibleDb = await getBibleDatabase();
+
+    // Canonical ID support (e.g. 1001001 -> Book 1, Chapter 1, Verse 1)
+    if (verseId >= 1000000) {
+      const bookId = Math.floor(verseId / 1000000);
+      const chapter = Math.floor((verseId % 1000000) / 1000);
+      const verseNum = verseId % 1000;
+
+      const verse = await bibleDb.getFirstAsync<{
+        id: number;
+        book_id: number;
+        chapter: number;
+        verse: number;
+        text: string;
+      }>(
+        `SELECT MIN(id) as id, book_id, chapter, verse, text
+         FROM KJV_verses
+         WHERE book_id = ? AND chapter = ? AND verse = ?
+         GROUP BY book_id, chapter, verse;`,
+        [bookId, chapter, verseNum]
+      );
+      if (verse) {
+        const book = CANONICAL_BOOKS.find((b) => b.id === verse.book_id);
+        return {
+          ...verse,
+          id: verseId,
+          book_name: book?.name || '',
+          book_abbrev: book?.abbreviation || '',
+        };
+      }
+    }
+
+    // Fallback for legacy raw KJV row IDs
     const verse = await bibleDb.getFirstAsync<{
       id: number;
       book_id: number;
@@ -227,6 +192,7 @@ export async function getVerseById(
       const book = CANONICAL_BOOKS.find((b) => b.id === verse.book_id);
       return {
         ...verse,
+        id: (verse.book_id * 1000000) + (verse.chapter * 1000) + verse.verse,
         book_name: book?.name || '',
         book_abbrev: book?.abbreviation || '',
       };
@@ -236,11 +202,12 @@ export async function getVerseById(
 }
 
 /**
- * Search verses by keyword
+ * Search verses by keyword in specified translation
  */
 export async function searchVerses(
   db: SQLiteDatabase,
   query: string,
+  translationId: string = 'kjv',
   limit: number = 30
 ): Promise<VerseSearchResult[]> {
   const trimmed = query.trim();
@@ -248,30 +215,75 @@ export async function searchVerses(
     return [];
   }
 
+  const normId = (translationId || 'kjv').toLowerCase();
+
+  // If KJV: query KJV.db
+  if (normId === 'kjv') {
+    try {
+      const bibleDb = await getBibleDatabase();
+      const results = await bibleDb.getAllAsync<{
+        id: number;
+        book_id: number;
+        chapter: number;
+        verse: number;
+        text: string;
+      }>(
+        `SELECT MIN(id) as id, book_id, chapter, verse, text
+         FROM KJV_verses
+         WHERE book_id BETWEEN 1 AND 66 AND text LIKE ?
+         GROUP BY book_id, chapter, verse
+         ORDER BY book_id ASC, chapter ASC, verse ASC
+         LIMIT ?;`,
+        [`%${trimmed}%`, limit]
+      );
+
+      return results.map((v) => {
+        const book = CANONICAL_BOOKS.find((b) => b.id === v.book_id);
+        const bookName = book?.name || '';
+        return {
+          id: (v.book_id * 1000000) + (v.chapter * 1000) + v.verse,
+          book_id: v.book_id,
+          chapter: v.chapter,
+          verse: v.verse,
+          text: v.text,
+          book_name: bookName,
+          book_abbrev: book?.abbreviation || '',
+          reference: `${bookName} ${v.chapter}:${v.verse}`,
+        };
+      });
+    } catch {
+      return [];
+    }
+  }
+
+  // Non-KJV: query downloaded_verses in user database
   try {
-    const bibleDb = await getBibleDatabase();
-    const results = await bibleDb.getAllAsync<{
-      id: number;
+    const results = await db.getAllAsync<{
+      id: string;
       book_id: number;
       chapter: number;
       verse: number;
       text: string;
+      book_name: string;
     }>(
-      `SELECT MIN(id) as id, book_id, chapter, verse, text
-       FROM KJV_verses
-       WHERE book_id BETWEEN 1 AND 66 AND text LIKE ?
-       GROUP BY book_id, chapter, verse
+      `SELECT id, book_id, chapter, verse, text, book_name
+       FROM downloaded_verses
+       WHERE translation_id = ? AND text LIKE ?
        ORDER BY book_id ASC, chapter ASC, verse ASC
        LIMIT ?;`,
-      [`%${trimmed}%`, limit]
+      [normId, `%${trimmed}%`, limit]
     );
 
     return results.map((v) => {
       const book = CANONICAL_BOOKS.find((b) => b.id === v.book_id);
       return {
-        ...v,
-        book_name: book?.name || '',
-        reference: `${book?.name || ''} ${v.chapter}:${v.verse}`,
+        id: (v.book_id * 1000000) + (v.chapter * 1000) + v.verse,
+        book_id: v.book_id,
+        chapter: v.chapter,
+        verse: v.verse,
+        text: v.text,
+        book_name: v.book_name || book?.name || '',
+        reference: `${v.book_name || book?.name || ''} ${v.chapter}:${v.verse}`,
       };
     });
   } catch {

@@ -1,25 +1,25 @@
-import React, { useRef } from 'react';
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import React, { useRef, useState } from "react";
 import {
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
-  Pressable,
-  KeyboardAvoidingView,
-  Platform,
-  Alert,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useDraftStore } from '../../devotional-core/store';
-import { useSaveDevotional } from '../../devotional-core/hooks';
-import { useTheme } from '../../design-system';
-import { FONTS } from '../../design-system/tokens/typography';
-import { SPACING, RADIUS, SHADOWS } from '../../design-system/tokens/spacing';
-import { TapeHeader } from '../../design-system/primitives/TapeHeader';
-import { ScriptureCard } from '../../design-system/primitives/ScriptureCard';
-import { RuledInput } from '../../design-system/primitives/RuledInput';
+    KeyboardAvoidingView,
+    Platform,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { promptModal, toast, useTheme } from "../../design-system";
+import { RuledInput } from "../../design-system/primitives/RuledInput";
+import { ScriptureCard } from "../../design-system/primitives/ScriptureCard";
+import { TapeHeader } from "../../design-system/primitives/TapeHeader";
+import { RADIUS, SHADOWS, SPACING } from "../../design-system/tokens/spacing";
+import { FONTS } from "../../design-system/tokens/typography";
+import { useSaveDevotional } from "../../devotional-core/hooks";
+import { useDraftStore } from "../../devotional-core/store";
+import { ChangeRhemaModal } from "./ChangeRhemaModal";
 
 export interface NotebookEditorProps {
   onSaveSuccess?: (devotionalId: string) => void;
@@ -30,6 +30,7 @@ export function NotebookEditor({ onSaveSuccess }: NotebookEditorProps) {
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
   const scrollRef = useRef<ScrollView>(null);
+  const [isChangeRhemaOpen, setIsChangeRhemaOpen] = useState(false);
 
   const {
     editingDevotionalId,
@@ -50,7 +51,10 @@ export function NotebookEditor({ onSaveSuccess }: NotebookEditorProps) {
 
   const handleSave = async () => {
     if (!rhemaText || !rhemaReference) {
-      Alert.alert('Rhema Scripture Needed', 'Please select a Scripture verse to begin your devotion.');
+      promptModal.info(
+        "Rhema Scripture Needed",
+        "Please select a Scripture verse to begin your devotional reflection.",
+      );
       return;
     }
 
@@ -69,26 +73,39 @@ export function NotebookEditor({ onSaveSuccess }: NotebookEditorProps) {
       });
 
       reset();
+      toast.success(
+        editingDevotionalId ? "Devotional Updated" : "Devotional Saved",
+        "Your reflection has been recorded in your journal.",
+      );
+
       if (onSaveSuccess) {
         onSaveSuccess(savedId);
       } else {
-        router.replace('/(tabs)/journal');
+        router.replace("/(tabs)/journal");
       }
     } catch (err) {
-      console.error('Failed to save devotional:', err);
-      Alert.alert('Save Error', 'Could not save your devotional entry. Please try again.');
+      console.error("Failed to save devotional:", err);
+      toast.error(
+        "Save Error",
+        "Could not save your devotional entry. Please try again.",
+      );
     }
   };
 
   return (
     <KeyboardAvoidingView
       style={styles.keyboardAvoid}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
     >
       <View style={[styles.paperCanvas, { backgroundColor: colors.paperBg }]}>
         {/* Physical Journal Left Binding Stripe */}
-        <View style={[styles.bindingMargin, { backgroundColor: colors.bindingAccent }]} />
+        <View
+          style={[
+            styles.bindingMargin,
+            { backgroundColor: colors.bindingAccent },
+          ]}
+        />
 
         {/* Top Floating Action Bar */}
         <View
@@ -104,23 +121,34 @@ export function NotebookEditor({ onSaveSuccess }: NotebookEditorProps) {
         >
           <Pressable
             onPress={() => {
-              Alert.alert('Discard Devotion?', 'Are you sure you want to discard this draft?', [
-                { text: 'Keep Writing', style: 'cancel' },
-                {
-                  text: 'Discard',
-                  style: 'destructive',
-                  onPress: () => {
-                    reset();
-                    router.back();
-                  },
+              if (!reflection && !motivation && !application) {
+                reset();
+                router.back();
+                return;
+              }
+
+              promptModal.confirm({
+                title: "Discard Devotion?",
+                message:
+                  "Are you sure you want to discard this devotional draft? Your unsaved writing will be lost.",
+                confirmText: "Discard Draft",
+                cancelText: "Keep Writing",
+                isDestructive: true,
+                onConfirm: () => {
+                  reset();
+                  router.back();
                 },
-              ]);
+              });
             }}
             style={styles.toolbarButton}
             hitSlop={8}
           >
             <Ionicons name="arrow-back" size={20} color={colors.inkSecondary} />
-            <Text style={[styles.toolbarButtonText, { color: colors.inkSecondary }]}>Cancel</Text>
+            <Text
+              style={[styles.toolbarButtonText, { color: colors.inkSecondary }]}
+            >
+              Cancel
+            </Text>
           </Pressable>
 
           <Pressable
@@ -134,7 +162,7 @@ export function NotebookEditor({ onSaveSuccess }: NotebookEditorProps) {
           >
             <Ionicons name="bookmark-outline" size={18} color="#FFFFFF" />
             <Text style={styles.saveButtonText}>
-              {saveMutation.isPending ? 'Saving...' : 'Save Devotion'}
+              {saveMutation.isPending ? "Saving..." : "Save Devotion"}
             </Text>
           </Pressable>
         </View>
@@ -142,10 +170,7 @@ export function NotebookEditor({ onSaveSuccess }: NotebookEditorProps) {
         <ScrollView
           ref={scrollRef}
           style={styles.scrollView}
-          contentContainerStyle={[
-            styles.scrollContent,
-            { paddingBottom: 380 },
-          ]}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: 380 }]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
@@ -154,15 +179,83 @@ export function NotebookEditor({ onSaveSuccess }: NotebookEditorProps) {
           {/* ═══════════════ 1. RHEMA SECTION ═══════════════ */}
           <TapeHeader label="✦  R H E M A" color={colors.tapeRhema} />
           <View style={styles.sectionContent}>
-            <Text style={[styles.sectionSubtitle, { color: colors.inkSecondary }]}>
-              The highlighted Scripture that spoke directly to your heart today
-            </Text>
+            <View style={styles.rhemaSubtitleRow}>
+              <Text
+                style={[
+                  styles.sectionSubtitle,
+                  { color: colors.inkSecondary, flex: 1, marginBottom: 0 },
+                ]}
+              >
+                The highlighted Scripture that spoke directly to your heart
+                today
+              </Text>
+
+              {rhemaText ? (
+                <Pressable
+                  onPress={() => setIsChangeRhemaOpen(true)}
+                  style={[
+                    styles.changeRhemaBtn,
+                    {
+                      backgroundColor: colors.tapeRhema + "18",
+                      borderColor: colors.tapeRhema + "45",
+                    },
+                  ]}
+                  hitSlop={6}
+                  accessibilityLabel="Change Rhema Scripture"
+                >
+                  <Ionicons
+                    name="swap-horizontal"
+                    size={13}
+                    color={colors.tapeRhema}
+                  />
+                  <Text
+                    style={[
+                      styles.changeRhemaBtnText,
+                      { color: colors.tapeRhema },
+                    ]}
+                  >
+                    Change
+                  </Text>
+                </Pressable>
+              ) : null}
+            </View>
 
             {rhemaText ? (
-              <ScriptureCard reference={rhemaReference} text={rhemaText} />
+              <View style={styles.rhemaCardWrapper}>
+                <ScriptureCard reference={rhemaReference} text={rhemaText} />
+                <Pressable
+                  onPress={() => setIsChangeRhemaOpen(true)}
+                  style={[
+                    styles.bottomChangeVerseBtn,
+                    {
+                      borderColor: colors.paperLine,
+                      backgroundColor: isDark ? "#23201D" : "#FAF6F0",
+                    },
+                  ]}
+                >
+                  <Ionicons
+                    name="book-outline"
+                    size={13}
+                    color={colors.brandGreen}
+                  />
+                  <Text
+                    style={[
+                      styles.bottomChangeVerseText,
+                      { color: colors.brandGreen },
+                    ]}
+                  >
+                    Select Different Verse or Translation
+                  </Text>
+                  <Ionicons
+                    name="chevron-forward"
+                    size={12}
+                    color={colors.brandGreen}
+                  />
+                </Pressable>
+              </View>
             ) : (
               <Pressable
-                onPress={() => router.push('/(tabs)/bible')}
+                onPress={() => setIsChangeRhemaOpen(true)}
                 style={[
                   styles.emptyRhemaCard,
                   {
@@ -171,8 +264,14 @@ export function NotebookEditor({ onSaveSuccess }: NotebookEditorProps) {
                   },
                 ]}
               >
-                <Ionicons name="book-outline" size={24} color={colors.tapeRhema} />
-                <Text style={[styles.emptyRhemaText, { color: colors.tapeRhema }]}>
+                <Ionicons
+                  name="book-outline"
+                  size={24}
+                  color={colors.tapeRhema}
+                />
+                <Text
+                  style={[styles.emptyRhemaText, { color: colors.tapeRhema }]}
+                >
                   Tap here to open the Bible and select today’s Rhema verse
                 </Text>
               </Pressable>
@@ -180,9 +279,14 @@ export function NotebookEditor({ onSaveSuccess }: NotebookEditorProps) {
           </View>
 
           {/* ═══════════════ 2. REFLECTION SECTION ═══════════════ */}
-          <TapeHeader label="✦  R E F L E C T I O N" color={colors.tapeReflection} />
+          <TapeHeader
+            label="✦  R E F L E C T I O N"
+            color={colors.tapeReflection}
+          />
           <View style={styles.sectionContent}>
-            <Text style={[styles.sectionSubtitle, { color: colors.inkSecondary }]}>
+            <Text
+              style={[styles.sectionSubtitle, { color: colors.inkSecondary }]}
+            >
               What is God revealing to you? Deep dive into the meaning & context
             </Text>
             <RuledInput
@@ -199,9 +303,14 @@ export function NotebookEditor({ onSaveSuccess }: NotebookEditorProps) {
           </View>
 
           {/* ═══════════════ 3. MOTIVATION SECTION ═══════════════ */}
-          <TapeHeader label="✦  M O T I V A T I O N" color={colors.tapeMotivation} />
+          <TapeHeader
+            label="✦  M O T I V A T I O N"
+            color={colors.tapeMotivation}
+          />
           <View style={styles.sectionContent}>
-            <Text style={[styles.sectionSubtitle, { color: colors.inkSecondary }]}>
+            <Text
+              style={[styles.sectionSubtitle, { color: colors.inkSecondary }]}
+            >
               Spiritual encouragement, emotional takeaway, and heart shift
             </Text>
             <RuledInput
@@ -218,9 +327,14 @@ export function NotebookEditor({ onSaveSuccess }: NotebookEditorProps) {
           </View>
 
           {/* ═══════════════ 4. APPLICATION SECTION ═══════════════ */}
-          <TapeHeader label="✦  A P P L I C A T I O N" color={colors.tapeApplication} />
+          <TapeHeader
+            label="✦  A P P L I C A T I O N"
+            color={colors.tapeApplication}
+          />
           <View style={styles.sectionContent}>
-            <Text style={[styles.sectionSubtitle, { color: colors.inkSecondary }]}>
+            <Text
+              style={[styles.sectionSubtitle, { color: colors.inkSecondary }]}
+            >
               How will you apply this truth in your daily walk today?
             </Text>
             <RuledInput
@@ -239,6 +353,12 @@ export function NotebookEditor({ onSaveSuccess }: NotebookEditorProps) {
           {/* Bottom spacing for keyboard */}
           <View style={{ height: SPACING.huge }} />
         </ScrollView>
+
+        {/* Change Rhema Verse Selection Modal */}
+        <ChangeRhemaModal
+          visible={isChangeRhemaOpen}
+          onClose={() => setIsChangeRhemaOpen(false)}
+        />
       </View>
     </KeyboardAvoidingView>
   );
@@ -252,7 +372,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   bindingMargin: {
-    position: 'absolute',
+    position: "absolute",
     left: SPACING.marginBinding,
     top: 0,
     bottom: 0,
@@ -261,16 +381,16 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   topToolbar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: SPACING.base,
     borderBottomWidth: 1,
     zIndex: 2,
   },
   toolbarButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: SPACING.xs,
   },
   toolbarButtonText: {
@@ -278,8 +398,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   saveButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: SPACING.sm,
     paddingHorizontal: SPACING.base,
     borderRadius: RADIUS.pill,
@@ -292,8 +412,8 @@ const styles = StyleSheet.create({
   saveButtonText: {
     fontFamily: FONTS.bodyBold,
     fontSize: 13,
-    color: '#FFFFFF',
-    fontWeight: '700',
+    color: "#FFFFFF",
+    fontWeight: "700",
   },
   scrollView: {
     flex: 1,
@@ -312,19 +432,58 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.md,
     lineHeight: 18,
   },
+  rhemaSubtitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: SPACING.md,
+    gap: 8,
+  },
+  changeRhemaBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: RADIUS.pill,
+    borderWidth: 0.8,
+  },
+  changeRhemaBtnText: {
+    fontFamily: FONTS.bodyBold,
+    fontSize: 10,
+    fontWeight: "800",
+  },
+  rhemaCardWrapper: {
+    gap: 6,
+  },
+  bottomChangeVerseBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    borderRadius: RADIUS.sm,
+    borderWidth: 1,
+  },
+  bottomChangeVerseText: {
+    fontFamily: FONTS.bodyBold,
+    fontSize: 11,
+    fontWeight: "700",
+  },
   emptyRhemaCard: {
     borderWidth: 1.5,
-    borderStyle: 'dashed',
+    borderStyle: "dashed",
     borderRadius: RADIUS.md,
     padding: SPACING.xl,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     gap: SPACING.sm,
   },
   emptyRhemaText: {
     fontFamily: FONTS.body,
     fontSize: 14,
-    textAlign: 'center',
-    fontWeight: '600',
+    textAlign: "center",
+    fontWeight: "600",
   },
 });

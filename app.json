@@ -4,7 +4,7 @@
     "slug": "shephema-app",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/app-icon.jpg",
+    "icon": "./assets/images/icon.png",
     "scheme": "shephema",
     "userInterfaceStyle": "automatic",
     "ios": {
@@ -13,8 +13,8 @@
     "android": {
       "package": "com.shephema.app",
       "adaptiveIcon": {
-        "backgroundColor": "#FBF9F5",
-        "foregroundImage": "./assets/images/app-icon.jpg",
+        "backgroundColor": "#377333",
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
@@ -23,16 +23,28 @@
     "web": {
       "bundler": "metro",
       "output": "single",
-      "favicon": "./assets/images/app-icon.jpg"
+      "favicon": "./assets/images/icon.png"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/app-icon.jpg",
+          "image": "./assets/images/mascot-holding-bible-transparent.png",
+          "imageWidth": 160,
           "resizeMode": "contain",
-          "backgroundColor": "#FBF9F5"
+          "backgroundColor": "#FBF9F5",
+          "dark": {
+            "image": "./assets/images/mascot-holding-bible-transparent.png",
+            "backgroundColor": "#14120E"
+          }
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/android-icon-monochrome.png",
+          "color": "#2D6A4F"
         }
       ]
     ],

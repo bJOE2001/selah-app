@@ -91,3 +91,19 @@ export function useDeleteDevotional() {
     },
   });
 }
+
+export function useToggleBookmarkDevotional() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, isBookmarked }: { id: string; isBookmarked: boolean }) => {
+      const db = await getUserDatabase();
+      return queries.toggleBookmarkDevotional(db, id, isBookmarked);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['devotionals'] });
+      queryClient.invalidateQueries({ queryKey: ['devotional'] });
+    },
+  });
+}
+

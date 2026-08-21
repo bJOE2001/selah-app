@@ -26,6 +26,7 @@ export interface Devotional {
   createdAt: string;
   updatedAt: string;
   isDraft: boolean;
+  isBookmarked: boolean;
   moodTags: MoodTag[];
   applicationTasks: ApplicationTask[];
 }
@@ -34,9 +35,13 @@ export interface DevotionalSummary {
   id: string;
   rhemaReference: string;
   rhemaText: string;
+  reflection: string;
+  motivation: string;
+  application: string;
   reflectionPreview: string;
   createdAt: string;
   isDraft: boolean;
+  isBookmarked: boolean;
   moodTags: MoodTag[];
   totalTasks: number;
   completedTasks: number;

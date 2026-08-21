@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useQueryClient } from '@tanstack/react-query';
 import { Book, Verse } from '../../src/bible-data/types';
 import { useChapterVerses } from '../../src/bible-data/hooks';
 import { useTranslationStore } from '../../src/bible-data/translationStore';
+import { useDownloadStore } from '../../src/bible-data/downloadStore';
 import {
   BookPicker,
   ChapterGrid,
@@ -13,25 +15,41 @@ import {
   TranslationPickerModal,
 } from '../../src/bible-reader';
 import { useDraftStore } from '../../src/devotional-core/store';
-import { useTheme } from '../../src/design-system';
+import { useTheme, toast } from '../../src/design-system';
 import { FONTS } from '../../src/design-system/tokens/typography';
 import { SPACING, RADIUS, SHADOWS } from '../../src/design-system/tokens/spacing';
 
 export default function BibleTabScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const queryClient = useQueryClient();
   const { colors, isDark } = useTheme();
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [selectedChapter, setSelectedChapter] = useState<number | null>(null);
   const [isTranslationPickerOpen, setIsTranslationPickerOpen] = useState(false);
 
-  const { selectedTranslation } = useTranslationStore();
+  const { selectedTranslation, setTranslation } = useTranslationStore();
+  const {
+    isDownloaded,
+    activeDownloads,
+    download,
+    initDownloads,
+  } = useDownloadStore();
+
+  useEffect(() => {
+    initDownloads();
+  }, [initDownloads]);
 
   const { data: verses, isLoading: versesLoading } = useChapterVerses(
     selectedBook?.id || 0,
     selectedChapter || 0,
     selectedTranslation.id
   );
+
+  const isCurrentVersionDownloaded = isDownloaded(selectedTranslation.id);
+  const downloadState = activeDownloads[selectedTranslation.id.toLowerCase()];
+  const isDownloadingCurrent = downloadState?.isDownloading;
+  const downloadProgress = downloadState?.progress || 0;
 
   const { setRhema } = useDraftStore();
 
@@ -50,6 +68,20 @@ export default function BibleTabScreen() {
       setSelectedChapter(null);
     } else if (selectedBook !== null) {
       setSelectedBook(null);
+    }
+  };
+
+  const handleDownloadActiveTranslation = async () => {
+    try {
+      toast.info(`Downloading ${selectedTranslation.code}...`, 'Saving full Bible translation locally.');
+      await download(selectedTranslation);
+      await queryClient.invalidateQueries({ queryKey: ['bible', 'chapter'] });
+      toast.success(
+        'Download Complete',
+        `${selectedTranslation.name} is now offline ready!`
+      );
+    } catch (err: any) {
+      toast.error('Download Failed', err?.message || 'Failed to download Bible version.');
     }
   };
 
@@ -127,6 +159,60 @@ export default function BibleTabScreen() {
           <Text style={[styles.loadingText, { color: colors.inkSecondary }]}>
             Loading {selectedTranslation.name}...
           </Text>
+        </View>
+      ) : !isCurrentVersionDownloaded && (!verses || verses.length === 0) ? (
+        <View style={styles.notDownloadedContainer}>
+          <View style={[styles.notDownloadedCard, { backgroundColor: colors.cardBg, borderColor: colors.paperLine }]}>
+            <View style={[styles.cloudIconCircle, { backgroundColor: colors.brandGreenLight }]}>
+              <Ionicons name="cloud-download-outline" size={32} color={colors.brandGreen} />
+            </View>
+
+            <Text style={[styles.notDownloadedTitle, { color: colors.inkPrimary }]}>
+              {selectedTranslation.name}
+            </Text>
+            <Text style={[styles.notDownloadedSubtitle, { color: colors.inkSecondary }]}>
+              Download this complete Bible version once ({selectedTranslation.approximateSizeMB || '3.8 MB'}) to read and meditate on Scripture anywhere 100% offline.
+            </Text>
+
+            {isDownloadingCurrent ? (
+              <View style={styles.downloadingBlock}>
+                <View style={styles.downloadProgressBarTrack}>
+                  <View
+                    style={[
+                      styles.downloadProgressBarFill,
+                      { width: `${downloadProgress}%`, backgroundColor: colors.brandGreen },
+                    ]}
+                  />
+                </View>
+                <Text style={[styles.downloadProgressLabel, { color: colors.brandGreen }]}>
+                  {downloadState?.statusText || `Downloading ${downloadProgress}%...`}
+                </Text>
+              </View>
+            ) : (
+              <Pressable
+                onPress={handleDownloadActiveTranslation}
+                style={[styles.downloadActionButton, { backgroundColor: colors.brandGreen }]}
+              >
+                <Ionicons name="arrow-down-circle" size={18} color="#FFFFFF" />
+                <Text style={styles.downloadActionButtonText}>
+                  Download {selectedTranslation.code} ({selectedTranslation.approximateSizeMB || '3.8 MB'})
+                </Text>
+              </Pressable>
+            )}
+
+            <View style={styles.switchRow}>
+              <Pressable
+                onPress={() => setTranslation('kjv')}
+                style={styles.switchButton}
+                hitSlop={8}
+              >
+                <Ionicons name="book-outline" size={14} color={colors.brandGreen} />
+                <Text style={[styles.switchButtonText, { color: colors.brandGreen }]}>
+                  Switch to KJV (Offline Bundled)
+                </Text>
+              </Pressable>
+            </View>
+          </View>
         </View>
       ) : (
         <VerseList
@@ -259,5 +345,96 @@ const styles = StyleSheet.create({
   loadingText: {
     fontFamily: FONTS.body,
     fontSize: 14,
+  },
+  notDownloadedContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: SPACING.base,
+  },
+  notDownloadedCard: {
+    width: '100%',
+    maxWidth: 380,
+    borderRadius: 24,
+    borderWidth: 1,
+    padding: SPACING.xl,
+    alignItems: 'center',
+    ...SHADOWS.card,
+  },
+  cloudIconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: SPACING.md,
+  },
+  notDownloadedTitle: {
+    fontFamily: FONTS.sectionHeader,
+    fontSize: 20,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: 6,
+  },
+  notDownloadedSubtitle: {
+    fontFamily: FONTS.body,
+    fontSize: 13,
+    lineHeight: 19,
+    textAlign: 'center',
+    marginBottom: SPACING.lg,
+  },
+  downloadingBlock: {
+    width: '100%',
+    gap: 8,
+    alignItems: 'center',
+    marginBottom: SPACING.md,
+  },
+  downloadProgressBarTrack: {
+    width: '100%',
+    height: 6,
+    backgroundColor: 'rgba(0, 0, 0, 0.08)',
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  downloadProgressBarFill: {
+    height: '100%',
+    borderRadius: 3,
+  },
+  downloadProgressLabel: {
+    fontFamily: FONTS.bodyBold,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  downloadActionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    width: '100%',
+    paddingVertical: 12,
+    borderRadius: RADIUS.pill,
+    marginBottom: SPACING.sm,
+    ...SHADOWS.subtle,
+  },
+  downloadActionButtonText: {
+    fontFamily: FONTS.bodyBold,
+    fontSize: 14,
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+  switchRow: {
+    marginTop: SPACING.xs,
+  },
+  switchButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+  },
+  switchButtonText: {
+    fontFamily: FONTS.bodyBold,
+    fontSize: 12,
+    fontWeight: '700',
   },
 });

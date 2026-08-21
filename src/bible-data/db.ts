@@ -168,7 +168,8 @@ async function initDevotionalTables(db: SQLite.SQLiteDatabase) {
       application TEXT NOT NULL DEFAULT '',
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL,
-      is_draft INTEGER NOT NULL DEFAULT 1
+      is_draft INTEGER NOT NULL DEFAULT 1,
+      is_bookmarked INTEGER NOT NULL DEFAULT 0
     );
   `);
 
@@ -207,6 +208,13 @@ async function initDevotionalTables(db: SQLite.SQLiteDatabase) {
     // Column already exists, ignore
   }
 
+  // Migration: add is_bookmarked column for existing databases
+  try {
+    await db.execAsync(`ALTER TABLE devotionals ADD COLUMN is_bookmarked INTEGER NOT NULL DEFAULT 0;`);
+  } catch (_) {
+    // Column already exists, ignore
+  }
+
   await db.execAsync(`
     CREATE TABLE IF NOT EXISTS verse_highlights (
       id TEXT PRIMARY KEY,
@@ -217,6 +225,62 @@ async function initDevotionalTables(db: SQLite.SQLiteDatabase) {
   `);
   await db.execAsync(`CREATE INDEX IF NOT EXISTS idx_highlights_verse ON verse_highlights(verse_id);`);
 
+  // Migration: Automatically upgrade any legacy KJV row IDs (< 1000000) to universal canonical verse IDs
+  try {
+    const legacyHighlights = await db.getAllAsync<{
+      id: string;
+      verse_id: number;
+      color: string;
+      created_at: string;
+    }>(`SELECT id, verse_id, color, created_at FROM verse_highlights WHERE verse_id < 1000000;`);
+
+    if (legacyHighlights && legacyHighlights.length > 0) {
+      const bibleDb = await getBibleDatabase();
+      for (const h of legacyHighlights) {
+        const kjvRow = await bibleDb.getFirstAsync<{
+          book_id: number;
+          chapter: number;
+          verse: number;
+        }>(`SELECT book_id, chapter, verse FROM KJV_verses WHERE id = ?;`, [h.verse_id]);
+
+        if (kjvRow) {
+          const canonicalId = (kjvRow.book_id * 1000000) + (kjvRow.chapter * 1000) + kjvRow.verse;
+          await db.runAsync(`DELETE FROM verse_highlights WHERE verse_id = ? AND id != ?;`, [canonicalId, h.id]);
+          await db.runAsync(`UPDATE verse_highlights SET verse_id = ? WHERE id = ?;`, [canonicalId, h.id]);
+        }
+      }
+    }
+  } catch (migErr) {
+    // Non-critical migration failure caught safely
+    console.warn('Verse highlights canonical migration note:', migErr);
+  }
+
+  await db.execAsync(`
+    CREATE TABLE IF NOT EXISTS downloaded_translations (
+      id TEXT PRIMARY KEY,
+      code TEXT NOT NULL,
+      name TEXT NOT NULL,
+      downloaded_at TEXT NOT NULL,
+      verse_count INTEGER NOT NULL,
+      size_bytes INTEGER NOT NULL
+    );
+  `);
+
+  await db.execAsync(`
+    CREATE TABLE IF NOT EXISTS downloaded_verses (
+      id TEXT PRIMARY KEY,
+      translation_id TEXT NOT NULL,
+      book_id INTEGER NOT NULL,
+      book_name TEXT NOT NULL,
+      chapter INTEGER NOT NULL,
+      verse INTEGER NOT NULL,
+      text TEXT NOT NULL
+    );
+  `);
+  await db.execAsync(`CREATE INDEX IF NOT EXISTS idx_downloaded_verses_lookup ON downloaded_verses(translation_id, book_id, chapter);`);
+  await db.execAsync(`CREATE INDEX IF NOT EXISTS idx_downloaded_verses_search ON downloaded_verses(translation_id, text);`);
+
+  // Legacy cached_verses table for backward-compatible fallback
   await db.execAsync(`
     CREATE TABLE IF NOT EXISTS cached_verses (
       id TEXT PRIMARY KEY,

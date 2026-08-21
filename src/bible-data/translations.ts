@@ -12,6 +12,7 @@ export interface BibleTranslation {
   description: string;
   isBuiltInOffline: boolean;
   apiIdentifier?: string;
+  approximateSizeMB?: string;
 }
 
 export const BIBLE_TRANSLATIONS: BibleTranslation[] = [
@@ -27,6 +28,7 @@ export const BIBLE_TRANSLATIONS: BibleTranslation[] = [
       "Clear, warm, dynamic thought-for-thought English translation loved for devotion and clarity.",
     isBuiltInOffline: false,
     apiIdentifier: "NLT",
+    approximateSizeMB: "3.8 MB",
   },
   {
     id: "kjv",
@@ -36,9 +38,10 @@ export const BIBLE_TRANSLATIONS: BibleTranslation[] = [
     language: "English",
     year: 1611,
     description:
-      "The monumental, poetic classic of the English language. Bundled offline.",
+      "The monumental, poetic classic of the English language. Permanently bundled offline.",
     isBuiltInOffline: true,
-    apiIdentifier: "kjv",
+    apiIdentifier: "KJV",
+    approximateSizeMB: "Bundled",
   },
   {
     id: "niv",
@@ -46,11 +49,12 @@ export const BIBLE_TRANSLATIONS: BibleTranslation[] = [
     name: "New International Version",
     category: "Popular English",
     language: "English",
-    year: 1978,
+    year: 2011,
     description:
       "The world's most popular modern English Bible balancing readability and accuracy.",
     isBuiltInOffline: false,
-    apiIdentifier: "NIV",
+    apiIdentifier: "NIV2011",
+    approximateSizeMB: "3.8 MB",
   },
   {
     id: "esv",
@@ -63,6 +67,7 @@ export const BIBLE_TRANSLATIONS: BibleTranslation[] = [
       "Essentially literal translation emphasizing word-for-word accuracy and literary beauty.",
     isBuiltInOffline: false,
     apiIdentifier: "ESV",
+    approximateSizeMB: "3.8 MB",
   },
   {
     id: "nkjv",
@@ -75,6 +80,72 @@ export const BIBLE_TRANSLATIONS: BibleTranslation[] = [
       "Modern update of the classic KJV preserving traditional reverence with contemporary English.",
     isBuiltInOffline: false,
     apiIdentifier: "NKJV",
+    approximateSizeMB: "3.8 MB",
+  },
+  {
+    id: "bsb",
+    code: "BSB",
+    name: "Berean Standard Bible",
+    category: "Popular English",
+    language: "English",
+    year: 2016,
+    description:
+      "Modern, beautifully transparent translation based on the best Greek and Hebrew sources.",
+    isBuiltInOffline: false,
+    apiIdentifier: "BSB",
+    approximateSizeMB: "3.6 MB",
+  },
+  {
+    id: "csb",
+    code: "CSB",
+    name: "Christian Standard Bible",
+    category: "Popular English",
+    language: "English",
+    year: 2017,
+    description:
+      "Optimal blend of accuracy and readability, faithful to original biblical manuscripts.",
+    isBuiltInOffline: false,
+    apiIdentifier: "CSB17",
+    approximateSizeMB: "3.8 MB",
+  },
+  {
+    id: "amp",
+    code: "AMP",
+    name: "Amplified Bible",
+    category: "Popular English",
+    language: "English",
+    year: 2015,
+    description:
+      "Uses synonyms and explanations to reveal subtle shades of meaning in the text.",
+    isBuiltInOffline: false,
+    apiIdentifier: "AMP",
+    approximateSizeMB: "4.0 MB",
+  },
+  {
+    id: "msg",
+    code: "MSG",
+    name: "The Message",
+    category: "Popular English",
+    language: "English",
+    year: 2002,
+    description:
+      "A contemporary paraphrase that presents the gospel in vivid, expressive English.",
+    isBuiltInOffline: false,
+    apiIdentifier: "MSG",
+    approximateSizeMB: "3.7 MB",
+  },
+  {
+    id: "net",
+    code: "NET",
+    name: "New English Translation",
+    category: "Popular English",
+    language: "English",
+    year: 2007,
+    description:
+      "Modern English translation with high fidelity to original scholarship.",
+    isBuiltInOffline: false,
+    apiIdentifier: "NET",
+    approximateSizeMB: "3.9 MB",
   },
   {
     id: "web",
@@ -87,29 +158,7 @@ export const BIBLE_TRANSLATIONS: BibleTranslation[] = [
       "Modern, highly readable, and accurate English translation in the public domain.",
     isBuiltInOffline: false,
     apiIdentifier: "WEB",
-  },
-  {
-    id: "bbe",
-    code: "BBE",
-    name: "Bible in Basic English",
-    category: "Popular English",
-    language: "English",
-    year: 1965,
-    description:
-      "Uses a simplified 1,000-word vocabulary for clear and accessible understanding.",
-    isBuiltInOffline: false,
-    apiIdentifier: "BBE",
-  },
-  {
-    id: "oeb-us",
-    code: "OEB",
-    name: "Open English Bible (US)",
-    category: "Popular English",
-    language: "English",
-    year: 2010,
-    description: "Contemporary open-source modern English translation.",
-    isBuiltInOffline: false,
-    apiIdentifier: "oeb-us",
+    approximateSizeMB: "3.8 MB",
   },
 
   // Literal & Study
@@ -119,11 +168,12 @@ export const BIBLE_TRANSLATIONS: BibleTranslation[] = [
     name: "New American Standard Bible",
     category: "Literal & Study",
     language: "English",
-    year: 1971,
+    year: 1995,
     description:
       "Renowned worldwide as the gold standard of literal word-for-word English translations.",
     isBuiltInOffline: false,
     apiIdentifier: "NASB",
+    approximateSizeMB: "3.8 MB",
   },
   {
     id: "asv",
@@ -136,6 +186,7 @@ export const BIBLE_TRANSLATIONS: BibleTranslation[] = [
       "Renowned for strict literal precision, scholarship, and biblical study accuracy.",
     isBuiltInOffline: false,
     apiIdentifier: "ASV",
+    approximateSizeMB: "3.7 MB",
   },
   {
     id: "ylt",
@@ -148,31 +199,21 @@ export const BIBLE_TRANSLATIONS: BibleTranslation[] = [
       "Strict, word-for-word translation preserving original Hebrew and Greek tenses.",
     isBuiltInOffline: false,
     apiIdentifier: "YLT",
-  },
-  {
-    id: "darby",
-    code: "DARBY",
-    name: "Darby Bible",
-    category: "Literal & Study",
-    language: "English",
-    year: 1890,
-    description:
-      "Close literal translation by J.N. Darby utilizing early Hebrew and Greek texts.",
-    isBuiltInOffline: false,
-    apiIdentifier: "DARBY",
+    approximateSizeMB: "3.7 MB",
   },
 
   // Historical & Classic
   {
     id: "dra",
     code: "DRA",
-    name: "Douay-Rheims 1899",
+    name: "Douay-Rheims Bible",
     category: "Historical & Classic",
     language: "English",
     year: 1899,
     description: "Traditional Catholic translation from the Latin Vulgate.",
     isBuiltInOffline: false,
-    apiIdentifier: "DRA",
+    apiIdentifier: "DRB",
+    approximateSizeMB: "3.8 MB",
   },
   {
     id: "clementine",
@@ -185,9 +226,22 @@ export const BIBLE_TRANSLATIONS: BibleTranslation[] = [
       "Historical Latin scripture promulgated by the Council of Trent.",
     isBuiltInOffline: false,
     apiIdentifier: "VULG",
+    approximateSizeMB: "3.6 MB",
   },
 
   // International
+  {
+    id: "rv1960",
+    code: "RVR60",
+    name: "Reina-Valera 1960",
+    category: "International",
+    language: "Spanish",
+    year: 1960,
+    description: "The most widely used and loved Spanish Bible translation worldwide.",
+    isBuiltInOffline: false,
+    apiIdentifier: "RV1960",
+    approximateSizeMB: "3.7 MB",
+  },
   {
     id: "cuv",
     code: "CUV",
@@ -198,40 +252,32 @@ export const BIBLE_TRANSLATIONS: BibleTranslation[] = [
     description: "The standard and most beloved Chinese Bible translation.",
     isBuiltInOffline: false,
     apiIdentifier: "CUV",
+    approximateSizeMB: "3.5 MB",
   },
   {
     id: "almeida",
-    code: "JFA",
-    name: "João Ferreira de Almeida",
+    code: "ARA",
+    name: "Almeida Revista e Atualizada",
     category: "International",
     language: "Portuguese",
-    year: 1819,
+    year: 1993,
     description:
       "Classic Portuguese translation widely used across Brazil and Portugal.",
     isBuiltInOffline: false,
-    apiIdentifier: "JFA",
+    apiIdentifier: "ARA",
+    approximateSizeMB: "3.6 MB",
   },
   {
     id: "rccv",
-    code: "RCCV",
+    code: "VDCL",
     name: "Romanian Cornilescu",
     category: "International",
     language: "Romanian",
-    year: 1924,
-    description: "The standard modern Romanian Protestant Bible.",
+    year: 1931,
+    description: "The standard modern Romanian Protestant Bible translation.",
     isBuiltInOffline: false,
-    apiIdentifier: "RCCV",
-  },
-  {
-    id: "bkr",
-    code: "BKR",
-    name: "Bible kralická",
-    category: "International",
-    language: "Czech",
-    year: 1613,
-    description: "Historical Czech Protestant Bible translation.",
-    isBuiltInOffline: false,
-    apiIdentifier: "BKR",
+    apiIdentifier: "VDCL",
+    approximateSizeMB: "3.6 MB",
   },
 ];
 

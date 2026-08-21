@@ -22,6 +22,7 @@ export interface EntryTimelineProps {
   onSelectEntry: (id: string) => void;
   onShareEntry: (id: string) => void;
   onStartNew: () => void;
+  hideTopBar?: boolean;
 }
 
 export function EntryTimeline({
@@ -29,13 +30,20 @@ export function EntryTimeline({
   onSelectEntry,
   onShareEntry,
   onStartNew,
+  hideTopBar = true,
 }: EntryTimelineProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
   const [searchQuery, setSearchQuery] = useState('');
+  const [filterMode, setFilterMode] = useState<'all' | 'bookmarked'>('all');
+
+  const bookmarkedCount = entries.filter((e) => e.isBookmarked).length;
 
   const filteredEntries = entries.filter((e) => {
+    if (filterMode === 'bookmarked' && !e.isBookmarked) {
+      return false;
+    }
     if (!searchQuery.trim()) return true;
     const q = searchQuery.toLowerCase();
     return (
@@ -78,13 +86,14 @@ export function EntryTimeline({
                 <Text style={[styles.statLabel, { color: colors.inkMuted }]}>Entries</Text>
               </View>
               <View style={[styles.statDivider, { backgroundColor: colors.paperLine }]} />
-              <View style={styles.statItem}>
-                <Ionicons name="flame" size={14} color="#FF7043" />
-                <Text style={[styles.statNumber, { color: colors.inkPrimary }]}>
-                  {Math.max(1, entries.length)}
-                </Text>
-                <Text style={[styles.statLabel, { color: colors.inkMuted }]}>Streak</Text>
-              </View>
+              <Pressable
+                onPress={() => setFilterMode(filterMode === 'bookmarked' ? 'all' : 'bookmarked')}
+                style={styles.statItem}
+              >
+                <Ionicons name="bookmark" size={14} color={colors.tapeRhema} />
+                <Text style={[styles.statNumber, { color: colors.tapeRhema }]}>{bookmarkedCount}</Text>
+                <Text style={[styles.statLabel, { color: colors.inkMuted }]}>Bookmarked</Text>
+              </Pressable>
             </View>
           </View>
 
@@ -119,10 +128,63 @@ export function EntryTimeline({
         </View>
       </View>
 
+      {/* Filter Tabs: All vs Bookmarked */}
+      <View style={styles.filterTabsRow}>
+        <Pressable
+          onPress={() => setFilterMode('all')}
+          style={[
+            styles.filterTabBtn,
+            filterMode === 'all'
+              ? { backgroundColor: colors.brandGreen, borderColor: colors.brandGreen }
+              : { backgroundColor: colors.cardBg, borderColor: colors.paperLine },
+          ]}
+        >
+          <Ionicons
+            name="reader"
+            size={13}
+            color={filterMode === 'all' ? '#FFFFFF' : colors.inkSecondary}
+          />
+          <Text
+            style={[
+              styles.filterTabText,
+              { color: filterMode === 'all' ? '#FFFFFF' : colors.inkSecondary },
+            ]}
+          >
+            All Entries ({entries.length})
+          </Text>
+        </Pressable>
+
+        <Pressable
+          onPress={() => setFilterMode('bookmarked')}
+          style={[
+            styles.filterTabBtn,
+            filterMode === 'bookmarked'
+              ? { backgroundColor: colors.tapeRhema, borderColor: colors.tapeRhema }
+              : { backgroundColor: colors.cardBg, borderColor: colors.paperLine },
+          ]}
+        >
+          <Ionicons
+            name="bookmark"
+            size={13}
+            color={filterMode === 'bookmarked' ? '#FFFFFF' : colors.tapeRhema}
+          />
+          <Text
+            style={[
+              styles.filterTabText,
+              { color: filterMode === 'bookmarked' ? '#FFFFFF' : colors.inkSecondary },
+            ]}
+          >
+            Bookmarked ({bookmarkedCount})
+          </Text>
+        </Pressable>
+      </View>
+
       {/* Section Label */}
       {filteredEntries.length > 0 ? (
         <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: colors.inkPrimary }]}>Recent Entries</Text>
+          <Text style={[styles.sectionTitle, { color: colors.inkPrimary }]}>
+            {filterMode === 'bookmarked' ? 'Bookmarked Entries' : 'Recent Entries'}
+          </Text>
           <View style={[styles.sectionCountBadge, { backgroundColor: colors.brandGreenLight }]}>
             <Text style={[styles.sectionCountText, { color: colors.brandGreen }]}>{filteredEntries.length}</Text>
           </View>
@@ -133,30 +195,32 @@ export function EntryTimeline({
 
   return (
     <View style={[styles.container, { backgroundColor: colors.paperBg }]}>
-      {/* Top App Bar */}
-      <View style={[styles.appBar, { paddingTop: Math.max(insets.top, 16) + 4, backgroundColor: colors.paperBg }]}>
-        <View style={styles.brandGroup}>
-          <View style={[styles.brandIconCircle, { backgroundColor: colors.brandGreenLight }]}>
-            <Ionicons name="journal" size={13} color={colors.brandGreen} />
-          </View>
-          <Text style={[styles.brandTitle, { color: colors.inkPrimary }]}>JOURNAL</Text>
-        </View>
-
-        <View style={styles.topRightActions}>
-          <View style={[styles.appBarDateBadge, { backgroundColor: colors.cardBg, borderColor: colors.paperLine }]}>
-            <Text style={[styles.appBarDateText, { color: colors.inkSecondary }]}>{formattedDate}</Text>
+      {/* Top App Bar (only if not hidden) */}
+      {!hideTopBar ? (
+        <View style={[styles.appBar, { paddingTop: Math.max(insets.top, 16) + 4, backgroundColor: colors.paperBg }]}>
+          <View style={styles.brandGroup}>
+            <View style={[styles.brandIconCircle, { backgroundColor: colors.brandGreenLight }]}>
+              <Ionicons name="journal" size={13} color={colors.brandGreen} />
+            </View>
+            <Text style={[styles.brandTitle, { color: colors.inkPrimary }]}>JOURNAL</Text>
           </View>
 
-          <Pressable
-            onPress={() => router.push('/settings')}
-            style={[styles.settingsIconButton, { backgroundColor: colors.cardBg, borderColor: colors.paperLine }]}
-            hitSlop={8}
-            accessibilityLabel="Settings"
-          >
-            <Ionicons name="settings-outline" size={18} color={colors.inkSecondary} />
-          </Pressable>
+          <View style={styles.topRightActions}>
+            <View style={[styles.appBarDateBadge, { backgroundColor: colors.cardBg, borderColor: colors.paperLine }]}>
+              <Text style={[styles.appBarDateText, { color: colors.inkSecondary }]}>{formattedDate}</Text>
+            </View>
+
+            <Pressable
+              onPress={() => router.push('/settings')}
+              style={[styles.settingsIconButton, { backgroundColor: colors.cardBg, borderColor: colors.paperLine }]}
+              hitSlop={8}
+              accessibilityLabel="Settings"
+            >
+              <Ionicons name="settings-outline" size={18} color={colors.inkSecondary} />
+            </Pressable>
+          </View>
         </View>
-      </View>
+      ) : null}
 
       {/* Main List */}
       <FlatList
@@ -381,6 +445,28 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.body,
     fontSize: 13,
     padding: 0,
+  },
+
+  /* ── Filter Tabs ── */
+  filterTabsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: SPACING.sm,
+  },
+  filterTabBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: RADIUS.pill,
+    borderWidth: 1,
+    ...SHADOWS.subtle,
+  },
+  filterTabText: {
+    fontFamily: FONTS.bodyBold,
+    fontSize: 11,
+    fontWeight: '700',
   },
 
   /* ── Section Header ── */

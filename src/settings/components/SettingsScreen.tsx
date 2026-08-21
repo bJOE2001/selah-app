@@ -6,9 +6,9 @@ import {
   ScrollView,
   Pressable,
   Switch,
-  Alert,
   Image,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -18,11 +18,15 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { usePrivacyAuthStore } from '../../privacy-lock/store';
 import { useBiometricAuth } from '../../privacy-lock/hooks';
 import { useTranslationStore } from '../../bible-data/translationStore';
+import { useDownloadStore } from '../../bible-data/downloadStore';
 import { TranslationPickerModal } from '../../bible-reader/components/TranslationPickerModal';
+import { EditJournalCoverModal } from '../../journal-history';
+import { DevotionalTimePickerModal } from './DevotionalTimePickerModal';
 import { getDatabase } from '../../bible-data/db';
 import { useRecentDevotionals } from '../../devotional-core/hooks';
 import { useSettingsStore, ScriptureFontSize, ThemeMode } from '../store';
-import { useTheme } from '../../design-system';
+import { useTheme, promptModal, toast } from '../../design-system';
+import { syncMorningReminder, syncEveningReminder } from '../../notifications';
 import { FONTS } from '../../design-system/tokens/typography';
 import { SPACING, RADIUS, SHADOWS } from '../../design-system/tokens/spacing';
 
@@ -35,9 +39,17 @@ export function SettingsScreen() {
   const { isLockEnabled, setLockEnabled, lock } = usePrivacyAuthStore();
   const { authenticate } = useBiometricAuth();
 
-  // Translations
-  const { selectedTranslation } = useTranslationStore();
+  // Translations & Downloads
+  const { selectedTranslation, setTranslation } = useTranslationStore();
+  const {
+    downloadedTranslations,
+    initDownloads,
+    deleteDownload,
+    getTotalStorageFormatted,
+  } = useDownloadStore();
   const [isTranslationPickerOpen, setIsTranslationPickerOpen] = useState(false);
+  const [isEditCoverOpen, setIsEditCoverOpen] = useState(false);
+  const [timePickerType, setTimePickerType] = useState<'morning' | 'evening' | null>(null);
 
   // Settings
   const {
@@ -53,30 +65,17 @@ export function SettingsScreen() {
     setEveningReminder,
     paperLined,
     setPaperLined,
+    journalCoverTitle,
   } = useSettingsStore();
 
-  // Devotionals & Cache stats
+  // Devotionals stats
   const { data: entries } = useRecentDevotionals(200);
-  const [cachedVersesCount, setCachedVersesCount] = useState<number>(0);
   const [isExporting, setIsExporting] = useState(false);
-  const [isClearingCache, setIsClearingCache] = useState(false);
-
-  // Load cached verse count
-  const loadCacheStats = async () => {
-    try {
-      const db = await getDatabase();
-      const result = await db.getFirstAsync<{ count: number }>(
-        'SELECT COUNT(*) as count FROM cached_verses;'
-      );
-      setCachedVersesCount(result?.count || 0);
-    } catch {
-      setCachedVersesCount(0);
-    }
-  };
+  const [isClearingDownloads, setIsClearingDownloads] = useState(false);
 
   useEffect(() => {
-    loadCacheStats();
-  }, []);
+    initDownloads();
+  }, [initDownloads]);
 
   // Handle Lock toggle
   const handleToggleLock = async (value: boolean) => {
@@ -84,14 +83,21 @@ export function SettingsScreen() {
       const success = await authenticate();
       if (success) {
         setLockEnabled(true);
-        Alert.alert('Privacy Lock Enabled', 'Your journal is now protected with biometrics / device passcode.');
+        toast.success(
+          'Privacy Lock Enabled',
+          'Your devotional journal is now protected with biometrics.'
+        );
       } else {
-        Alert.alert('Authentication Required', 'Could not verify biometrics to enable lock.');
+        toast.error(
+          'Authentication Required',
+          'Could not verify biometrics to enable app lock.'
+        );
       }
     } else {
       const success = await authenticate();
       if (success) {
         setLockEnabled(false);
+        toast.info('Privacy Lock Disabled', 'App lock has been turned off.');
       }
     }
   };
@@ -99,7 +105,7 @@ export function SettingsScreen() {
   // Handle Export Journal
   const handleExportJournal = async () => {
     if (!entries || entries.length === 0) {
-      Alert.alert('No Entries Found', 'You have not written any devotional entries yet.');
+      promptModal.info('No Entries Found', 'You have not written any devotional entries yet.');
       return;
     }
 
@@ -131,57 +137,59 @@ export function SettingsScreen() {
           mimeType: 'application/json',
           dialogTitle: 'Export Devotional Journal Backup',
         });
+        toast.success('Export Ready', 'Your devotional backup has been generated.');
       } else {
-        Alert.alert('Export Complete', `Saved to ${fileUri}`);
+        toast.success('Export Complete', `Saved to ${fileUri}`);
       }
     } catch (error) {
       console.error('Export failed:', error);
-      Alert.alert('Export Failed', 'Could not generate devotional backup file.');
+      toast.error('Export Failed', 'Could not generate devotional backup file.');
     } finally {
       setIsExporting(false);
     }
   };
 
-  // Handle Clear Cache
-  const handleClearCache = () => {
-    Alert.alert(
-      'Clear Offline Bible Cache?',
-      'This will clear saved offline chapters from online translations (e.g. NLT, NIV, ESV). Public domain Bibles (KJV, ASV, WEB, BBE) will remain permanently accessible.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Clear Cache',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              setIsClearingCache(true);
-              const db = await getDatabase();
-              await db.runAsync('DELETE FROM cached_verses;');
-              await loadCacheStats();
-              Alert.alert('Cache Cleared', 'Offline verse cache has been emptied.');
-            } catch (err) {
-              console.error('Failed to clear cache:', err);
-              Alert.alert('Error', 'Could not clear cache.');
-            } finally {
-              setIsClearingCache(false);
-            }
-          },
-        },
-      ]
-    );
+
+  // ── Daily Devotional Habit Reminders (Native Push Notifications) ──
+  const handleToggleMorningReminder = async (enabled: boolean) => {
+    setMorningReminder(enabled);
+    const success = await syncMorningReminder(enabled, morningReminderTime);
+    if (enabled) {
+      if (success) {
+        toast.success('Morning Devotion Scheduled', `Daily reminder set for ${morningReminderTime}.`);
+      } else {
+        toast.error('Permission Needed', 'Please enable notifications in system settings.');
+      }
+    } else {
+      toast.info('Reminder Turned Off', 'Morning devotion notification disabled.');
+    }
   };
 
-  // Cycle reminder times
-  const cycleMorningTime = () => {
-    const times = ['06:00 AM', '06:30 AM', '07:00 AM', '07:30 AM', '08:00 AM', '08:30 AM'];
-    const nextIdx = (times.indexOf(morningReminderTime) + 1) % times.length;
-    setMorningReminder(true, times[nextIdx]);
+  const handleToggleEveningReminder = async (enabled: boolean) => {
+    setEveningReminder(enabled);
+    const success = await syncEveningReminder(enabled, eveningReminderTime);
+    if (enabled) {
+      if (success) {
+        toast.success('Evening Reflection Scheduled', `Daily reminder set for ${eveningReminderTime}.`);
+      } else {
+        toast.error('Permission Needed', 'Please enable notifications in system settings.');
+      }
+    } else {
+      toast.info('Reminder Turned Off', 'Evening reflection notification disabled.');
+    }
   };
 
-  const cycleEveningTime = () => {
-    const times = ['08:00 PM', '08:30 PM', '09:00 PM', '09:30 PM', '10:00 PM', '10:30 PM'];
-    const nextIdx = (times.indexOf(eveningReminderTime) + 1) % times.length;
-    setEveningReminder(true, times[nextIdx]);
+  const handleSaveManualTime = async (newTime: string) => {
+    if (timePickerType === 'morning') {
+      setMorningReminder(true, newTime);
+      await syncMorningReminder(true, newTime);
+      toast.success('Morning Time Set', `Daily devotion reminder scheduled for ${newTime}.`);
+    } else if (timePickerType === 'evening') {
+      setEveningReminder(true, newTime);
+      await syncEveningReminder(true, newTime);
+      toast.success('Evening Time Set', `Daily reflection reminder scheduled for ${newTime}.`);
+    }
+    setTimePickerType(null);
   };
 
   return (
@@ -365,7 +373,7 @@ export function SettingsScreen() {
                 <Pressable
                   onPress={() => {
                     lock();
-                    Alert.alert('Journal Locked', 'App will require authentication.');
+                    toast.info('Journal Locked', 'App will require authentication.');
                   }}
                   style={styles.rowItem}
                 >
@@ -474,6 +482,30 @@ export function SettingsScreen() {
                 thumbColor="#FFFFFF"
               />
             </View>
+
+            <View style={[styles.divider, { backgroundColor: colors.paperLine }]} />
+
+            {/* Personalize Journal Cover */}
+            <Pressable
+              onPress={() => setIsEditCoverOpen(true)}
+              style={styles.rowItem}
+            >
+              <View style={styles.rowLeft}>
+                <View style={[styles.iconBox, { backgroundColor: isDark ? '#332918' : '#FFF8ED' }]}>
+                  <Ionicons name="book-outline" size={17} color={colors.brandGold} />
+                </View>
+                <View style={styles.rowTextCol}>
+                  <Text style={[styles.rowTitle, { color: colors.inkPrimary }]}>Journal Notebook Cover</Text>
+                  <Text style={[styles.rowSubtitle, { color: colors.inkSecondary }]} numberOfLines={1}>
+                    {journalCoverTitle}
+                  </Text>
+                </View>
+              </View>
+              <View style={[styles.pillBadge, { backgroundColor: colors.brandGreenLight, borderColor: colors.brandGreen + '40' }]}>
+                <Text style={[styles.pillBadgeText, { color: colors.brandGreen }]}>Edit</Text>
+                <Ionicons name="chevron-forward" size={14} color={colors.brandGreen} />
+              </View>
+            </Pressable>
           </View>
         </View>
 
@@ -498,18 +530,37 @@ export function SettingsScreen() {
               </View>
               <Switch
                 value={morningReminderEnabled}
-                onValueChange={(v) => setMorningReminder(v)}
+                onValueChange={(v) => handleToggleMorningReminder(v)}
                 trackColor={{ false: isDark ? '#3D362F' : '#E0D8CE', true: colors.brandGreen }}
                 thumbColor="#FFFFFF"
               />
             </View>
 
             {morningReminderEnabled ? (
-              <Pressable onPress={cycleMorningTime} style={[styles.timePickerRow, { backgroundColor: isDark ? '#1C1916' : '#FBF9F5', borderColor: colors.paperLine }]}>
-                <Text style={[styles.timePickerLabel, { color: colors.inkSecondary }]}>Notification Time (Tap to cycle):</Text>
-                <View style={[styles.timePill, { backgroundColor: colors.cardBg, borderColor: colors.paperLine }]}>
+              <Pressable
+                onPress={() => setTimePickerType('morning')}
+                style={[
+                  styles.timePickerRow,
+                  {
+                    backgroundColor: isDark ? '#1C1916' : '#FBF9F5',
+                    borderColor: colors.paperLine,
+                  },
+                ]}
+              >
+                <Text style={[styles.timePickerLabel, { color: colors.inkSecondary }]}>
+                  Notification Time (Tap to edit):
+                </Text>
+                <View
+                  style={[
+                    styles.timePill,
+                    { backgroundColor: colors.cardBg, borderColor: colors.paperLine },
+                  ]}
+                >
                   <Ionicons name="time-outline" size={13} color={colors.brandGreen} />
-                  <Text style={[styles.timePillText, { color: colors.inkPrimary }]}>{morningReminderTime}</Text>
+                  <Text style={[styles.timePillText, { color: colors.inkPrimary }]}>
+                    {morningReminderTime}
+                  </Text>
+                  <Ionicons name="pencil" size={11} color={colors.brandGreen} />
                 </View>
               </Pressable>
             ) : null}
@@ -529,18 +580,37 @@ export function SettingsScreen() {
               </View>
               <Switch
                 value={eveningReminderEnabled}
-                onValueChange={(v) => setEveningReminder(v)}
+                onValueChange={(v) => handleToggleEveningReminder(v)}
                 trackColor={{ false: isDark ? '#3D362F' : '#E0D8CE', true: colors.brandGreen }}
                 thumbColor="#FFFFFF"
               />
             </View>
 
             {eveningReminderEnabled ? (
-              <Pressable onPress={cycleEveningTime} style={[styles.timePickerRow, { backgroundColor: isDark ? '#1C1916' : '#FBF9F5', borderColor: colors.paperLine }]}>
-                <Text style={[styles.timePickerLabel, { color: colors.inkSecondary }]}>Notification Time (Tap to cycle):</Text>
-                <View style={[styles.timePill, { backgroundColor: colors.cardBg, borderColor: colors.paperLine }]}>
+              <Pressable
+                onPress={() => setTimePickerType('evening')}
+                style={[
+                  styles.timePickerRow,
+                  {
+                    backgroundColor: isDark ? '#1C1916' : '#FBF9F5',
+                    borderColor: colors.paperLine,
+                  },
+                ]}
+              >
+                <Text style={[styles.timePickerLabel, { color: colors.inkSecondary }]}>
+                  Notification Time (Tap to edit):
+                </Text>
+                <View
+                  style={[
+                    styles.timePill,
+                    { backgroundColor: colors.cardBg, borderColor: colors.paperLine },
+                  ]}
+                >
                   <Ionicons name="time-outline" size={13} color="#818CF8" />
-                  <Text style={[styles.timePillText, { color: colors.inkPrimary }]}>{eveningReminderTime}</Text>
+                  <Text style={[styles.timePillText, { color: colors.inkPrimary }]}>
+                    {eveningReminderTime}
+                  </Text>
+                  <Ionicons name="pencil" size={11} color="#818CF8" />
                 </View>
               </Pressable>
             ) : null}
@@ -563,10 +633,38 @@ export function SettingsScreen() {
               </View>
               <View style={[styles.statMiniDivider, { backgroundColor: colors.paperLine }]} />
               <View style={styles.statMiniCard}>
-                <Text style={[styles.statMiniNumber, { color: colors.inkPrimary }]}>{cachedVersesCount}</Text>
-                <Text style={[styles.statMiniLabel, { color: colors.inkMuted }]}>Cached Verses</Text>
+                <Text style={[styles.statMiniNumber, { color: colors.inkPrimary }]}>
+                  {Object.keys(downloadedTranslations).length + 1}
+                </Text>
+                <Text style={[styles.statMiniLabel, { color: colors.inkMuted }]}>
+                  Offline Bibles ({getTotalStorageFormatted()})
+                </Text>
               </View>
             </View>
+
+            <View style={[styles.divider, { backgroundColor: colors.paperLine }]} />
+
+            {/* Manage Offline Bible Versions */}
+            <Pressable
+              onPress={() => setIsTranslationPickerOpen(true)}
+              style={styles.rowItem}
+            >
+              <View style={styles.rowLeft}>
+                <View style={[styles.iconBox, { backgroundColor: colors.brandGreenLight }]}>
+                  <Ionicons name="cloud-download-outline" size={17} color={colors.brandGreen} />
+                </View>
+                <View style={styles.rowTextCol}>
+                  <Text style={[styles.rowTitle, { color: colors.inkPrimary }]}>Offline Bible Versions</Text>
+                  <Text style={[styles.rowSubtitle, { color: colors.inkSecondary }]}>
+                    Download & manage versions for 100% offline use
+                  </Text>
+                </View>
+              </View>
+              <View style={[styles.pillBadge, { backgroundColor: colors.brandGreenLight, borderColor: colors.brandGreen + '40' }]}>
+                <Text style={[styles.pillBadgeText, { color: colors.brandGreen }]}>Manage</Text>
+                <Ionicons name="chevron-forward" size={14} color={colors.brandGreen} />
+              </View>
+            </Pressable>
 
             <View style={[styles.divider, { backgroundColor: colors.paperLine }]} />
 
@@ -577,11 +675,11 @@ export function SettingsScreen() {
               style={styles.rowItem}
             >
               <View style={styles.rowLeft}>
-                <View style={[styles.iconBox, { backgroundColor: colors.brandGreenLight }]}>
+                <View style={[styles.iconBox, { backgroundColor: isDark ? '#2A2520' : '#F5EFE6' }]}>
                   {isExporting ? (
                     <ActivityIndicator size="small" color={colors.brandGreen} />
                   ) : (
-                    <Ionicons name="download-outline" size={17} color={colors.brandGreen} />
+                    <Ionicons name="download-outline" size={17} color={colors.inkPrimary} />
                   )}
                 </View>
                 <View style={styles.rowTextCol}>
@@ -594,33 +692,60 @@ export function SettingsScreen() {
               <Ionicons name="chevron-forward" size={16} color={colors.inkMuted} />
             </Pressable>
 
-            <View style={[styles.divider, { backgroundColor: colors.paperLine }]} />
+            {Object.keys(downloadedTranslations).length > 0 ? (
+              <>
+                <View style={[styles.divider, { backgroundColor: colors.paperLine }]} />
 
-            {/* Clear Offline Cache */}
-            <Pressable
-              onPress={handleClearCache}
-              disabled={isClearingCache}
-              style={styles.rowItem}
-            >
-              <View style={styles.rowLeft}>
-                <View style={[styles.iconBox, { backgroundColor: isDark ? '#33201D' : '#FFF0ED' }]}>
-                  {isClearingCache ? (
-                    <ActivityIndicator size="small" color={colors.tapeRhema} />
-                  ) : (
-                    <Ionicons name="trash-outline" size={17} color={colors.tapeRhema} />
-                  )}
-                </View>
-                <View style={styles.rowTextCol}>
-                  <Text style={[styles.rowTitle, { color: colors.tapeRhema }]}>
-                    Clear Offline Verse Cache
-                  </Text>
-                  <Text style={[styles.rowSubtitle, { color: colors.inkSecondary }]}>
-                    Free storage by clearing online translations
-                  </Text>
-                </View>
-              </View>
-              <Ionicons name="chevron-forward" size={16} color={colors.inkMuted} />
-            </Pressable>
+                {/* Delete Downloaded Translations */}
+                <Pressable
+                  onPress={() => {
+                    promptModal.confirm({
+                      title: 'Delete All Downloaded Translations?',
+                      message: `This will remove all downloaded translation files and free up ${getTotalStorageFormatted()} of storage. KJV will remain permanently available offline.`,
+                      confirmText: 'Delete Downloads',
+                      cancelText: 'Keep Versions',
+                      isDestructive: true,
+                      onConfirm: async () => {
+                        try {
+                          setIsClearingDownloads(true);
+                          const ids = Object.keys(downloadedTranslations);
+                          for (const id of ids) {
+                            await deleteDownload(id);
+                          }
+                          setTranslation('kjv');
+                          toast.success('Storage Cleared', 'Downloaded Bible versions have been removed.');
+                        } catch (err) {
+                          toast.error('Error', 'Failed to clear downloaded versions.');
+                        } finally {
+                          setIsClearingDownloads(false);
+                        }
+                      },
+                    });
+                  }}
+                  disabled={isClearingDownloads}
+                  style={styles.rowItem}
+                >
+                  <View style={styles.rowLeft}>
+                    <View style={[styles.iconBox, { backgroundColor: isDark ? '#33201D' : '#FFF0ED' }]}>
+                      {isClearingDownloads ? (
+                        <ActivityIndicator size="small" color={colors.tapeRhema} />
+                      ) : (
+                        <Ionicons name="trash-outline" size={17} color={colors.tapeRhema} />
+                      )}
+                    </View>
+                    <View style={styles.rowTextCol}>
+                      <Text style={[styles.rowTitle, { color: colors.tapeRhema }]}>
+                        Delete Downloaded Translations
+                      </Text>
+                      <Text style={[styles.rowSubtitle, { color: colors.inkSecondary }]}>
+                        Free {getTotalStorageFormatted()} (KJV stays bundled offline)
+                      </Text>
+                    </View>
+                  </View>
+                  <Ionicons name="chevron-forward" size={16} color={colors.inkMuted} />
+                </Pressable>
+              </>
+            ) : null}
           </View>
         </View>
 
@@ -704,6 +829,25 @@ export function SettingsScreen() {
       <TranslationPickerModal
         visible={isTranslationPickerOpen}
         onClose={() => setIsTranslationPickerOpen(false)}
+      />
+
+      {/* Edit Journal Cover Customization Modal */}
+      <EditJournalCoverModal
+        visible={isEditCoverOpen}
+        onClose={() => setIsEditCoverOpen(false)}
+      />
+
+      {/* Manual Devotional Habit Time Picker Modal */}
+      <DevotionalTimePickerModal
+        visible={timePickerType !== null}
+        type={timePickerType || 'morning'}
+        initialTime={
+          timePickerType === 'morning'
+            ? morningReminderTime
+            : eveningReminderTime
+        }
+        onClose={() => setTimePickerType(null)}
+        onSaveTime={handleSaveManualTime}
       />
     </View>
   );

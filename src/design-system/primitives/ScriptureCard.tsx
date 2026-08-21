@@ -16,10 +16,13 @@ export function ScriptureCard({
   reference,
   text,
   bookName,
-  translation = 'KJV',
+  translation,
   style,
 }: ScriptureCardProps) {
   const { colors } = useTheme();
+
+  // Check if the reference string already has a translation code like "(NLT)" or "(ASV)"
+  const alreadyHasTranslation = /\([A-Za-z0-9_-]+\)\s*$/.test(reference.trim());
 
   return (
     <View
@@ -43,7 +46,12 @@ export function ScriptureCard({
         <View style={[styles.divider, { backgroundColor: colors.rhemaCardBorder }]} />
         <Text style={[styles.referenceText, { color: colors.inkSecondary }]}>
           {reference}
-          <Text style={[styles.translationText, { color: colors.inkMuted }]}> ({translation})</Text>
+          {!alreadyHasTranslation && translation ? (
+            <Text style={[styles.translationText, { color: colors.inkMuted }]}>
+              {' '}
+              ({translation})
+            </Text>
+          ) : null}
         </Text>
       </View>
     </View>
