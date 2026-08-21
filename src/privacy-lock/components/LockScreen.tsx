@@ -30,7 +30,7 @@ export function LockScreen() {
           />
         </View>
 
-        <Text style={[styles.title, { color: colors.inkPrimary }]}>Shephema</Text>
+        <Text style={[styles.title, { color: colors.inkPrimary }]}>Shepema</Text>
         <Text style={[styles.subtitle, { color: colors.inkSecondary }]}>Guided by God's Word</Text>
 
         <View style={[styles.lockBadge, { backgroundColor: colors.chipBg, borderColor: colors.chipBorder }]}>

@@ -66,7 +66,7 @@ export function DailyDashboard({ onShareEntry, onShareQuote }: DailyDashboardPro
           <View style={[styles.brandIconCircle, { backgroundColor: colors.brandGreenLight }]}>
             <Ionicons name="book" size={13} color={colors.brandGreen} />
           </View>
-          <Text style={[styles.brandTitle, { color: colors.inkPrimary }]}>SHEPHEMA</Text>
+          <Text style={[styles.brandTitle, { color: colors.inkPrimary }]}>SHEPEMA</Text>
         </View>
 
         <View style={styles.topRightActions}>

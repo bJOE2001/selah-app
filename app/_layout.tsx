@@ -141,7 +141,7 @@ export default function RootLayout() {
     }
   }, [fontsLoaded, fontError, dbReady]);
 
-  // While fonts and database are preparing, display the dedicated Shephema opening screen
+  // While fonts and database are preparing, display the dedicated Shepema opening screen
   if ((!fontsLoaded && !fontError) || !dbReady) {
     return <AppOpeningScreen />;
   }

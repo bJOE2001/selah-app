@@ -117,7 +117,7 @@ export function SettingsScreen() {
       );
 
       const exportData = {
-        app: 'Shephema Devotional',
+        app: 'Shepema Devotional',
         version: '1.0.0',
         exportedAt: new Date().toISOString(),
         totalEntries: fullEntries.length,
@@ -225,7 +225,7 @@ export function SettingsScreen() {
             <View style={styles.heroTextCol}>
               <View style={[styles.appBadge, { backgroundColor: colors.brandGreenLight, borderColor: colors.brandGreen + '40' }]}>
                 <Ionicons name="sparkles" size={12} color={colors.brandGreen} />
-                <Text style={[styles.appBadgeText, { color: colors.brandGreen }]}>SHEPHEMA DEVOTIONAL</Text>
+                <Text style={[styles.appBadgeText, { color: colors.brandGreen }]}>SHEPEMA DEVOTIONAL</Text>
               </View>
               <Text style={[styles.heroHeadline, { color: colors.inkPrimary }]}>Preferences & Privacy</Text>
               <Text style={[styles.heroSubtitle, { color: colors.inkSecondary }]}>
@@ -749,11 +749,11 @@ export function SettingsScreen() {
           </View>
         </View>
 
-        {/* ═══════════ SECTION 6: ABOUT SHEPHEMA ═══════════ */}
+        {/* ═══════════ SECTION 6: ABOUT SHEPEMA ═══════════ */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Ionicons name="information-circle" size={16} color={colors.brandGreen} />
-            <Text style={[styles.sectionTitle, { color: colors.inkMuted }]}>ABOUT SHEPHEMA</Text>
+            <Text style={[styles.sectionTitle, { color: colors.inkMuted }]}>ABOUT SHEPEMA</Text>
           </View>
 
           <View style={[styles.card, { backgroundColor: colors.cardBg, borderColor: colors.paperLine }]}>
@@ -770,7 +770,7 @@ export function SettingsScreen() {
                   <Ionicons name="sparkles" size={10} color={colors.brandGreen} />
                   <Text style={[styles.aboutBuddyPillText, { color: colors.brandGreen }]}>Devotional Buddy</Text>
                 </View>
-                <Text style={[styles.aboutAppName, { color: colors.inkPrimary }]}>Shephema</Text>
+                <Text style={[styles.aboutAppName, { color: colors.inkPrimary }]}>Shepema</Text>
                 <Text style={[styles.aboutVersion, { color: colors.inkSecondary }]}>Guided by God's Word • v1.0.0</Text>
               </View>
             </View>
@@ -782,9 +782,9 @@ export function SettingsScreen() {
               </Text>
             </View>
 
-            {/* Origin & Meaning of Shephema */}
+            {/* Origin & Meaning of Shepema */}
             <Text style={[styles.aboutDescription, { color: colors.inkSecondary }]}>
-              <Text style={{ fontWeight: '700', color: colors.inkPrimary }}>Shephema</Text> (from <Text style={{ fontStyle: 'italic', fontWeight: '700', color: colors.inkPrimary }}>"Sheep"</Text> + <Text style={{ fontStyle: 'italic', fontWeight: '700', color: colors.inkPrimary }}>"Rhema"</Text> — God's living Word) is designed to be the warm, encouraging <Text style={{ fontWeight: '700', color: colors.inkPrimary }}>devotional buddy</Text> for every believer. Whether you are doing morning quiet time, reflecting on a verse during lunch, or unwinding at night with prayer, Shephema is right there with you.
+              <Text style={{ fontWeight: '700', color: colors.inkPrimary }}>Shepema</Text> (from <Text style={{ fontStyle: 'italic', fontWeight: '700', color: colors.inkPrimary }}>"Sheep"</Text> + <Text style={{ fontStyle: 'italic', fontWeight: '700', color: colors.inkPrimary }}>"Rhema"</Text> — God's living Word) is designed to be the warm, encouraging <Text style={{ fontWeight: '700', color: colors.inkPrimary }}>devotional buddy</Text> for every believer. Whether you are doing morning quiet time, reflecting on a verse during lunch, or unwinding at night with prayer, Shepema is right there with you.
             </Text>
 
             <Text style={[styles.aboutDescription, { color: colors.inkSecondary, marginTop: -4 }]}>

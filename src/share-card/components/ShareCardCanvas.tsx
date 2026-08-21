@@ -94,7 +94,7 @@ export const ShareCardCanvas = forwardRef<View, ShareCardCanvasProps>(
               />
               <View>
                 <Text style={[styles.appName, { color: palette.textPrimary }]}>
-                  SHEPHEMA
+                  SHEPEMA
                 </Text>
                 <Text style={[styles.appTaglineSub, { color: palette.textSecondary }]}>
                   Guided by God's Word
@@ -179,7 +179,7 @@ export const ShareCardCanvas = forwardRef<View, ShareCardCanvasProps>(
               </Text>
             </View>
             <Text style={[styles.watermark, { color: palette.textSecondary }]}>
-              shephema.app
+              shepema.app
             </Text>
           </View>
         </View>

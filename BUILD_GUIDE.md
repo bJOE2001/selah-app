@@ -1,8 +1,8 @@
-﻿# 📖 Shephema — Complete Build & Deployment Guide
+# 📖 Shepema — Complete Build & Deployment Guide
 
 This guide provides step-by-step instructions for:
-1. Building the **Shephema Android APK** (`shepema-app`).
-2. Running & building the **Shephema Web Landing Page** (`shepema-web`).
+1. Building the **Shepema Android APK** (`shepema-app`).
+2. Running & building the **Shepema Web Landing Page** (`shepema-web`).
 3. Deploying the website to **Vercel**.
 
 ---
@@ -61,10 +61,10 @@ This guide provides step-by-step instructions for:
 ### 📥 Connecting the APK to Your Website
 
 Once you have your built APK file:
-1. **Rename** the file to: `shephema.apk`
+1. **Rename** the file to: `shepema.apk`
 2. **Copy / Replace** it into:
    ```
-   C:\xampp\htdocs\shepema-web\public\downloads\shephema.apk
+   C:\xampp\htdocs\shepema-web\public\downloads\shepema.apk
    ```
 
 ---
@@ -109,15 +109,15 @@ npm run preview
    ```bash
    git init
    git add .
-   git commit -m "feat: initial shephema web landing page"
+   git commit -m "feat: initial shepema web landing page"
    ```
 
-3. Create a new repository on **[GitHub](https://github.com/new)** (e.g., `shephema-web`).
+3. Create a new repository on **[GitHub](https://github.com/new)** (e.g., `shepema-web`).
 
 4. Link and push to GitHub:
    ```bash
    git branch -M main
-   git remote add origin https://github.com/<your-username>/shephema-web.git
+   git remote add origin https://github.com/<your-username>/shepema-web.git
    git push -u origin main
    ```
 
@@ -128,7 +128,7 @@ npm run preview
 1. Go to **[Vercel Dashboard](https://vercel.com/new)**.
 2. Sign in with your GitHub account.
 3. Click **"Add New..."** ➔ **"Project"**.
-4. Select your **`shephema-web`** repository and click **"Import"**.
+4. Select your **`shepema-web`** repository and click **"Import"**.
 5. Configure Project Settings:
    - **Framework Preset**: `Vite` *(detected automatically)*
    - **Root Directory**: `./`
@@ -140,8 +140,8 @@ npm run preview
 ---
 
 ### Step 3: Your Site is Live! 🎉
-- Vercel will provide you with a live production URL (e.g. `https://shephema-web.vercel.app`).
-- The APK download button will serve the file directly from `https://your-domain.com/downloads/shephema.apk`.
+- Vercel will provide you with a live production URL (e.g. `https://shepema-web.vercel.app`).
+- The APK download button will serve the file directly from `https://your-domain.com/downloads/shepema.apk`.
 - Every time you `git push` new changes to GitHub, Vercel will **automatically rebuild and redeploy** your website!
 
 ---
@@ -152,7 +152,7 @@ npm run preview
 shepema-web/
 ├── public/
 │   ├── downloads/
-│   │   └── shephema.apk            # Downloadable Android APK (~101 MB)
+│   │   └── shepema.apk            # Downloadable Android APK (~101 MB)
 │   └── images/
 │       ├── app-icon.jpg            # Branding favicon & icons
 │       ├── mascot-cozy-reading-transparent.png # Hero section mascot

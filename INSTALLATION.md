@@ -1,8 +1,8 @@
-# Shephema — Installation & Setup Guide
+# Shepema — Installation & Setup Guide
 
 > *Guided by God's Word*
 
-Welcome to **Shephema**, an aesthetic devotional journaling and Scripture reader app built with **React Native**, **Expo SDK 54**, **Expo Router**, **TypeScript**, and **Expo SQLite**.
+Welcome to **Shepema**, an aesthetic devotional journaling and Scripture reader app built with **React Native**, **Expo SDK 54**, **Expo Router**, **TypeScript**, and **Expo SQLite**.
 
 This guide walks you through setting up, configuring, and running the project from scratch on your local development machine.
 
@@ -46,7 +46,7 @@ npm install
 
 ### 3. Bible Database Setup
 
-Shephema includes a local SQLite database of the King James Version (KJV) Bible located at:
+Shepema includes a local SQLite database of the King James Version (KJV) Bible located at:
 ```
 assets/db/KJV.db (~33MB)
 ```

@@ -95,7 +95,7 @@ export function AppOpeningScreen() {
                 },
               ]}
             >
-              SHEPHEMA
+              SHEPEMA
             </Text>
             <View
               style={[
