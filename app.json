@@ -30,12 +30,12 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/mascot-holding-bible-transparent.png",
-          "imageWidth": 120,
+          "image": "./assets/images/transparent-pixel.png",
+          "imageWidth": 1,
           "resizeMode": "contain",
           "backgroundColor": "#FAF7F2",
           "dark": {
-            "image": "./assets/images/mascot-holding-bible-transparent.png",
+            "image": "./assets/images/transparent-pixel.png",
             "backgroundColor": "#14120E"
           }
         }

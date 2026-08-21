@@ -64,9 +64,6 @@ export default function RootLayout() {
   const { isDark, colors } = useTheme();
 
   useEffect(() => {
-    // Hide native OS splash screen immediately to show AppOpeningScreen
-    SplashScreen.hideAsync().catch(() => {});
-
     // Display the animated AppOpeningScreen on launch
     const timer = setTimeout(() => {
       setIsOpeningComplete(true);
@@ -147,6 +144,12 @@ export default function RootLayout() {
     eveningReminderEnabled,
     eveningReminderTime,
   ]);
+
+  useEffect(() => {
+    if ((fontsLoaded || fontError) && dbReady) {
+      SplashScreen.hideAsync().catch(() => {});
+    }
+  }, [fontsLoaded, fontError, dbReady]);
 
   // Display the dedicated Shepema AppOpeningScreen on app startup
   if ((!fontsLoaded && !fontError) || !dbReady || !isOpeningComplete) {
