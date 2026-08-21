@@ -1,12 +1,13 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Image, Animated, Easing } from 'react-native';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useTheme } from '../theme/useTheme';
 import { FONTS } from '../tokens/typography';
 import { SPACING, RADIUS, SHADOWS } from '../tokens/spacing';
 
 export function AppOpeningScreen() {
+  const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
 
   // Subtle breathing animation for mascot medallion
@@ -109,11 +110,21 @@ export function AppOpeningScreen() {
           </View>
         </Animated.View>
 
-        {/* Bottom Loading Dots */}
-        <View style={styles.footer}>
-          <Text style={[styles.loadingText, { color: colors.inkMuted }]}>
+        {/* Bottom Loading Text & Made with Love */}
+        <View
+          style={[
+            styles.footer,
+            { bottom: Math.max(insets.bottom, 24) + 36 },
+          ]}
+        >
+          <Text style={[styles.loadingText, { color: colors.inkSecondary }]}>
             Opening your devotional journal...
           </Text>
+          <View style={styles.madeWithRow}>
+            <Text style={[styles.madeWithText, { color: colors.inkMuted }]}>
+              Made with ❤️ and faith
+            </Text>
+          </View>
         </View>
       </View>
     </SafeAreaProvider>
@@ -181,12 +192,25 @@ const styles = StyleSheet.create({
   },
   footer: {
     position: 'absolute',
-    bottom: 48,
     alignItems: 'center',
+    left: 0,
+    right: 0,
   },
   loadingText: {
     fontFamily: FONTS.body,
+    fontSize: 12,
+    letterSpacing: 0.4,
+  },
+  madeWithRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    marginTop: 5,
+  },
+  madeWithText: {
+    fontFamily: FONTS.body,
     fontSize: 11,
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
   },
 });

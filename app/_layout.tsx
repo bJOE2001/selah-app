@@ -47,6 +47,7 @@ const queryClient = new QueryClient({
 
 export default function RootLayout() {
   const [dbReady, setDbReady] = useState(false);
+  const [isOpeningComplete, setIsOpeningComplete] = useState(false);
 
   const [fontsLoaded, fontError] = useFonts({
     PlayfairDisplay_400Regular,
@@ -61,6 +62,18 @@ export default function RootLayout() {
 
   const { isUnlocked, isLockEnabled } = usePrivacyAuthStore();
   const { isDark, colors } = useTheme();
+
+  useEffect(() => {
+    // Hide native OS splash screen immediately to show AppOpeningScreen
+    SplashScreen.hideAsync().catch(() => {});
+
+    // Display the animated AppOpeningScreen on launch
+    const timer = setTimeout(() => {
+      setIsOpeningComplete(true);
+    }, 1800);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     async function prepare() {
@@ -135,14 +148,8 @@ export default function RootLayout() {
     eveningReminderTime,
   ]);
 
-  useEffect(() => {
-    if ((fontsLoaded || fontError) && dbReady) {
-      SplashScreen.hideAsync().catch(() => {});
-    }
-  }, [fontsLoaded, fontError, dbReady]);
-
-  // While fonts and database are preparing, display the dedicated Shepema opening screen
-  if ((!fontsLoaded && !fontError) || !dbReady) {
+  // Display the dedicated Shepema AppOpeningScreen on app startup
+  if ((!fontsLoaded && !fontError) || !dbReady || !isOpeningComplete) {
     return <AppOpeningScreen />;
   }
 
