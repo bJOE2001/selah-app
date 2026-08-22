@@ -30,10 +30,19 @@ export default function Root({ children }: { children: ReactNode }) {
 
 const responsiveBackground = `
 body {
-  background-color: #fff;
+  background-color: #FAF6F0;
+  color: #2C2523;
 }
 @media (prefers-color-scheme: dark) {
   body {
-    background-color: #000;
+    background-color: #181512;
+    color: #EDE6DD;
   }
-}`;
+}
+/* Eye-comfort smooth transition for theme switching ("di makalitan ang mata") */
+html, body, div, span, p, h1, h2, h3, h4, h5, h6, a, input, textarea, svg, path, button {
+  transition-property: background-color, border-color, color, fill, stroke, box-shadow;
+  transition-duration: 350ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+`;

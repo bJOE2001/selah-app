@@ -18,9 +18,19 @@ import React, { useEffect, useState } from "react";
 import "react-native-get-random-values";
 
 import * as NavigationBar from "expo-navigation-bar";
-import * as SystemUI from "expo-system-ui";
-import { Appearance, Image, Platform, Text, View } from "react-native";
+import { Appearance, Image, LogBox, Platform, Text, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+
+// Ignore benign Expo Go warnings (SDK 53+ notifications & Android Edge-to-Edge system bar warnings)
+LogBox.ignoreLogs([
+  "expo-notifications: Android Push notifications",
+  "`expo-notifications` functionality is not fully supported in Expo Go",
+  "`setPositionAsync` is not supported with edge-to-edge enabled",
+  "`setBackgroundColorAsync` is not supported with edge-to-edge enabled",
+  "`setBorderColorAsync` is not supported with edge-to-edge enabled",
+  "is not supported with edge-to-edge enabled",
+]);
+
 import { initDatabase } from "../src/bible-data/db";
 import {
     PromptModal,
@@ -80,9 +90,6 @@ export default function RootLayout() {
         }
         if (Platform.OS === "android") {
           try {
-            await SystemUI.setBackgroundColorAsync(colors.paperBg);
-          } catch {}
-          try {
             await NavigationBar.setButtonStyleAsync(isDark ? "light" : "dark");
           } catch {}
         } else if (Platform.OS === "web" && typeof document !== "undefined") {
@@ -104,9 +111,6 @@ export default function RootLayout() {
     }
     if (Platform.OS === "android") {
       const syncNavBar = async () => {
-        try {
-          await SystemUI.setBackgroundColorAsync(colors.paperBg);
-        } catch {}
         try {
           await NavigationBar.setButtonStyleAsync(isDark ? "light" : "dark");
         } catch {}

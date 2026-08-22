@@ -1,5 +1,10 @@
-import { Platform } from 'react-native';
+import { Platform, LogBox } from 'react-native';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
+
+LogBox.ignoreLogs([
+  'expo-notifications: Android Push notifications',
+  '`expo-notifications` functionality is not fully supported in Expo Go',
+]);
 
 const MORNING_NOTIFICATION_ID = 'morning-devotion-reminder';
 const EVENING_NOTIFICATION_ID = 'evening-reflection-reminder';

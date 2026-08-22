@@ -415,6 +415,25 @@ export function NotebookEditor({ onSaveSuccess }: NotebookEditorProps) {
           visible={isChangeRhemaOpen}
           onClose={() => setIsChangeRhemaOpen(false)}
         />
+
+        {/* 
+          Solid backdrop behind the phone's bottom 3-button navigation bar (matching Bible / Tab screens).
+          This prevents scrolling page content from showing behind the Android back/home/recent buttons.
+        */}
+        {insets.bottom > 0 ? (
+          <View
+            style={{
+              position: 'absolute',
+              left: 0,
+              right: 0,
+              bottom: 0,
+              height: insets.bottom + 6,
+              backgroundColor: colors.paperBg,
+              zIndex: 99,
+            }}
+            pointerEvents="none"
+          />
+        ) : null}
       </View>
     </KeyboardAvoidingView>
   );

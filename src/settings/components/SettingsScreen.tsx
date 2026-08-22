@@ -1,14 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   Pressable,
-  Switch,
   Image,
   ActivityIndicator,
   Modal,
+  PanResponder,
+  GestureResponderEvent,
+  LayoutChangeEvent,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -24,11 +26,106 @@ import { EditJournalCoverModal } from '../../journal-history';
 import { DevotionalTimePickerModal } from './DevotionalTimePickerModal';
 import { getDatabase } from '../../bible-data/db';
 import { useRecentDevotionals } from '../../devotional-core/hooks';
-import { useSettingsStore, ScriptureFontSize, ThemeMode } from '../store';
-import { useTheme, promptModal, toast } from '../../design-system';
+import { useSettingsStore, ThemeMode } from '../store';
+import { useTheme, promptModal, toast, JournalToggle, ThemeSegmentedControl } from '../../design-system';
 import { syncMorningReminder, syncEveningReminder } from '../../notifications';
 import { FONTS } from '../../design-system/tokens/typography';
 import { SPACING, RADIUS, SHADOWS } from '../../design-system/tokens/spacing';
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FontSizeSlider — Touch-draggable continuous slider (12px – 28px)
+   ═══════════════════════════════════════════════════════════════════════════ */
+interface FontSizeSliderProps {
+  value: number;
+  min: number;
+  max: number;
+  onChange: (value: number) => void;
+  colors: any;
+  isDark: boolean;
+}
+
+function FontSizeSlider({ value, min, max, onChange, colors, isDark }: FontSizeSliderProps) {
+  const trackRef = useRef<View>(null);
+  const trackWidthRef = useRef(0);
+  const trackPageXRef = useRef(0);
+
+  const measureTrack = useCallback(() => {
+    trackRef.current?.measureInWindow((x, _y, width) => {
+      trackWidthRef.current = width;
+      trackPageXRef.current = x;
+    });
+  }, []);
+
+  const positionToValue = useCallback(
+    (pageX: number) => {
+      const trackWidth = trackWidthRef.current;
+      if (trackWidth <= 0) return value;
+      const relativeX = Math.max(0, Math.min(pageX - trackPageXRef.current, trackWidth));
+      const ratio = relativeX / trackWidth;
+      return Math.round(min + ratio * (max - min));
+    },
+    [min, max, value]
+  );
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: (evt) => {
+        measureTrack();
+        const newVal = positionToValue(evt.nativeEvent.pageX);
+        onChange(newVal);
+      },
+      onPanResponderMove: (evt) => {
+        const newVal = positionToValue(evt.nativeEvent.pageX);
+        onChange(newVal);
+      },
+      onPanResponderRelease: (evt) => {
+        const newVal = positionToValue(evt.nativeEvent.pageX);
+        onChange(newVal);
+      },
+    })
+  ).current;
+
+  const fraction = (value - min) / (max - min);
+
+  return (
+    <View style={styles.sliderRow}>
+      <Text style={[styles.sliderEndLabel, { color: colors.inkSecondary, fontSize: 11 }]}>A</Text>
+      <View
+        ref={trackRef}
+        style={styles.sliderTrackWrapper}
+        onLayout={measureTrack}
+        {...panResponder.panHandlers}
+      >
+        {/* Track background */}
+        <View style={[styles.sliderTrack, { backgroundColor: isDark ? '#2D2721' : '#E8DFD4' }]}>
+          <View
+            style={[
+              styles.sliderFill,
+              {
+                backgroundColor: colors.brandGreen,
+                width: `${fraction * 100}%`,
+              },
+            ]}
+          />
+        </View>
+        {/* Draggable Thumb */}
+        <View
+          style={[
+            styles.sliderThumb,
+            {
+              left: `${fraction * 100}%`,
+              backgroundColor: colors.brandGreen,
+              borderColor: isDark ? '#1A1714' : '#FFFFFF',
+            },
+          ]}
+        />
+      </View>
+      <Text style={[styles.sliderEndLabel, { color: colors.inkSecondary, fontSize: 18 }]}>A</Text>
+    </View>
+  );
+}
 
 export function SettingsScreen() {
   const router = useRouter();
@@ -285,34 +382,8 @@ export function SettingsScreen() {
                 </View>
               </View>
 
-              <View style={[styles.segmentedRow, { backgroundColor: isDark ? '#151311' : '#F5EFE6' }]}>
-                {([
-                  { key: 'light', label: '☀️ Light' },
-                  { key: 'dark', label: '🌙 Dark' },
-                  { key: 'system', label: '📱 System' },
-                ] as { key: ThemeMode; label: string }[]).map((item) => (
-                  <Pressable
-                    key={item.key}
-                    onPress={() => setThemeMode(item.key)}
-                    style={[
-                      styles.segmentBtn,
-                      themeMode === item.key && {
-                        backgroundColor: colors.brandGreen,
-                        ...SHADOWS.subtle,
-                      },
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.segmentText,
-                        { color: colors.inkSecondary },
-                        themeMode === item.key && { color: '#FFFFFF', fontWeight: '800' },
-                      ]}
-                    >
-                      {item.label}
-                    </Text>
-                  </Pressable>
-                ))}
+              <View style={{ marginTop: 10 }}>
+                <ThemeSegmentedControl value={themeMode} onChange={setThemeMode} />
               </View>
             </View>
 
@@ -329,11 +400,9 @@ export function SettingsScreen() {
                   <Text style={[styles.rowSubtitle, { color: colors.inkSecondary }]}>Classic paper lines in Devotion Editor</Text>
                 </View>
               </View>
-              <Switch
+              <JournalToggle
                 value={paperLined}
                 onValueChange={setPaperLined}
-                trackColor={{ false: isDark ? '#3D362F' : '#E0D8CE', true: colors.brandGreen }}
-                thumbColor="#FFFFFF"
               />
             </View>
           </View>
@@ -359,11 +428,9 @@ export function SettingsScreen() {
                   </Text>
                 </View>
               </View>
-              <Switch
+              <JournalToggle
                 value={isLockEnabled}
                 onValueChange={handleToggleLock}
-                trackColor={{ false: isDark ? '#3D362F' : '#E0D8CE', true: colors.brandGreen }}
-                thumbColor="#FFFFFF"
               />
             </View>
 
@@ -435,31 +502,32 @@ export function SettingsScreen() {
                 </View>
               </View>
 
-              <View style={[styles.segmentedRow, { backgroundColor: isDark ? '#151311' : '#F5EFE6' }]}>
-                {(['S', 'M', 'L', 'XL'] as ScriptureFontSize[]).map((size) => (
-                  <Pressable
-                    key={size}
-                    onPress={() => setFontSize(size)}
-                    style={[
-                      styles.segmentBtn,
-                      fontSize === size && {
-                        backgroundColor: colors.brandGreen,
-                        ...SHADOWS.subtle,
-                      },
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.segmentText,
-                        { color: colors.inkSecondary },
-                        fontSize === size && { color: '#FFFFFF', fontWeight: '800' },
-                      ]}
-                    >
-                      {size}
-                    </Text>
-                  </Pressable>
-                ))}
+              {/* Live Preview */}
+              <View style={[styles.fontPreviewBox, { backgroundColor: isDark ? '#151311' : '#F9F5EE', borderColor: colors.paperLine }]}>
+                <Text
+                  style={{
+                    fontFamily: FONTS.scriptureDisplay,
+                    fontSize: fontSize,
+                    color: colors.inkPrimary,
+                    lineHeight: fontSize * 1.55,
+                  }}
+                >
+                  For God so loved the world, that he gave his only Son…
+                </Text>
+                <Text style={[styles.fontPreviewLabel, { color: colors.inkSecondary }]}>
+                  {fontSize}px
+                </Text>
               </View>
+
+              {/* Draggable Slider */}
+              <FontSizeSlider
+                value={fontSize}
+                min={12}
+                max={28}
+                onChange={setFontSize}
+                colors={colors}
+                isDark={isDark}
+              />
             </View>
 
             <View style={[styles.divider, { backgroundColor: colors.paperLine }]} />
@@ -475,11 +543,10 @@ export function SettingsScreen() {
                   <Text style={[styles.rowSubtitle, { color: colors.inkSecondary }]}>Highlight direct speech in Gospels</Text>
                 </View>
               </View>
-              <Switch
+              <JournalToggle
                 value={redLetter}
                 onValueChange={setRedLetter}
-                trackColor={{ false: isDark ? '#3D362F' : '#E0D8CE', true: colors.tapeRhema }}
-                thumbColor="#FFFFFF"
+                activeColor={colors.tapeRhema}
               />
             </View>
 
@@ -528,11 +595,9 @@ export function SettingsScreen() {
                   <Text style={[styles.rowSubtitle, { color: colors.inkSecondary }]}>Daily start with Scripture</Text>
                 </View>
               </View>
-              <Switch
+              <JournalToggle
                 value={morningReminderEnabled}
                 onValueChange={(v) => handleToggleMorningReminder(v)}
-                trackColor={{ false: isDark ? '#3D362F' : '#E0D8CE', true: colors.brandGreen }}
-                thumbColor="#FFFFFF"
               />
             </View>
 
@@ -578,11 +643,9 @@ export function SettingsScreen() {
                   <Text style={[styles.rowSubtitle, { color: colors.inkSecondary }]}>End-of-day gratitude & prayer</Text>
                 </View>
               </View>
-              <Switch
+              <JournalToggle
                 value={eveningReminderEnabled}
                 onValueChange={(v) => handleToggleEveningReminder(v)}
-                trackColor={{ false: isDark ? '#3D362F' : '#E0D8CE', true: colors.brandGreen }}
-                thumbColor="#FFFFFF"
               />
             </View>
 
@@ -804,16 +867,119 @@ export function SettingsScreen() {
               </View>
             </View>
 
-            {/* The R.R.M.A. Method Banner */}
-            <View style={[styles.rrmaBanner, { backgroundColor: isDark ? '#26221E' : '#F9F5EE', borderColor: colors.paperLine }]}>
-              <Text style={[styles.rrmaLabel, { color: colors.brandGreen }]}>✦ THE R.R.M.A. METHOD</Text>
-              <Text style={[styles.rrmaSub, { color: colors.inkSecondary }]}>
-                <Text style={{ fontWeight: '700', color: colors.tapeRhema }}>Rhema</Text> (Scripture) • <Text style={{ fontWeight: '700', color: colors.tapeReflection }}>Reflect</Text> (Meaning) • <Text style={{ fontWeight: '700', color: colors.tapeMotivation }}>Motivate</Text> (Heart) • <Text style={{ fontWeight: '700', color: colors.tapeApplication }}>Apply</Text> (Action)
-              </Text>
+            {/* The R.R.M.A. Method Comprehensive Card */}
+            <View style={[styles.rrmaContainer, { backgroundColor: isDark ? '#221E1A' : '#FBF7F0', borderColor: colors.paperLine }]}>
+              <View style={styles.rrmaHeader}>
+                <View style={[styles.rrmaBadge, { backgroundColor: colors.brandGreenLight }]}>
+                  <Ionicons name="sparkles" size={12} color={colors.brandGreen} />
+                  <Text style={[styles.rrmaBadgeText, { color: colors.brandGreen }]}>DEVOTIONAL FRAMEWORK</Text>
+                </View>
+                <Text style={[styles.rrmaMainTitle, { color: colors.inkPrimary }]}>The R.R.M.A. Method</Text>
+                <Text style={[styles.rrmaIntroText, { color: colors.inkSecondary }]}>
+                  A guided 4-step practice to help you meditate on God's Word, connect it to your heart, and live it out daily.
+                </Text>
+              </View>
+
+              <View style={[styles.rrmaDivider, { backgroundColor: colors.paperLine }]} />
+
+              {/* Step 1: Rhema */}
+              <View style={styles.rrmaStepItem}>
+                <View style={[styles.rrmaStepBadge, { backgroundColor: colors.tapeRhema + '22', borderColor: colors.tapeRhema }]}>
+                  <Text style={[styles.rrmaStepLetter, { color: colors.tapeRhema }]}>R</Text>
+                </View>
+                <View style={styles.rrmaStepContent}>
+                  <View style={styles.rrmaStepTitleRow}>
+                    <Text style={[styles.rrmaStepName, { color: colors.tapeRhema }]}>RHEMA</Text>
+                    <Text style={[styles.rrmaStepTag, { color: colors.inkSecondary }]}>God's Spoken Word</Text>
+                  </View>
+                  <Text style={[styles.rrmaStepDesc, { color: colors.inkSecondary }]}>
+                    The specific verse or passage that catches your attention and speaks directly to your spirit today.
+                  </Text>
+                  <Text style={[styles.rrmaStepPrompt, { color: colors.inkPrimary }]}>
+                    ✦ "What Scripture did the Holy Spirit highlight for you?"
+                  </Text>
+                </View>
+              </View>
+
+              {/* Step 2: Reflect */}
+              <View style={styles.rrmaStepItem}>
+                <View style={[styles.rrmaStepBadge, { backgroundColor: colors.tapeReflection + '22', borderColor: colors.tapeReflection }]}>
+                  <Text style={[styles.rrmaStepLetter, { color: colors.tapeReflection }]}>R</Text>
+                </View>
+                <View style={styles.rrmaStepContent}>
+                  <View style={styles.rrmaStepTitleRow}>
+                    <Text style={[styles.rrmaStepName, { color: colors.tapeReflection }]}>REFLECT</Text>
+                    <Text style={[styles.rrmaStepTag, { color: colors.inkSecondary }]}>Divine Meaning</Text>
+                  </View>
+                  <Text style={[styles.rrmaStepDesc, { color: colors.inkSecondary }]}>
+                    Slow down and meditate on the truth. Seek to understand what God is teaching about His character and will.
+                  </Text>
+                  <Text style={[styles.rrmaStepPrompt, { color: colors.inkPrimary }]}>
+                    ✦ "What is God revealing to you through this passage?"
+                  </Text>
+                </View>
+              </View>
+
+              {/* Step 3: Motivate */}
+              <View style={styles.rrmaStepItem}>
+                <View style={[styles.rrmaStepBadge, { backgroundColor: colors.tapeMotivation + '22', borderColor: colors.tapeMotivation }]}>
+                  <Text style={[styles.rrmaStepLetter, { color: colors.tapeMotivation }]}>M</Text>
+                </View>
+                <View style={styles.rrmaStepContent}>
+                  <View style={styles.rrmaStepTitleRow}>
+                    <Text style={[styles.rrmaStepName, { color: colors.tapeMotivation }]}>MOTIVATE</Text>
+                    <Text style={[styles.rrmaStepTag, { color: colors.inkSecondary }]}>Heart & Conviction</Text>
+                  </View>
+                  <Text style={[styles.rrmaStepDesc, { color: colors.inkSecondary }]}>
+                    Let the truth touch your emotions and convictions. Experience renewed hope, peace, or godly repentance.
+                  </Text>
+                  <Text style={[styles.rrmaStepPrompt, { color: colors.inkPrimary }]}>
+                    ✦ "Why does this verse inspire, challenge, or comfort your heart?"
+                  </Text>
+                </View>
+              </View>
+
+              {/* Step 4: Apply */}
+              <View style={[styles.rrmaStepItem, { marginBottom: 0 }]}>
+                <View style={[styles.rrmaStepBadge, { backgroundColor: colors.tapeApplication + '22', borderColor: colors.tapeApplication }]}>
+                  <Text style={[styles.rrmaStepLetter, { color: colors.tapeApplication }]}>A</Text>
+                </View>
+                <View style={styles.rrmaStepContent}>
+                  <View style={styles.rrmaStepTitleRow}>
+                    <Text style={[styles.rrmaStepName, { color: colors.tapeApplication }]}>APPLY</Text>
+                    <Text style={[styles.rrmaStepTag, { color: colors.inkSecondary }]}>Action & Prayer</Text>
+                  </View>
+                  <Text style={[styles.rrmaStepDesc, { color: colors.inkSecondary }]}>
+                    Turn revelation into obedience. Write down tangible action steps, prayer commitments, or life changes.
+                  </Text>
+                  <Text style={[styles.rrmaStepPrompt, { color: colors.inkPrimary }]}>
+                    ✦ "How will you live out and practice this truth today?"
+                  </Text>
+                </View>
+              </View>
             </View>
           </View>
         </View>
       </ScrollView>
+
+      {/* 
+        Solid backdrop behind the phone's bottom 3-button navigation bar (matching Bible / Tab screens).
+        This prevents scrolling page content from showing behind the Android back/home/recent buttons.
+      */}
+      {insets.bottom > 0 ? (
+        <View
+          style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: insets.bottom + 6,
+            backgroundColor: colors.paperBg,
+            zIndex: 99,
+          }}
+          pointerEvents="none"
+        />
+      ) : null}
 
       {/* Translation Picker Modal */}
       <TranslationPickerModal
@@ -1070,6 +1236,102 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
+  /* ── Font Size Slider & Preview ── */
+  fontPreviewBox: {
+    marginTop: SPACING.sm,
+    padding: SPACING.md,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+  },
+  fontPreviewLabel: {
+    fontFamily: FONTS.body,
+    fontSize: 10,
+    marginTop: 8,
+    textAlign: 'right',
+    letterSpacing: 0.3,
+  },
+  sliderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: SPACING.md,
+    paddingHorizontal: 2,
+  },
+  sliderEndLabel: {
+    fontFamily: FONTS.scriptureDisplay,
+    fontWeight: '700',
+    width: 20,
+    textAlign: 'center',
+  },
+  sliderTrackWrapper: {
+    flex: 1,
+    height: 28,
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  sliderTrack: {
+    height: 4,
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  sliderFill: {
+    height: '100%',
+    borderRadius: 2,
+  },
+  sliderDot: {
+    position: 'absolute',
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    borderWidth: 2,
+    marginLeft: -8,
+    top: 6,
+  },
+  sliderThumb: {
+    position: 'absolute',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 3,
+    marginLeft: -10,
+    top: 4,
+    ...SHADOWS.subtle,
+  },
+  sliderLabelsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 32,
+    marginTop: 2,
+  },
+  sliderLabelText: {
+    fontFamily: FONTS.bodyBold,
+    fontSize: 10,
+    fontWeight: '600',
+    letterSpacing: 0.3,
+  },
+  sliderStepRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.md,
+    marginTop: SPACING.sm,
+  },
+  sliderStepBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sliderStepValue: {
+    fontFamily: FONTS.bodyBold,
+    fontSize: 15,
+    fontWeight: '800',
+    minWidth: 44,
+    textAlign: 'center',
+  },
+
   /* ── Time Picker Row ── */
   timePickerRow: {
     flexDirection: 'row',
@@ -1213,22 +1475,95 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
   },
-  rrmaBanner: {
-    marginTop: SPACING.sm,
-    padding: SPACING.sm + 2,
-    borderRadius: 12,
+  /* ── R.R.M.A. Method Card ── */
+  rrmaContainer: {
+    marginTop: SPACING.md,
+    padding: SPACING.md,
+    borderRadius: 16,
     borderWidth: 1,
+    gap: SPACING.sm,
   },
-  rrmaLabel: {
+  rrmaHeader: {
+    gap: 4,
+  },
+  rrmaBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: RADIUS.pill,
+    alignSelf: 'flex-start',
+  },
+  rrmaBadgeText: {
     fontFamily: FONTS.bodyBold,
-    fontSize: 10,
+    fontSize: 9.5,
     fontWeight: '800',
     letterSpacing: 0.6,
-    marginBottom: 2,
   },
-  rrmaSub: {
+  rrmaMainTitle: {
+    fontFamily: FONTS.sectionHeader,
+    fontSize: 16,
+    fontWeight: '700',
+    marginTop: 2,
+  },
+  rrmaIntroText: {
+    fontFamily: FONTS.body,
+    fontSize: 11.5,
+    lineHeight: 17,
+  },
+  rrmaDivider: {
+    height: 1,
+    marginVertical: 4,
+  },
+  rrmaStepItem: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: SPACING.sm + 2,
+  },
+  rrmaStepBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 2,
+  },
+  rrmaStepLetter: {
+    fontFamily: FONTS.bodyBold,
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  rrmaStepContent: {
+    flex: 1,
+    gap: 3,
+  },
+  rrmaStepTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  rrmaStepName: {
+    fontFamily: FONTS.bodyBold,
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  rrmaStepTag: {
+    fontFamily: FONTS.bodyItalic,
+    fontSize: 10.5,
+  },
+  rrmaStepDesc: {
     fontFamily: FONTS.body,
     fontSize: 11,
     lineHeight: 16,
+  },
+  rrmaStepPrompt: {
+    fontFamily: FONTS.bodyItalic,
+    fontSize: 10.5,
+    lineHeight: 15,
+    marginTop: 2,
   },
 });

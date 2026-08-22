@@ -116,8 +116,8 @@ const styles = StyleSheet.create({
     height: 1,
   },
   textInput: {
-    fontFamily: FONTS.userInput,
-    fontSize: 18,
+    fontFamily: FONTS.body,
+    fontSize: 16,
     padding: 0,
     paddingTop: SPACING.xs,
     zIndex: 1,
