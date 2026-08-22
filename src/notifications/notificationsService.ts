@@ -9,9 +9,6 @@ const DEVOTIONAL_CHANNEL_ID = 'daily-devotional-habits';
 export const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
 
 function getNotificationsModule(): typeof import('expo-notifications') | null {
-  if (Platform.OS === 'web') {
-    return null;
-  }
   try {
     return require('expo-notifications');
   } catch (err) {

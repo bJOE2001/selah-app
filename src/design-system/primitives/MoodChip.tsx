@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { Text, StyleSheet, Pressable, ViewStyle, Animated, Platform } from 'react-native';
+import { Text, StyleSheet, Pressable, ViewStyle, Animated } from 'react-native';
 import { COLORS } from '../tokens/colors';
 import { FONTS } from '../tokens/typography';
 import { SPACING, RADIUS } from '../tokens/spacing';
@@ -25,7 +25,7 @@ export function MoodChip({ tag, isSelected, onPress, style }: MoodChipProps) {
     Animated.spring(scaleAnim, {
       toValue: 0.92,
       damping: 15,
-      useNativeDriver: Platform.OS !== 'web',
+      useNativeDriver: true,
     }).start();
   };
 
@@ -33,7 +33,7 @@ export function MoodChip({ tag, isSelected, onPress, style }: MoodChipProps) {
     Animated.spring(scaleAnim, {
       toValue: 1,
       damping: 15,
-      useNativeDriver: Platform.OS !== 'web',
+      useNativeDriver: true,
     }).start();
   };
 

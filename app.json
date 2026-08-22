@@ -23,13 +23,7 @@
     "web": {
       "bundler": "metro",
       "output": "single",
-      "favicon": "./public/icons/favicon.png",
-      "themeColor": "#377333",
-      "backgroundColor": "#FAF7F2",
-      "name": "Shepema - Daily Devotional & Bible",
-      "shortName": "Shepema",
-      "display": "standalone",
-      "orientation": "portrait"
+      "favicon": "./assets/images/app-icon.jpg"
     },
     "plugins": [
       "expo-router",

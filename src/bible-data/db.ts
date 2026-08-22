@@ -1,7 +1,6 @@
 import * as SQLite from 'expo-sqlite';
 import * as FileSystem from 'expo-file-system/legacy';
 import { Asset } from 'expo-asset';
-import { Platform } from 'react-native';
 
 let userDbInstance: SQLite.SQLiteDatabase | null = null;
 let bibleDbInstance: SQLite.SQLiteDatabase | null = null;
@@ -39,7 +38,7 @@ export async function initDatabase(): Promise<SQLite.SQLiteDatabase> {
 }
 
 async function _doInitDatabase(): Promise<SQLite.SQLiteDatabase> {
-  // --- Step 1: Copy KJV.db asset to device if needed (native only) ---
+  // --- Step 1: Copy KJV.db asset to device if needed ---
   await ensureBibleDb();
 
   // --- Step 2: Open user database ---
@@ -55,10 +54,6 @@ async function _doInitDatabase(): Promise<SQLite.SQLiteDatabase> {
  * Only checks file existence + size — no database open/close for verification.
  */
 async function ensureBibleDb(): Promise<void> {
-  if (Platform.OS === 'web') {
-    // On web, SQLite uses WASM/IndexedDB/OPFS; local filesystem copy is not applicable
-    return;
-  }
   try {
     const sqliteDir = `${FileSystem.documentDirectory}SQLite`;
     const biblePath = `${sqliteDir}/${BIBLE_DB_NAME}`;

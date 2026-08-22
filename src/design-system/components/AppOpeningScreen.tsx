@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Image, Animated, Easing, Platform } from 'react-native';
+import { View, Text, StyleSheet, Image, Animated, Easing } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useTheme } from '../theme/useTheme';
@@ -18,7 +18,7 @@ export function AppOpeningScreen() {
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 350,
-      useNativeDriver: Platform.OS !== 'web',
+      useNativeDriver: true,
     }).start();
 
     const pulse = Animated.loop(
@@ -27,13 +27,13 @@ export function AppOpeningScreen() {
           toValue: 1.04,
           duration: 1200,
           easing: Easing.inOut(Easing.ease),
-          useNativeDriver: Platform.OS !== 'web',
+          useNativeDriver: true,
         }),
         Animated.timing(pulseAnim, {
           toValue: 1,
           duration: 1200,
           easing: Easing.inOut(Easing.ease),
-          useNativeDriver: Platform.OS !== 'web',
+          useNativeDriver: true,
         }),
       ])
     );
