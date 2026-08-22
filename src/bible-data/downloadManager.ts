@@ -154,7 +154,7 @@ export async function downloadTranslation(
     );
   }
 
-  onProgress?.(40, 'Parsing Scripture verses...');
+  onProgress?.(40, 'Preparing Scripture verses...');
   const rawVerses: RawApiVerse[] = await response.json();
 
   if (!Array.isArray(rawVerses) || rawVerses.length === 0) {
@@ -197,7 +197,7 @@ export async function downloadTranslation(
     throw new Error(`No canonical verses found in ${translation.name}.`);
   }
 
-  onProgress?.(65, `Saving ${cleanVerses.length.toLocaleString()} verses locally...`);
+  onProgress?.(65, `Saving ${cleanVerses.length.toLocaleString()} verses to your device...`);
 
   // Compute total size in bytes
   let totalChars = 0;
@@ -233,7 +233,7 @@ export async function downloadTranslation(
 
       if (chunkIdx % 10 === 0 || chunkIdx === totalChunks - 1) {
         const progressPercent = Math.round(65 + ((chunkIdx + 1) / totalChunks) * 33);
-        onProgress?.(progressPercent, `Saving to offline database (${progressPercent}%)...`);
+        onProgress?.(progressPercent, `Saving to your device (${progressPercent}%)...`);
       }
     }
 
@@ -246,7 +246,8 @@ export async function downloadTranslation(
     );
   });
 
-  onProgress?.(100, 'Download complete!');
+  onProgress?.(100, 'Ready for offline reading!');
+
 
   return {
     id: normId,

@@ -76,21 +76,64 @@ This will launch the interactive Expo DevTools terminal UI and display a QR code
 
 ## 📱 Running on Different Platforms
 
-### A. Physical Device (Expo Go)
-1. Run `npm start`.
-2. **Android**: Open the **Expo Go** app and scan the QR code from the terminal.
-3. **iOS**: Open the native **Camera** app, scan the QR code, and tap the prompt to open in **Expo Go**.
-> *Ensure your computer and mobile device are connected to the same Wi-Fi network.*
+### A. Real Android Device as Screen-Mirrored Emulator (Recommended)
+You can mirror your real Android phone to your PC monitor using `scrcpy` and get instant real-time live coding:
 
-### B. Android Emulator
-1. Start your Android Emulator in Android Studio.
-2. Run:
-   ```bash
-   npm run android
-   # or press 'a' in the interactive Expo terminal
+1. **Enable USB Debugging on your phone**:
+   - Go to **Settings > About Phone** and tap **Build Number** 7 times.
+   - Go to **Developer Options** and turn **ON**:
+     - `USB Debugging`
+     - `Install via USB` *(Xiaomi/MIUI)*
+     - `USB Debugging (Security settings)` *(Xiaomi/MIUI)*
+2. **Install `scrcpy` on PC (PowerShell)**:
+   ```powershell
+   winget install Genymobile.scrcpy
+   ```
+3. **Verify Phone Connection**:
+   ```powershell
+   adb devices
+   ```
+4. **Mirror Screen in Window**:
+   ```powershell
+   scrcpy
+   ```
+5. **Start Live Dev Server**:
+   ```powershell
+   npx expo start
    ```
 
-### C. iOS Simulator (macOS only)
+---
+
+### B. Building Standalone APKs & Development Client (EAS CLI)
+
+Use Expo Application Services (EAS) to compile native Android APKs in the cloud without needing local Android Studio configuration:
+
+```powershell
+# 1. Build a Live Development Client APK (Hot Reloading via USB/Wi-Fi):
+npx eas-cli build --profile development --platform android
+
+# 2. Build a Standalone Preview APK (Direct Installable .apk):
+npx eas-cli build --profile preview --platform android
+
+# 3. Build a Production APK:
+npx eas-cli build --profile production --platform android
+```
+
+---
+
+### C. Physical Device (Expo Go)
+1. Run `npx expo start`.
+2. **Android**: Open the **Expo Go** app and scan the QR code from the terminal.
+3. **iOS**: Open the native **Camera** app, scan the QR code, and tap the prompt to open in **Expo Go**.
+> *Ensure your computer and mobile device are connected to the same Wi-Fi network (or use `npx expo start --tunnel`).*
+
+### D. Local Native Build (Android Studio)
+If you have Android Studio and Android SDK installed on your PC:
+```powershell
+npx expo run:android
+```
+
+### E. iOS Simulator (macOS only)
 1. Open the iOS Simulator.
 2. Run:
    ```bash
@@ -98,8 +141,8 @@ This will launch the interactive Expo DevTools terminal UI and display a QR code
    # or press 'i' in the interactive Expo terminal
    ```
 
-### D. Web Browser
-Rhema supports web preview via React Native Web:
+### F. Web Browser
+Shepema supports web preview via React Native Web:
 ```bash
 npm run web
 # or press 'w' in the interactive Expo terminal
@@ -107,6 +150,7 @@ npm run web
 Your default browser will open `http://localhost:8081`.
 
 ---
+
 
 ## 📂 Project Architecture
 

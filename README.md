@@ -17,18 +17,32 @@ Shepema is a mobile application built with **React Native**, **Expo SDK 54**, an
 
 ---
 
-## ⚡ Quick Start
+## ⚡ Quick Commands
 
+### 1. Start Development Server
 ```bash
-# Clone the repository
-git clone https://github.com/your-username/rhema-app.git
-cd rhema-app
+npx expo start
+```
 
-# Install dependencies
-npm install
+### 2. Mirror Android Phone to PC Monitor (`scrcpy`)
+```powershell
+# Install scrcpy (one-time on Windows):
+winget install Genymobile.scrcpy
 
-# Start the Expo development server
-npm start
+# Check phone connection:
+adb devices
+
+# Mirror phone screen to PC:
+scrcpy
+```
+
+### 3. Build APK with EAS (Cloud Build)
+```bash
+# Build Live Development Client APK:
+npx eas-cli build --profile development --platform android
+
+# Build Standalone Preview APK (Direct Install):
+npx eas-cli build --profile preview --platform android
 ```
 
 ---
@@ -44,3 +58,4 @@ For comprehensive system requirements, device setup (Expo Go, Android Studio, Xc
 ## 📄 License
 
 This project is licensed under the [MIT License](LICENSE).
+

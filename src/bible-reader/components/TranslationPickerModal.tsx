@@ -105,7 +105,7 @@ export function TranslationPickerModal({
       cancelText: 'Not Now',
       onConfirm: async () => {
         try {
-          toast.info(`Downloading ${translation.code}...`, 'Saving complete translation offline.');
+          toast.info(`Downloading ${translation.code}...`, 'Saving complete Bible for offline reading.');
           await download(translation);
           setTranslation(translation);
           toast.success(
@@ -122,7 +122,7 @@ export function TranslationPickerModal({
   const handleStartDownload = async (translation: BibleTranslation, e: any) => {
     e.stopPropagation();
     try {
-      toast.info(`Downloading ${translation.code}...`, 'Fetching full scripture dataset.');
+      toast.info(`Downloading ${translation.code}...`, 'Saving complete Bible for offline reading.');
       await download(translation);
       toast.success(
         'Download Complete',
@@ -132,6 +132,7 @@ export function TranslationPickerModal({
       toast.error('Download Failed', err?.message || 'Could not download Bible version.');
     }
   };
+
 
   const handleDelete = (translation: BibleTranslation, e: any) => {
     e.stopPropagation();
