@@ -1,7 +1,7 @@
 {
   "name": "shepema-app",
   "main": "expo-router/entry",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "dependencies": {
     "@expo-google-fonts/caveat": "^0.4.2",
     "@expo-google-fonts/lora": "^0.4.2",

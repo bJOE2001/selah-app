@@ -2,7 +2,7 @@
   "expo": {
     "name": "Shepema",
     "slug": "shepema-app",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/app-icon.jpg",
     "scheme": "shepema",
@@ -12,6 +12,7 @@
     },
     "android": {
       "package": "com.shepema.app",
+      "versionCode": 2,
       "adaptiveIcon": {
         "backgroundColor": "#377333",
         "foregroundImage": "./assets/images/app-icon.jpg",
