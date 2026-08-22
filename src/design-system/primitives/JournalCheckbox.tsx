@@ -7,6 +7,7 @@ import {
   Pressable,
   ViewStyle,
   Animated,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../tokens/colors';
@@ -41,7 +42,7 @@ export function JournalCheckbox({
       toValue: isChecked ? 1 : 0,
       damping: 14,
       stiffness: 240,
-      useNativeDriver: true,
+      useNativeDriver: Platform.OS !== 'web',
     }).start();
   }, [isChecked]);
 

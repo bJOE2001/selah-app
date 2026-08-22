@@ -2,8 +2,9 @@
 
 This guide provides step-by-step instructions for:
 1. Building the **Shepema Android APK** (`shepema-app`).
-2. Running & building the **Shepema Web Landing Page** (`shepema-web`).
-3. Deploying the website to **Vercel**.
+2. Building & Deploying the **Shepema PWA (Progressive Web App)** to **Vercel**.
+3. Running & building the **Shepema Web Landing Page** (`shepema-web`).
+4. Deploying the website to **Vercel**.
 
 ---
 
@@ -68,8 +69,42 @@ Once you have your built APK file:
    ```
 
 ---
+ 
+ ## 🌐 Part 2: Building & Deploying the Shepema PWA (`shepema-app`) to Vercel
 
-## 🌐 Part 2: Running & Building the Web App (`shepema-web`)
+Shepema is fully configured as an installable Progressive Web App (PWA) with offline Service Worker support and mobile/desktop installation.
+
+### Step 1: Build the PWA Locally
+Open your terminal in `c:\xampp\htdocs\shepema-app`:
+```bash
+npm run build:pwa
+```
+This exports the optimized static PWA bundle into the `dist/` folder with `manifest.json`, `sw.js`, `icons/`, and `vercel.json`.
+
+---
+
+### Step 2: Deploy to Vercel
+
+#### Option A: Via GitHub (Recommended)
+1. Push `shepema-app` to your GitHub repository.
+2. Go to **[Vercel Dashboard](https://vercel.com/new)** and import your repository.
+3. In Project Settings:
+   - **Framework Preset**: `Other`
+   - **Root Directory**: `./`
+   - **Build Command**: `npm run build:pwa`
+   - **Output Directory**: `dist`
+   - **Install Command**: `npm install`
+4. Click **Deploy**.
+
+#### Option B: Direct Deploy via Vercel CLI
+```bash
+npm install -g vercel
+vercel deploy --prod
+```
+
+---
+
+## 💻 Part 3: Running & Building the Shepema Web Landing Page (`shepema-web`)
 
 ### 1. Install Dependencies
 ```bash
