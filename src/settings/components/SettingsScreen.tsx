@@ -215,7 +215,7 @@ export function SettingsScreen() {
 
       const exportData = {
         app: 'Shepema Devotional',
-        version: '1.0.0',
+        version: '1.0.1',
         exportedAt: new Date().toISOString(),
         totalEntries: fullEntries.length,
         entries: fullEntries,
@@ -834,7 +834,7 @@ export function SettingsScreen() {
                   <Text style={[styles.aboutBuddyPillText, { color: colors.brandGreen }]}>Devotional Buddy</Text>
                 </View>
                 <Text style={[styles.aboutAppName, { color: colors.inkPrimary }]}>Shepema</Text>
-                <Text style={[styles.aboutVersion, { color: colors.inkSecondary }]}>Guided by God's Word • v1.0.0</Text>
+                <Text style={[styles.aboutVersion, { color: colors.inkSecondary }]}>Guided by God's Word • v1.0.1</Text>
               </View>
             </View>
 
