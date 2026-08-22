@@ -44,7 +44,7 @@
         "expo-notifications",
         {
           "icon": "./assets/images/notification-icon.png",
-          "color": "#2D6A4F"
+          "color": "#377333"
         }
       ]
     ],
@@ -54,8 +54,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "2061a430-c973-490a-9752-0c62e60c520f"
+        "projectId": "9243b46e-1e22-48a2-aa40-4c45c1646a96"
       }
-    }
+    },
+    "owner": "dsadada"
   }
 }
