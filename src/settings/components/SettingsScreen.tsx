@@ -31,6 +31,20 @@ import { useTheme, promptModal, toast, JournalToggle, ThemeSegmentedControl } fr
 import { syncMorningReminder, syncEveningReminder } from '../../notifications';
 import { FONTS } from '../../design-system/tokens/typography';
 import { SPACING, RADIUS, SHADOWS } from '../../design-system/tokens/spacing';
+import {
+  useEntitlementStore,
+  useIsPremium,
+  useCurrentTier,
+  restorePurchases,
+  PaywallModal,
+} from '../../entitlements';
+import {
+  useCloudAuthStore,
+  syncToCloud,
+  restoreFromCloud,
+  signOutCloud,
+  CloudVaultAuthModal,
+} from '../../cloud-vault';
 
 /* ═══════════════════════════════════════════════════════════════════════════
    FontSizeSlider — Touch-draggable continuous slider (12px – 28px)
@@ -169,6 +183,83 @@ export function SettingsScreen() {
   const { data: entries } = useRecentDevotionals(200);
   const [isExporting, setIsExporting] = useState(false);
   const [isClearingDownloads, setIsClearingDownloads] = useState(false);
+
+  // Entitlements & Subscription
+  const isPremium = useIsPremium();
+  const currentTier = useCurrentTier();
+  const devOverride = useEntitlementStore((s) => s.devOverride);
+  const setDevOverride = useEntitlementStore((s) => s.setDevOverride);
+  const [isPaywallOpen, setIsPaywallOpen] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
+
+  // Cloud Vault State
+  const cloudUser = useCloudAuthStore((s) => s.user);
+  const lastSyncTime = useCloudAuthStore((s) => s.lastSyncTime);
+  const isSyncing = useCloudAuthStore((s) => s.isSyncing);
+  const [isCloudAuthOpen, setIsCloudAuthOpen] = useState(false);
+
+  const handleSyncCloud = async () => {
+    if (!isPremium) {
+      setIsPaywallOpen(true);
+      return;
+    }
+    if (!cloudUser) {
+      setIsCloudAuthOpen(true);
+      return;
+    }
+
+    const res = await syncToCloud();
+    if (res.success) {
+      toast.success('Cloud Vault Synced', `${res.syncedCount} devotional entries backed up securely.`);
+    } else {
+      toast.error('Sync Notice', res.error || 'Unable to sync with Cloud Vault.');
+    }
+  };
+
+  const handleRestoreCloud = async () => {
+    if (!isPremium) {
+      setIsPaywallOpen(true);
+      return;
+    }
+    if (!cloudUser) {
+      setIsCloudAuthOpen(true);
+      return;
+    }
+
+    promptModal.confirm({
+      title: 'Restore from Cloud Vault?',
+      message: 'This will download and merge your encrypted journal backups into this device.',
+      confirmText: 'Restore Entries',
+      cancelText: 'Cancel',
+      onConfirm: async () => {
+        const res = await restoreFromCloud();
+        if (res.success) {
+          toast.success('Restore Complete', `Restored ${res.syncedCount} entries from Cloud Vault.`);
+        } else {
+          toast.error('Restore Notice', res.error || 'Failed to restore entries.');
+        }
+      },
+    });
+  };
+
+  const handleRestorePurchases = async () => {
+    setIsRestoring(true);
+    try {
+      const success = await restorePurchases();
+      if (success) {
+        toast.success('Purchases Restored', 'Your previous subscription has been activated.');
+      } else {
+        promptModal.info(
+          'No Purchases Found',
+          'No active subscriptions were found for this store account.'
+        );
+      }
+    } catch (e: any) {
+      promptModal.error('Restore Error', e?.message || 'Unable to restore purchases at this time.');
+    } finally {
+      setIsRestoring(false);
+    }
+  };
 
   useEffect(() => {
     initDownloads();
@@ -353,6 +444,242 @@ export function SettingsScreen() {
                 resizeMode="contain"
               />
             </View>
+          </View>
+        </View>
+
+        {/* ═══════════ SECTION 0: SHEPEMA GRACE MEMBERSHIP ═══════════ */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Ionicons name="ribbon-outline" size={16} color="#C59B27" />
+            <Text style={[styles.sectionTitle, { color: colors.inkMuted }]}>MEMBERSHIP & GRACE</Text>
+          </View>
+
+          <View style={[styles.card, { backgroundColor: colors.cardBg, borderColor: isPremium ? '#C59B27' : colors.paperLine, borderWidth: isPremium ? 1.5 : 1 }]}>
+            {/* Membership Header Card */}
+            <View style={styles.graceHeaderRow}>
+              <View style={[styles.graceBadgeIcon, { backgroundColor: isPremium ? '#C59B27' : isDark ? '#2B251C' : '#F5ECE0' }]}>
+                <Ionicons
+                  name={isPremium ? 'ribbon' : 'sparkles'}
+                  size={20}
+                  color={isPremium ? '#FFFFFF' : '#C59B27'}
+                />
+              </View>
+              <View style={styles.graceTextCol}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Text style={[styles.gracePlanTitle, { color: colors.inkPrimary }]}>
+                    {isPremium
+                      ? currentTier === 'patron_lifetime'
+                        ? 'Founding Patron (Lifetime)'
+                        : 'Shepema Grace Active'
+                      : 'Free Plan (Guest)'}
+                  </Text>
+                  {isPremium && (
+                    <View style={[styles.activeStatusPill, { backgroundColor: '#E8F5E9' }]}>
+                      <Text style={styles.activeStatusText}>ACTIVE</Text>
+                    </View>
+                  )}
+                </View>
+                <Text style={[styles.gracePlanSubtitle, { color: colors.inkSecondary }]}>
+                  {isPremium
+                    ? 'Cloud Vault, Luxury Leather Covers & Watermark-Free HD Cards unlocked.'
+                    : 'Offline KJV Bible & local notes. Upgrade for Cloud Vault & Luxury Covers.'}
+                </Text>
+              </View>
+            </View>
+
+            {/* Upgrade CTA */}
+            {!isPremium ? (
+              <View style={{ paddingHorizontal: SPACING.md, paddingBottom: SPACING.md }}>
+                <Pressable
+                  onPress={() => setIsPaywallOpen(true)}
+                  style={[styles.graceUpgradeBtn, { backgroundColor: '#8B3A2B' }]}
+                >
+                  <Ionicons name="sparkles" size={15} color="#FFFFFF" />
+                  <Text style={styles.graceUpgradeBtnText}>Upgrade to Shepema Grace</Text>
+                </Pressable>
+              </View>
+            ) : null}
+
+            <View style={[styles.divider, { backgroundColor: colors.paperLine }]} />
+
+            {/* Restore Purchases Row */}
+            <Pressable
+              onPress={handleRestorePurchases}
+              disabled={isRestoring}
+              style={styles.rowItem}
+            >
+              <View style={styles.rowLeft}>
+                <View style={[styles.iconBox, { backgroundColor: isDark ? '#2A2520' : '#F5EFE6' }]}>
+                  {isRestoring ? (
+                    <ActivityIndicator size="small" color={colors.brandGreen} />
+                  ) : (
+                    <Ionicons name="refresh-outline" size={17} color={colors.inkPrimary} />
+                  )}
+                </View>
+                <View style={styles.rowTextCol}>
+                  <Text style={[styles.rowTitle, { color: colors.inkPrimary }]}>Restore Purchases</Text>
+                  <Text style={[styles.rowSubtitle, { color: colors.inkSecondary }]}>
+                    Restore previously purchased subscriptions
+                  </Text>
+                </View>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={colors.inkMuted} />
+            </Pressable>
+
+            {/* Dev Mode Override Toggle (__DEV__ only) */}
+            {__DEV__ && (
+              <>
+                <View style={[styles.divider, { backgroundColor: colors.paperLine }]} />
+                <View style={styles.rowItem}>
+                  <View style={styles.rowLeft}>
+                    <View style={[styles.iconBox, { backgroundColor: '#FFF3E0' }]}>
+                      <Ionicons name="code-slash" size={17} color="#E65100" />
+                    </View>
+                    <View style={styles.rowTextCol}>
+                      <Text style={[styles.rowTitle, { color: '#E65100' }]}>[DEV] Mock Premium Access</Text>
+                      <Text style={[styles.rowSubtitle, { color: colors.inkSecondary }]}>
+                        Toggle simulated Grace entitlement for testing
+                      </Text>
+                    </View>
+                  </View>
+                  <JournalToggle
+                    value={devOverride}
+                    onValueChange={(val) => setDevOverride(val)}
+                  />
+                </View>
+              </>
+            )}
+          </View>
+        </View>
+
+        {/* ═══════════ SECTION: ENCRYPTED CLOUD VAULT ═══════════ */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Ionicons name="cloud-done-outline" size={16} color={colors.brandGreen} />
+            <Text style={[styles.sectionTitle, { color: colors.inkMuted }]}>ENCRYPTED CLOUD VAULT</Text>
+          </View>
+
+          <View style={[styles.card, { backgroundColor: colors.cardBg, borderColor: colors.paperLine }]}>
+            {cloudUser ? (
+              <>
+                <View style={styles.rowItem}>
+                  <View style={styles.rowLeft}>
+                    <View style={[styles.iconBox, { backgroundColor: '#E8F5E9' }]}>
+                      <Ionicons name="person-circle-outline" size={19} color="#2E7D32" />
+                    </View>
+                    <View style={styles.rowTextCol}>
+                      <Text style={[styles.rowTitle, { color: colors.inkPrimary }]}>
+                        {cloudUser.email || 'Cloud Account Connected'}
+                      </Text>
+                      <Text style={[styles.rowSubtitle, { color: colors.inkSecondary }]}>
+                        {lastSyncTime
+                          ? `Last synced: ${new Date(lastSyncTime).toLocaleDateString()} at ${new Date(lastSyncTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                          : 'Not synced yet'}
+                      </Text>
+                    </View>
+                  </View>
+                  <Pressable
+                    onPress={() => {
+                      promptModal.confirm({
+                        title: 'Sign Out of Vault?',
+                        message: 'Local journal entries will remain safe on your device.',
+                        confirmText: 'Sign Out',
+                        cancelText: 'Cancel',
+                        onConfirm: () => {
+                          signOutCloud();
+                          toast.info('Signed Out', 'Cloud Vault disconnected.');
+                        },
+                      });
+                    }}
+                    hitSlop={6}
+                  >
+                    <Text style={{ fontFamily: FONTS.bodyBold, fontSize: 12, color: colors.tapeRhema }}>
+                      Sign Out
+                    </Text>
+                  </Pressable>
+                </View>
+
+                <View style={[styles.divider, { backgroundColor: colors.paperLine }]} />
+
+                {/* Sync Now Button */}
+                <Pressable
+                  onPress={handleSyncCloud}
+                  disabled={isSyncing}
+                  style={styles.rowItem}
+                >
+                  <View style={styles.rowLeft}>
+                    <View style={[styles.iconBox, { backgroundColor: isDark ? '#2A2520' : '#F5EFE6' }]}>
+                      {isSyncing ? (
+                        <ActivityIndicator size="small" color={colors.brandGreen} />
+                      ) : (
+                        <Ionicons name="cloud-upload-outline" size={17} color={colors.brandGreen} />
+                      )}
+                    </View>
+                    <View style={styles.rowTextCol}>
+                      <Text style={[styles.rowTitle, { color: colors.inkPrimary }]}>Sync Now</Text>
+                      <Text style={[styles.rowSubtitle, { color: colors.inkSecondary }]}>
+                        Encrypt and upload latest journal entries
+                      </Text>
+                    </View>
+                  </View>
+                  <Ionicons name="chevron-forward" size={16} color={colors.inkMuted} />
+                </Pressable>
+
+                <View style={[styles.divider, { backgroundColor: colors.paperLine }]} />
+
+                {/* Restore From Cloud Button */}
+                <Pressable
+                  onPress={handleRestoreCloud}
+                  disabled={isSyncing}
+                  style={styles.rowItem}
+                >
+                  <View style={styles.rowLeft}>
+                    <View style={[styles.iconBox, { backgroundColor: isDark ? '#2A2520' : '#F5EFE6' }]}>
+                      <Ionicons name="cloud-download-outline" size={17} color={colors.brandGreen} />
+                    </View>
+                    <View style={styles.rowTextCol}>
+                      <Text style={[styles.rowTitle, { color: colors.inkPrimary }]}>Restore from Cloud</Text>
+                      <Text style={[styles.rowSubtitle, { color: colors.inkSecondary }]}>
+                        Download your encrypted backup to this device
+                      </Text>
+                    </View>
+                  </View>
+                  <Ionicons name="chevron-forward" size={16} color={colors.inkMuted} />
+                </Pressable>
+              </>
+            ) : (
+              <Pressable
+                onPress={() => {
+                  if (!isPremium) {
+                    setIsPaywallOpen(true);
+                  } else {
+                    setIsCloudAuthOpen(true);
+                  }
+                }}
+                style={styles.rowItem}
+              >
+                <View style={styles.rowLeft}>
+                  <View style={[styles.iconBox, { backgroundColor: isPremium ? '#E8F5E9' : isDark ? '#2D2314' : '#F5E6CC' }]}>
+                    <Ionicons
+                      name={isPremium ? 'cloud-upload-outline' : 'lock-closed'}
+                      size={17}
+                      color={isPremium ? '#2E7D32' : '#C59B27'}
+                    />
+                  </View>
+                  <View style={styles.rowTextCol}>
+                    <Text style={[styles.rowTitle, { color: colors.inkPrimary }]}>
+                      {isPremium ? 'Connect Cloud Vault' : 'Encrypted Cloud Vault (Grace)'}
+                    </Text>
+                    <Text style={[styles.rowSubtitle, { color: colors.inkSecondary }]}>
+                      {isPremium
+                        ? 'Sign in to enable zero-knowledge multi-device sync'
+                        : 'Zero-knowledge encrypted cloud backup & restore'}
+                    </Text>
+                  </View>
+                </View>
+                <Ionicons name="chevron-forward" size={16} color={colors.inkMuted} />
+              </Pressable>
+            )}
           </View>
         </View>
 
@@ -958,6 +1285,67 @@ export function SettingsScreen() {
                 </View>
               </View>
             </View>
+
+            {/* Legal & Support Links */}
+            <View style={[styles.divider, { backgroundColor: colors.paperLine }]} />
+
+            <Pressable
+              onPress={() => {
+                promptModal.info(
+                  'Privacy Policy',
+                  'Shepema is built on a Zero-Knowledge & Local-First philosophy:\n\n1. All scripture readings and local notes remain on your device by default.\n2. When using Cloud Vault, your reflections are encrypted with AES-256 before leaving your device.\n3. We never sell, track, or harvest personal devotional data.\n\nFor questions, contact support@shepema.app'
+                );
+              }}
+              style={styles.rowItem}
+            >
+              <View style={styles.rowLeft}>
+                <View style={[styles.iconBox, { backgroundColor: isDark ? '#2A2520' : '#F5EFE6' }]}>
+                  <Ionicons name="shield-outline" size={17} color={colors.inkPrimary} />
+                </View>
+                <View style={styles.rowTextCol}>
+                  <Text style={[styles.rowTitle, { color: colors.inkPrimary }]}>Privacy Policy</Text>
+                  <Text style={[styles.rowSubtitle, { color: colors.inkSecondary }]}>
+                    Zero-knowledge encryption & data ownership
+                  </Text>
+                </View>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={colors.inkMuted} />
+            </Pressable>
+
+            <View style={[styles.divider, { backgroundColor: colors.paperLine }]} />
+
+            <Pressable
+              onPress={() => {
+                promptModal.info(
+                  'Terms of Service',
+                  'Shepema Grace Subscriptions & Purchases:\n\n1. Subscriptions auto-renew unless cancelled at least 24 hours before the period ends.\n2. Subscriptions can be managed or cancelled in Google Play / App Store account settings.\n3. Lifetime purchases grant perpetual access to all current and future Grace features.'
+                );
+              }}
+              style={styles.rowItem}
+            >
+              <View style={styles.rowLeft}>
+                <View style={[styles.iconBox, { backgroundColor: isDark ? '#2A2520' : '#F5EFE6' }]}>
+                  <Ionicons name="document-text-outline" size={17} color={colors.inkPrimary} />
+                </View>
+                <View style={styles.rowTextCol}>
+                  <Text style={[styles.rowTitle, { color: colors.inkPrimary }]}>Terms of Service</Text>
+                  <Text style={[styles.rowSubtitle, { color: colors.inkSecondary }]}>
+                    Subscription terms & store billing
+                  </Text>
+                </View>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={colors.inkMuted} />
+            </Pressable>
+
+            {/* Version & Soli Deo Gloria Footer */}
+            <View style={{ alignItems: 'center', paddingTop: 14, paddingBottom: 4 }}>
+              <Text style={{ fontFamily: FONTS.body, fontSize: 11, color: colors.inkMuted }}>
+                Shepema Devotional • Version 1.0.1 (Build 2)
+              </Text>
+              <Text style={{ fontFamily: FONTS.scriptureItalic, fontSize: 11, color: colors.inkSecondary, marginTop: 3 }}>
+                Soli Deo Gloria ✦ To God Alone Be the Glory
+              </Text>
+            </View>
           </View>
         </View>
       </ScrollView>
@@ -1004,6 +1392,18 @@ export function SettingsScreen() {
         }
         onClose={() => setTimePickerType(null)}
         onSaveTime={handleSaveManualTime}
+      />
+
+      {/* Shepema Grace Paywall Modal */}
+      <PaywallModal
+        visible={isPaywallOpen}
+        onClose={() => setIsPaywallOpen(false)}
+      />
+
+      {/* Encrypted Cloud Vault Auth Modal */}
+      <CloudVaultAuthModal
+        visible={isCloudAuthOpen}
+        onClose={() => setIsCloudAuthOpen(false)}
       />
     </View>
   );
@@ -1161,6 +1561,65 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: SPACING.md,
     ...SHADOWS.card,
+  },
+
+  /* ── Grace Membership Card ── */
+  graceHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: SPACING.xs,
+    marginBottom: SPACING.xs,
+  },
+  graceBadgeIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  graceTextCol: {
+    flex: 1,
+  },
+  gracePlanTitle: {
+    fontFamily: FONTS.sectionHeader,
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  activeStatusPill: {
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: RADIUS.pill,
+  },
+  activeStatusText: {
+    fontFamily: FONTS.bodyBold,
+    fontSize: 9,
+    color: '#2E7D32',
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  gracePlanSubtitle: {
+    fontFamily: FONTS.body,
+    fontSize: 12,
+    marginTop: 2,
+    lineHeight: 16,
+  },
+  graceUpgradeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 11,
+    borderRadius: RADIUS.pill,
+    marginTop: 6,
+    ...SHADOWS.subtle,
+  },
+  graceUpgradeBtnText: {
+    fontFamily: FONTS.bodyBold,
+    fontSize: 14,
+    color: '#FFFFFF',
+    fontWeight: '700',
+    letterSpacing: 0.3,
   },
   rowItem: {
     flexDirection: 'row',

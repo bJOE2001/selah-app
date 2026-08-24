@@ -9,6 +9,13 @@ export interface NotebookPageFrameProps {
   showSpine?: boolean;
   showRibbon?: boolean;
   ribbonColor?: string;
+  canvasBgColor?: string;
+  canvasBorderColor?: string;
+  spineBgColor?: string;
+  spineStripeColor?: string;
+  stitchColor?: string;
+  stackedLayer1Bg?: string;
+  stackedLayer2Bg?: string;
 }
 
 export function NotebookPageFrame({
@@ -17,6 +24,13 @@ export function NotebookPageFrame({
   showSpine = true,
   showRibbon = false,
   ribbonColor,
+  canvasBgColor,
+  canvasBorderColor,
+  spineBgColor,
+  spineStripeColor,
+  stitchColor,
+  stackedLayer1Bg,
+  stackedLayer2Bg,
 }: NotebookPageFrameProps) {
   const { colors, isDark } = useTheme();
 
@@ -27,8 +41,8 @@ export function NotebookPageFrame({
         style={[
           styles.stackedPageLayer2,
           {
-            backgroundColor: isDark ? '#1C1815' : '#E8DFD1',
-            borderColor: colors.paperLine,
+            backgroundColor: stackedLayer2Bg || (isDark ? '#1C1815' : '#E8DFD1'),
+            borderColor: canvasBorderColor || colors.paperLine,
           },
         ]}
       />
@@ -38,8 +52,8 @@ export function NotebookPageFrame({
         style={[
           styles.stackedPageLayer1,
           {
-            backgroundColor: isDark ? '#1F1B17' : '#F2EADB',
-            borderColor: colors.paperLine,
+            backgroundColor: stackedLayer1Bg || (isDark ? '#1F1B17' : '#F2EADB'),
+            borderColor: canvasBorderColor || colors.paperLine,
           },
         ]}
       />
@@ -49,8 +63,8 @@ export function NotebookPageFrame({
         style={[
           styles.activePageCanvas,
           {
-            backgroundColor: colors.cardBg,
-            borderColor: colors.paperLine,
+            backgroundColor: canvasBgColor || colors.cardBg,
+            borderColor: canvasBorderColor || colors.paperLine,
           },
           SHADOWS.card,
         ]}
@@ -61,8 +75,8 @@ export function NotebookPageFrame({
             style={[
               styles.spineContainer,
               {
-                backgroundColor: isDark ? '#161311' : '#F5EFE6',
-                borderRightColor: colors.paperLine,
+                backgroundColor: spineBgColor || (isDark ? '#161311' : '#F5EFE6'),
+                borderRightColor: canvasBorderColor || colors.paperLine,
               },
             ]}
           >
@@ -70,7 +84,7 @@ export function NotebookPageFrame({
             <View
               style={[
                 styles.spineStripe,
-                { backgroundColor: colors.bindingAccent },
+                { backgroundColor: spineStripeColor || colors.bindingAccent },
               ]}
             />
 
@@ -82,7 +96,7 @@ export function NotebookPageFrame({
                   style={[
                     styles.stitchHole,
                     {
-                      backgroundColor: isDark ? '#3D342B' : '#C4B7A6',
+                      backgroundColor: stitchColor || (isDark ? '#3D342B' : '#C4B7A6'),
                       borderColor: isDark ? '#0F0D0C' : '#E8DEC8',
                     },
                   ]}

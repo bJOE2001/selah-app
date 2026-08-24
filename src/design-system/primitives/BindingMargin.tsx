@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, ViewProps } from 'react-native';
-import { COLORS } from '../tokens/colors';
+import { useTheme } from '../theme/useTheme';
 import { SPACING } from '../tokens/spacing';
 
 export interface BindingMarginProps extends ViewProps {
@@ -9,16 +9,19 @@ export interface BindingMarginProps extends ViewProps {
 }
 
 export function BindingMargin({
-  accentColor = COLORS.bindingAccent,
+  accentColor,
   leftOffset = SPACING.marginBinding,
   style,
   ...props
 }: BindingMarginProps) {
+  const { colors } = useTheme();
+  const effectiveAccent = accentColor || colors.bindingAccent;
+
   return (
     <View
       style={[
         styles.bindingLine,
-        { left: leftOffset, backgroundColor: accentColor },
+        { left: leftOffset, backgroundColor: effectiveAccent },
         style,
       ]}
       pointerEvents="none"

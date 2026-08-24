@@ -17,6 +17,7 @@ import { ShareCardCanvas, CardTheme, ShareableDevotional } from './ShareCardCanv
 import { useTheme, promptModal, toast } from '../../design-system';
 import { FONTS } from '../../design-system/tokens/typography';
 import { SPACING, RADIUS, SHADOWS } from '../../design-system/tokens/spacing';
+import { useHasFeature, PaywallModal } from '../../entitlements';
 
 export interface ShareCardModalProps {
   visible: boolean;
@@ -33,8 +34,10 @@ export function ShareCardModal({
   const [theme, setTheme] = useState<CardTheme>('classic');
   const [includeReflection, setIncludeReflection] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
+  const [showPaywall, setShowPaywall] = useState(false);
   const cardRef = useRef<View>(null);
   const { colors, isDark } = useTheme();
+  const hasWatermarkFree = useHasFeature('watermarkFreeCards');
 
   if (!devotional) return null;
 
@@ -232,6 +235,22 @@ export function ShareCardModal({
             />
           </ScrollView>
 
+          {/* Watermark Removal Nudge for Free Users */}
+          {!hasWatermarkFree && (
+            <Pressable
+              onPress={() => setShowPaywall(true)}
+              style={[
+                styles.watermarkNudgeBtn,
+                { backgroundColor: isDark ? 'rgba(197, 155, 39, 0.12)' : 'rgba(197, 155, 39, 0.10)' },
+              ]}
+            >
+              <Ionicons name="sparkles" size={13} color="#C59B27" />
+              <Text style={styles.watermarkNudgeText}>
+                Remove watermark & export in Ultra-HD with Grace
+              </Text>
+            </Pressable>
+          )}
+
           {/* Action CTA Button */}
           <Pressable
             onPress={handleShare}
@@ -252,6 +271,12 @@ export function ShareCardModal({
             </Text>
           </Pressable>
         </View>
+
+        <PaywallModal
+          visible={showPaywall}
+          onClose={() => setShowPaywall(false)}
+          triggerFeature="Watermark-Free Exports"
+        />
       </View>
     </Modal>
   );
@@ -391,5 +416,20 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '700',
     letterSpacing: 0.3,
+  },
+  watermarkNudgeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: RADIUS.pill,
+    marginBottom: 8,
+  },
+  watermarkNudgeText: {
+    fontFamily: FONTS.bodyBold,
+    fontSize: 12,
+    color: '#C59B27',
   },
 });

@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, ViewStyle } from 'react-native';
-import { COLORS } from '../tokens/colors';
+import { useTheme } from '../theme/useTheme';
 import { FONTS } from '../tokens/typography';
 import { SPACING, RADIUS, SHADOWS } from '../tokens/spacing';
 
@@ -14,18 +14,21 @@ export interface TapeHeaderProps {
 
 export function TapeHeader({
   label,
-  color = COLORS.tapeRhema,
+  color,
   rotation = '-0.8deg',
   style,
   badge,
 }: TapeHeaderProps) {
+  const { colors } = useTheme();
+  const effectiveColor = color || colors.tapeRhema;
+
   return (
     <View style={[styles.wrapper, style]}>
       <View
         style={[
           styles.tape,
           {
-            backgroundColor: color,
+            backgroundColor: effectiveColor,
             transform: [{ rotate: rotation }],
           },
         ]}

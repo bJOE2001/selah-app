@@ -9,6 +9,11 @@ import { ShareCardModal } from '../../src/share-card';
 import { useTheme } from '../../src/design-system';
 import { FONTS } from '../../src/design-system/tokens/typography';
 import { SPACING, RADIUS, SHADOWS } from '../../src/design-system/tokens/spacing';
+import {
+  useIsPremium,
+  FREE_JOURNAL_PAGE_LIMIT,
+  PaywallModal,
+} from '../../src/entitlements';
 
 export default function JournalTabScreen() {
   const router = useRouter();
@@ -18,6 +23,20 @@ export default function JournalTabScreen() {
   const [viewMode, setViewMode] = useState<'notebook' | 'timeline'>('notebook');
   const [sharingId, setSharingId] = useState<string | null>(null);
   const { data: sharingDevotional } = useDevotional(sharingId);
+
+  const isPremium = useIsPremium();
+  const [isPaywallOpen, setIsPaywallOpen] = useState(false);
+
+  const totalEntriesCount = (entries || []).length;
+  const isPageLimitReached = !isPremium && totalEntriesCount >= FREE_JOURNAL_PAGE_LIMIT;
+
+  const handleStartNew = () => {
+    if (isPageLimitReached) {
+      setIsPaywallOpen(true);
+      return;
+    }
+    router.push('/devotional/new');
+  };
 
   const now = new Date();
   const formattedDate = now.toLocaleDateString('en-US', {
@@ -102,6 +121,45 @@ export default function JournalTabScreen() {
         </View>
       </View>
 
+      {/* Volume Capacity Banner for Free Users */}
+      {!isPremium && (
+        <Pressable
+          onPress={() => isPageLimitReached && setIsPaywallOpen(true)}
+          style={[
+            styles.volumeCapacityBar,
+            {
+              backgroundColor: isPageLimitReached
+                ? (isDark ? '#2D2314' : '#F5E6CC')
+                : (isDark ? '#1C1914' : '#F5EFE6'),
+              borderColor: isPageLimitReached ? '#C59B27' : colors.paperLine,
+            },
+          ]}
+        >
+          <View style={styles.volumeCapacityLeft}>
+            <Ionicons
+              name={isPageLimitReached ? 'lock-closed' : 'book-outline'}
+              size={13}
+              color={isPageLimitReached ? '#C59B27' : colors.inkSecondary}
+            />
+            <Text
+              style={[
+                styles.volumeCapacityText,
+                { color: isPageLimitReached ? '#C59B27' : colors.inkSecondary },
+              ]}
+            >
+              {isPageLimitReached
+                ? `Volume 1 Completed (${FREE_JOURNAL_PAGE_LIMIT}/${FREE_JOURNAL_PAGE_LIMIT} Pages) • Tap to Upgrade`
+                : `Volume 1 • ${totalEntriesCount} / ${FREE_JOURNAL_PAGE_LIMIT} Pages Written`}
+            </Text>
+          </View>
+          {isPageLimitReached && (
+            <View style={[styles.unlockPill, { backgroundColor: '#8B3A2B' }]}>
+              <Text style={styles.unlockPillText}>UNLOCK UNLIMITED</Text>
+            </View>
+          )}
+        </Pressable>
+      )}
+
       {/* Main Journal View */}
       <View style={styles.mainViewArea}>
         {viewMode === 'notebook' ? (
@@ -109,14 +167,14 @@ export default function JournalTabScreen() {
             entries={entries || []}
             onSelectEntry={(id) => router.push(`/devotional/${id}` as any)}
             onShareEntry={(id) => setSharingId(id)}
-            onStartNew={() => router.push('/devotional/new')}
+            onStartNew={handleStartNew}
           />
         ) : (
           <EntryTimeline
             entries={entries || []}
             onSelectEntry={(id) => router.push(`/devotional/${id}` as any)}
             onShareEntry={(id) => setSharingId(id)}
-            onStartNew={() => router.push('/devotional/new')}
+            onStartNew={handleStartNew}
           />
         )}
       </View>
@@ -126,6 +184,13 @@ export default function JournalTabScreen() {
         visible={!!sharingId}
         devotional={sharingDevotional || null}
         onClose={() => setSharingId(null)}
+      />
+
+      {/* Shepema Grace Paywall Modal */}
+      <PaywallModal
+        visible={isPaywallOpen}
+        onClose={() => setIsPaywallOpen(false)}
+        triggerFeature="Unlimited Devotional Pages (30/30 Limit Reached)"
       />
     </View>
   );
@@ -202,5 +267,37 @@ const styles = StyleSheet.create({
   },
   mainViewArea: {
     flex: 1,
+  },
+  volumeCapacityBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginHorizontal: SPACING.base,
+    marginBottom: SPACING.xs,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+  },
+  volumeCapacityLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flex: 1,
+  },
+  volumeCapacityText: {
+    fontFamily: FONTS.bodyBold,
+    fontSize: 11,
+  },
+  unlockPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: RADIUS.pill,
+  },
+  unlockPillText: {
+    color: '#FFFFFF',
+    fontFamily: FONTS.bodyBold,
+    fontSize: 9,
+    letterSpacing: 0.5,
   },
 });

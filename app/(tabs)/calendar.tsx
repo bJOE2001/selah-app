@@ -10,6 +10,11 @@ import { ShareCardModal } from '../../src/share-card';
 import { useTheme } from '../../src/design-system';
 import { FONTS } from '../../src/design-system/tokens/typography';
 import { SPACING, RADIUS, SHADOWS } from '../../src/design-system/tokens/spacing';
+import {
+  useIsPremium,
+  FREE_JOURNAL_PAGE_LIMIT,
+  PaywallModal,
+} from '../../src/entitlements';
 
 export default function CalendarTabScreen() {
   const router = useRouter();
@@ -18,7 +23,20 @@ export default function CalendarTabScreen() {
   const { data: entries } = useRecentDevotionals(100);
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [sharingId, setSharingId] = useState<string | null>(null);
+  const [isPaywallOpen, setIsPaywallOpen] = useState(false);
   const { data: sharingDevotional } = useDevotional(sharingId);
+
+  const isPremium = useIsPremium();
+  const totalEntriesCount = (entries || []).length;
+  const isPageLimitReached = !isPremium && totalEntriesCount >= FREE_JOURNAL_PAGE_LIMIT;
+
+  const handleStartNew = () => {
+    if (isPageLimitReached) {
+      setIsPaywallOpen(true);
+      return;
+    }
+    router.push('/devotional/new');
+  };
 
   const now = new Date();
   const formattedDate = now.toLocaleDateString('en-US', {
@@ -217,7 +235,7 @@ export default function CalendarTabScreen() {
                   No devotionals recorded on this day.
                 </Text>
                 <Pressable
-                  onPress={() => router.push('/devotional/new')}
+                  onPress={handleStartNew}
                   style={[styles.writeEntryBtn, { backgroundColor: colors.brandGreen }]}
                 >
                   <Ionicons name="add" size={16} color="#FFFFFF" />
@@ -249,6 +267,13 @@ export default function CalendarTabScreen() {
         visible={!!sharingId}
         devotional={sharingDevotional || null}
         onClose={() => setSharingId(null)}
+      />
+
+      {/* Shepema Grace Paywall Modal */}
+      <PaywallModal
+        visible={isPaywallOpen}
+        onClose={() => setIsPaywallOpen(false)}
+        triggerFeature="Unlimited Devotional Pages (30/30 Limit Reached)"
       />
     </View>
   );

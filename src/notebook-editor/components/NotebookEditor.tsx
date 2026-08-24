@@ -20,9 +20,15 @@ import { FONTS } from "../../design-system/tokens/typography";
 import {
   useDeleteDevotional,
   useSaveDevotional,
+  useRecentDevotionals,
 } from "../../devotional-core/hooks";
 import { useDraftStore } from "../../devotional-core/store";
 import { ChangeRhemaModal } from "./ChangeRhemaModal";
+import {
+  useIsPremium,
+  FREE_JOURNAL_PAGE_LIMIT,
+  PaywallModal,
+} from "../../entitlements";
 
 export interface NotebookEditorProps {
   onSaveSuccess?: (devotionalId: string) => void;
@@ -34,6 +40,10 @@ export function NotebookEditor({ onSaveSuccess }: NotebookEditorProps) {
   const { colors, isDark } = useTheme();
   const scrollRef = useRef<ScrollView>(null);
   const [isChangeRhemaOpen, setIsChangeRhemaOpen] = useState(false);
+  const [isPaywallOpen, setIsPaywallOpen] = useState(false);
+
+  const isPremium = useIsPremium();
+  const { data: recentEntries } = useRecentDevotionals(100);
 
   const {
     editingDevotionalId,
@@ -44,6 +54,7 @@ export function NotebookEditor({ onSaveSuccess }: NotebookEditorProps) {
     motivation,
     selectedMoodTagIds,
     application,
+    setRhema,
     setReflection,
     setMotivation,
     setApplication,
@@ -83,6 +94,11 @@ export function NotebookEditor({ onSaveSuccess }: NotebookEditorProps) {
   };
 
   const handleSave = async () => {
+    if (!editingDevotionalId && !isPremium && (recentEntries || []).length >= FREE_JOURNAL_PAGE_LIMIT) {
+      setIsPaywallOpen(true);
+      return;
+    }
+
     if (!rhemaText || !rhemaReference) {
       promptModal.info(
         "Rhema Scripture Needed",
@@ -414,6 +430,13 @@ export function NotebookEditor({ onSaveSuccess }: NotebookEditorProps) {
         <ChangeRhemaModal
           visible={isChangeRhemaOpen}
           onClose={() => setIsChangeRhemaOpen(false)}
+        />
+
+        {/* Shepema Grace Paywall Modal */}
+        <PaywallModal
+          visible={isPaywallOpen}
+          onClose={() => setIsPaywallOpen(false)}
+          triggerFeature="Unlimited Devotional Pages (30/30 Limit Reached)"
         />
 
         {/* 

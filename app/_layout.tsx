@@ -42,6 +42,7 @@ import { LockScreen } from "../src/privacy-lock/components/LockScreen";
 import { usePrivacyAuthStore } from "../src/privacy-lock/store";
 import { configureNotificationHandler, syncAllReminders } from "../src/notifications";
 import { useSettingsStore } from "../src/settings/store";
+import { initRevenueCat } from "../src/entitlements";
 
 // Prevent splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -71,7 +72,7 @@ export default function RootLayout() {
   });
 
   const { isUnlocked, isLockEnabled } = usePrivacyAuthStore();
-  const { isDark, colors } = useTheme();
+  const { isDark, colors, themeMode } = useTheme();
 
   useEffect(() => {
     // Display the animated AppOpeningScreen on launch
@@ -86,7 +87,7 @@ export default function RootLayout() {
     async function prepare() {
       try {
         if (typeof Appearance?.setColorScheme === "function") {
-          Appearance.setColorScheme(isDark ? "dark" : "light");
+          Appearance.setColorScheme(themeMode === "system" ? null : (isDark ? "dark" : "light"));
         }
         if (Platform.OS === "android") {
           try {
@@ -96,6 +97,7 @@ export default function RootLayout() {
           document.body.style.backgroundColor = colors.paperBg;
         }
         await initDatabase();
+        initRevenueCat().catch((rcErr) => console.warn("RevenueCat init warning:", rcErr));
         setDbReady(true);
       } catch (e) {
         console.warn("Database initialization error:", e);
@@ -107,7 +109,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (typeof Appearance?.setColorScheme === "function") {
-      Appearance.setColorScheme(isDark ? "dark" : "light");
+      Appearance.setColorScheme(themeMode === "system" ? null : (isDark ? "dark" : "light"));
     }
     if (Platform.OS === "android") {
       const syncNavBar = async () => {
@@ -119,7 +121,7 @@ export default function RootLayout() {
     } else if (Platform.OS === "web" && typeof document !== "undefined") {
       document.body.style.backgroundColor = colors.paperBg;
     }
-  }, [colors.paperBg, isDark]);
+  }, [colors.paperBg, isDark, themeMode]);
 
   const {
     morningReminderEnabled,

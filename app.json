@@ -8,7 +8,8 @@
     "scheme": "shepema",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.shepema.app"
     },
     "android": {
       "package": "com.shepema.app",

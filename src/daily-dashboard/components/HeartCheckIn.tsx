@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '../../design-system/tokens/colors';
+import { useTheme } from '../../design-system';
 import { FONTS } from '../../design-system/tokens/typography';
 import { SPACING, RADIUS, SHADOWS } from '../../design-system/tokens/spacing';
 
@@ -77,19 +77,20 @@ export interface HeartCheckInProps {
 }
 
 export function HeartCheckIn({ onJournalWithMood }: HeartCheckInProps) {
+  const { colors, isDark } = useTheme();
   const [selectedMood, setSelectedMood] = useState<MoodOption | null>(null);
 
   return (
     <View style={styles.container}>
-      <View style={styles.card}>
+      <View style={[styles.card, { backgroundColor: colors.cardBg, borderColor: colors.paperLine }]}>
         <View style={styles.headerRow}>
-          <View style={styles.iconCircle}>
+          <View style={[styles.iconCircle, { backgroundColor: isDark ? '#1C291C' : '#EAF4EC' }]}>
             <Ionicons name="heart" size={13} color="#4A7C59" />
           </View>
-          <Text style={styles.title}>How is your heart today?</Text>
+          <Text style={[styles.title, { color: colors.inkPrimary }]}>How is your heart today?</Text>
         </View>
 
-        <Text style={styles.subtitle}>
+        <Text style={[styles.subtitle, { color: colors.inkMuted }]}>
           Pause and bring your authentic heart before the Lord.
         </Text>
 
@@ -102,6 +103,10 @@ export function HeartCheckIn({ onJournalWithMood }: HeartCheckInProps) {
                 key={mood.id}
                 style={[
                   styles.chip,
+                  {
+                    backgroundColor: isDark ? '#1F1B17' : '#FAF7F2',
+                    borderColor: colors.paperLine,
+                  },
                   isSelected && {
                     backgroundColor: mood.color + '1A',
                     borderColor: mood.color,
@@ -115,7 +120,8 @@ export function HeartCheckIn({ onJournalWithMood }: HeartCheckInProps) {
                 <Text
                   style={[
                     styles.chipLabel,
-                    isSelected && { color: COLORS.inkPrimary, fontWeight: '700' },
+                    { color: colors.inkSecondary },
+                    isSelected && { color: colors.inkPrimary, fontWeight: '700' },
                   ]}
                 >
                   {mood.label}
@@ -127,9 +133,17 @@ export function HeartCheckIn({ onJournalWithMood }: HeartCheckInProps) {
 
         {/* Dynamic Encouragement & Prayer Drawer */}
         {selectedMood ? (
-          <View style={[styles.responseBox, { borderLeftColor: selectedMood.color }]}>
-            <Text style={styles.scriptureText}>{selectedMood.scripture}</Text>
-            <Text style={styles.encouragementText}>{selectedMood.encouragement}</Text>
+          <View
+            style={[
+              styles.responseBox,
+              {
+                backgroundColor: isDark ? '#1A1815' : '#FAF7F2',
+                borderLeftColor: selectedMood.color,
+              },
+            ]}
+          >
+            <Text style={[styles.scriptureText, { color: colors.inkPrimary }]}>{selectedMood.scripture}</Text>
+            <Text style={[styles.encouragementText, { color: colors.inkSecondary }]}>{selectedMood.encouragement}</Text>
 
             <Pressable
               style={[styles.journalBtn, { backgroundColor: selectedMood.color }]}
@@ -178,13 +192,11 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: FONTS.sectionHeader,
     fontSize: 14,
-    color: COLORS.inkPrimary,
     fontWeight: '700',
   },
   subtitle: {
     fontFamily: FONTS.body,
     fontSize: 11,
-    color: COLORS.inkMuted,
     marginBottom: SPACING.sm + 2,
   },
   chipGrid: {
@@ -196,8 +208,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: '#FAF7F2',
-    borderColor: '#EBE3D7',
     borderWidth: 1,
     paddingVertical: 7,
     paddingHorizontal: 11,
@@ -209,11 +219,9 @@ const styles = StyleSheet.create({
   chipLabel: {
     fontFamily: FONTS.body,
     fontSize: 12,
-    color: COLORS.inkSecondary,
   },
   responseBox: {
     marginTop: SPACING.md,
-    backgroundColor: '#FAF7F2',
     padding: SPACING.sm + 4,
     borderRadius: 14,
     borderLeftWidth: 3.5,
@@ -221,14 +229,12 @@ const styles = StyleSheet.create({
   scriptureText: {
     fontFamily: FONTS.scriptureItalic,
     fontSize: 12,
-    color: COLORS.inkPrimary,
     lineHeight: 17,
     marginBottom: 4,
   },
   encouragementText: {
     fontFamily: FONTS.body,
     fontSize: 11,
-    color: COLORS.inkSecondary,
     lineHeight: 16,
     marginBottom: SPACING.sm,
   },

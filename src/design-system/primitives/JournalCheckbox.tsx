@@ -9,7 +9,7 @@ import {
   Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '../tokens/colors';
+import { useTheme } from '../theme/useTheme';
 import { FONTS } from '../tokens/typography';
 import { SPACING, RADIUS } from '../tokens/spacing';
 
@@ -34,6 +34,7 @@ export function JournalCheckbox({
   placeholder = 'Action step to live out today...',
   style,
 }: JournalCheckboxProps) {
+  const { colors } = useTheme();
   const checkAnim = useRef(new Animated.Value(isChecked ? 1 : 0)).current;
 
   useEffect(() => {
@@ -52,14 +53,15 @@ export function JournalCheckbox({
         <View
           style={[
             styles.box,
+            { borderColor: colors.checkboxUnchecked },
             isChecked && {
-              borderColor: COLORS.checkboxChecked,
-              backgroundColor: COLORS.checkboxChecked + '18',
+              borderColor: colors.checkboxChecked,
+              backgroundColor: colors.checkboxChecked + '18',
             },
           ]}
         >
           <Animated.View style={{ transform: [{ scale: checkAnim }], opacity: checkAnim }}>
-            <Ionicons name="checkmark" size={16} color={COLORS.checkboxChecked} />
+            <Ionicons name="checkmark" size={16} color={colors.checkboxChecked} />
           </Animated.View>
         </View>
       </Pressable>
@@ -69,12 +71,16 @@ export function JournalCheckbox({
         <TextInput
           style={[
             styles.input,
-            isChecked && styles.textChecked,
+            {
+              color: colors.inkPrimary,
+              borderBottomColor: colors.paperLine,
+            },
+            isChecked && [styles.textChecked, { color: colors.inkSecondary }],
           ]}
           value={text}
           onChangeText={onChangeText}
           placeholder={placeholder}
-          placeholderTextColor={COLORS.inkPlaceholder}
+          placeholderTextColor={colors.inkPlaceholder}
           multiline
         />
       ) : (
@@ -82,7 +88,8 @@ export function JournalCheckbox({
           <Text
             style={[
               styles.staticText,
-              isChecked && styles.textChecked,
+              { color: colors.inkPrimary },
+              isChecked && [styles.textChecked, { color: colors.inkSecondary }],
             ]}
           >
             {text}
@@ -93,7 +100,7 @@ export function JournalCheckbox({
       {/* Remove button if callback provided */}
       {onRemove ? (
         <Pressable onPress={onRemove} style={styles.removeButton} hitSlop={8}>
-          <Ionicons name="close-circle-outline" size={20} color={COLORS.inkPlaceholder} />
+          <Ionicons name="close-circle-outline" size={20} color={colors.inkPlaceholder} />
         </Pressable>
       ) : null}
     </View>
@@ -115,7 +122,6 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: RADIUS.xs,
     borderWidth: 2,
-    borderColor: COLORS.checkboxUnchecked,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -123,10 +129,8 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: FONTS.userInput,
     fontSize: 17,
-    color: COLORS.inkPrimary,
     padding: 0,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.paperLine,
     paddingBottom: SPACING.xs,
   },
   staticTextContainer: {
@@ -135,12 +139,10 @@ const styles = StyleSheet.create({
   staticText: {
     fontFamily: FONTS.body,
     fontSize: 15,
-    color: COLORS.inkPrimary,
     lineHeight: 22,
   },
   textChecked: {
     textDecorationLine: 'line-through',
-    color: COLORS.inkSecondary,
     opacity: 0.55,
   },
   removeButton: {

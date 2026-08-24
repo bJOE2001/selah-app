@@ -22,9 +22,15 @@ import {
 } from "../../devotional-core/hooks";
 import { DevotionalSummary } from "../../devotional-core/types";
 import { useSettingsStore } from "../../settings/store";
+import { useIsPremium, FREE_JOURNAL_PAGE_LIMIT } from "../../entitlements";
 import { BookmarkIndexModal, BookmarkItemData } from "./BookmarkIndexModal";
 import { DogEarFold } from "./DogEarFold";
-import { EditJournalCoverModal } from "./EditJournalCoverModal";
+import {
+  EditJournalCoverModal,
+  COVER_MATERIALS,
+  getCoverMaterialTokens,
+  SacredCross,
+} from "./EditJournalCoverModal";
 import { NotebookPageFrame } from "./NotebookPageFrame";
 import { TableOfContentsModal } from "./TableOfContentsModal";
 
@@ -52,9 +58,15 @@ export function NotebookBookView({
   const [isNavigatorOpen, setIsNavigatorOpen] = useState(false);
   const toggleBookmarkMutation = useToggleBookmarkDevotional();
   const deleteMutation = useDeleteDevotional();
+  const isPremium = useIsPremium();
 
-  const { journalCoverTitle, journalCoverSubtitle, journalCoverVerseRef } =
-    useSettingsStore();
+  const {
+    journalCoverTitle,
+    journalCoverSubtitle,
+    journalCoverVerseRef,
+    journalCoverMaterial,
+    journalCoverEmblem,
+  } = useSettingsStore();
 
   // Initialize bookmarked state mapping from entries
   const [bookmarkedIds, setBookmarkedIds] = useState<Record<string, boolean>>(
@@ -181,176 +193,209 @@ export function NotebookBookView({
     });
   };
 
-  const renderCoverPage = () => (
-    <NotebookPageFrame showSpine={true} showRibbon={false}>
-      <View
-        style={[
-          styles.coverContainer,
-          { backgroundColor: isDark ? "#1F1B17" : "#FAF5ED" },
-        ]}
+  const renderCoverPage = () => {
+    const rawSelectedMat =
+      COVER_MATERIALS.find((m) => m.id === journalCoverMaterial) ||
+      COVER_MATERIALS[0];
+
+    // Fall back to Classic Linen if subscription expired or user is on Free tier
+    const activeMatId =
+      !isPremium && rawSelectedMat.isPremium
+        ? COVER_MATERIALS[0].id
+        : rawSelectedMat.id;
+
+    const tokens = getCoverMaterialTokens(activeMatId, isDark);
+
+    const activeEmblem =
+      !isPremium && journalCoverEmblem !== "mascot"
+        ? "mascot"
+        : journalCoverEmblem || "mascot";
+
+    return (
+      <NotebookPageFrame
+        showSpine={true}
+        showRibbon={false}
+        canvasBgColor={tokens.bg}
+        canvasBorderColor={tokens.border}
+        spineBgColor={tokens.spineBg}
+        spineStripeColor={tokens.accent}
+        stitchColor={tokens.stitchColor}
+        stackedLayer1Bg={tokens.stacked1Bg}
+        stackedLayer2Bg={tokens.stacked2Bg}
       >
-        {/* Decorative Gold Embossed Frame */}
         <View
           style={[
-            styles.coverEmbossedBorder,
-            { borderColor: colors.brandGold + "65" },
+            styles.coverContainer,
+            { backgroundColor: tokens.bg, borderColor: tokens.border },
           ]}
         >
-          {/* Top Inscription */}
-          <View style={styles.coverHeader}>
-            <Text style={[styles.coverVolumeText, { color: colors.brandGold }]}>
-              MY DEVOTIONAL JOURNAL
-            </Text>
-            <View
-              style={[
-                styles.goldLine,
-                { backgroundColor: colors.brandGold + "50" },
-              ]}
-            />
-          </View>
-
-          {/* Center Title & Mascot Crest (Tap to Personalize) */}
-          <Pressable
-            onPress={() => setIsEditCoverOpen(true)}
-            style={styles.coverCenter}
-            accessibilityLabel="Edit Journal Cover"
+          {/* Decorative Gold Embossed Frame */}
+          <View
+            style={[
+              styles.coverEmbossedBorder,
+              { borderColor: tokens.accent + (tokens.isDarkCover ? "75" : "55") },
+            ]}
           >
-            {/* Mascot Crest Medallion with Gold Aureole Ring */}
-            <View style={styles.coverMascotArea}>
-              <View
-                style={[
-                  styles.coverMascotOuterRing,
-                  {
-                    borderColor: colors.brandGold + "55",
-                    backgroundColor: isDark
-                      ? "rgba(212, 175, 55, 0.08)"
-                      : "rgba(212, 175, 55, 0.06)",
-                  },
-                ]}
-              >
-                <View
-                  style={[
-                    styles.coverMascotHalo,
-                    {
-                      backgroundColor: isDark ? "#26211C" : "#FFFDF9",
-                      borderColor: colors.brandGold + "85",
-                    },
-                  ]}
-                >
-                  <Image
-                    source={require("../../../assets/images/mascot-holding-bible-transparent.png")}
-                    style={styles.coverMascotImage}
-                    resizeMode="contain"
-                  />
-                </View>
-              </View>
-            </View>
-
-            <Text style={[styles.coverTitle, { color: colors.inkPrimary }]}>
-              {journalCoverTitle}
-            </Text>
-
-            {journalCoverSubtitle ? (
-              <Text
-                style={[styles.coverScripture, { color: colors.inkSecondary }]}
-              >
-                “{journalCoverSubtitle}”
-              </Text>
-            ) : null}
-
-            {journalCoverVerseRef ? (
-              <Text
-                style={[styles.coverScriptureRef, { color: colors.brandGold }]}
-              >
-                {journalCoverVerseRef}
-              </Text>
-            ) : null}
-
-            <View
-              style={[
-                styles.personalizeBadge,
-                {
-                  backgroundColor: isDark ? "#2A241F" : "#F5EFE6",
-                  borderColor: colors.paperLine,
-                },
-              ]}
+            {/* Center Title & Mascot Crest (Tap to Personalize) */}
+            <Pressable
+              onPress={() => setIsEditCoverOpen(true)}
+              style={styles.coverCenter}
+              accessibilityLabel="Edit Journal Cover"
             >
-              <Ionicons name="pencil" size={11} color={colors.inkMuted} />
-              <Text
-                style={[
-                  styles.personalizeBadgeText,
-                  { color: colors.inkMuted },
-                ]}
-              >
-                Tap to Personalize
-              </Text>
-            </View>
-          </Pressable>
-
-          {/* Bottom Stats & Write Today CTA */}
-          <View style={styles.coverFooter}>
-            <View style={styles.coverStatsRow}>
-              <View
-                style={[
-                  styles.coverStatsBadge,
-                  {
-                    backgroundColor: colors.cardBg,
-                    borderColor: colors.paperLine,
-                  },
-                ]}
-              >
-                <Text
-                  style={[styles.coverStatsText, { color: colors.inkPrimary }]}
-                >
-                  {entries.length}{" "}
-                  {entries.length === 1 ? "Page Written" : "Pages Written"}
-                </Text>
-              </View>
-
-              {bookmarkedCount > 0 ? (
-                <Pressable
-                  onPress={() => setIsBookmarkIndexOpen(true)}
-                  style={[
-                    styles.coverBookmarkBadge,
-                    {
-                      backgroundColor: colors.tapeRhema + "18",
-                      borderColor: colors.tapeRhema + "45",
-                    },
-                  ]}
-                >
-                  <Ionicons
-                    name="bookmark"
-                    size={11}
-                    color={colors.tapeRhema}
-                  />
-                  <Text
+              {/* Mascot / Sacred Crest Medallion with Gold Aureole Ring */}
+              {activeEmblem !== "none" ? (
+                <View style={styles.coverMascotArea}>
+                  <View
                     style={[
-                      styles.coverBookmarkText,
-                      { color: colors.tapeRhema },
+                      styles.coverMascotOuterRing,
+                      {
+                        borderColor: tokens.accent + "55",
+                        backgroundColor: tokens.isDarkCover
+                          ? "rgba(212, 175, 55, 0.12)"
+                          : "rgba(212, 175, 55, 0.06)",
+                      },
                     ]}
                   >
-                    {bookmarkedCount} Bookmarked
-                  </Text>
-                </Pressable>
+                    <View
+                      style={[
+                        styles.coverMascotHalo,
+                        {
+                          backgroundColor: tokens.isDarkCover
+                            ? (tokens.id === "onyx_gold" ? "#22201D" : tokens.bg)
+                            : "#FFFDF9",
+                          borderColor: tokens.accent + "85",
+                        },
+                      ]}
+                    >
+                      {activeEmblem === "mascot" ? (
+                        <Image
+                          source={require("../../../assets/images/mascot-holding-bible-transparent.png")}
+                          style={styles.coverMascotImage}
+                          resizeMode="contain"
+                        />
+                      ) : activeEmblem === "cross" ? (
+                        <SacredCross size={40} color={tokens.accent} />
+                      ) : activeEmblem === "dove" ? (
+                        <Text style={{ fontSize: 30 }}>🕊️</Text>
+                      ) : activeEmblem === "bible" ? (
+                        <Ionicons name="book-outline" size={30} color={tokens.accent} />
+                      ) : (
+                        <Ionicons name="sparkles" size={30} color={tokens.accent} />
+                      )}
+                    </View>
+                  </View>
+                </View>
               ) : null}
-            </View>
 
-            {/* Single Primary Action: Write Today */}
-            <Pressable
-              onPress={onStartNew}
-              style={[
-                styles.writeTodayBtn,
-                { backgroundColor: colors.brandGreen },
-              ]}
-            >
-              <Ionicons name="create-outline" size={15} color="#FFFFFF" />
-              <Text style={styles.writeTodayBtnText}>Write</Text>
+              <Text style={[styles.coverTitle, { color: tokens.textColor }]}>
+                {journalCoverTitle}
+              </Text>
+
+              {journalCoverSubtitle ? (
+                <Text
+                  style={[styles.coverScripture, { color: tokens.subtextColor }]}
+                >
+                  “{journalCoverSubtitle}”
+                </Text>
+              ) : null}
+
+              {journalCoverVerseRef ? (
+                <Text
+                  style={[styles.coverScriptureRef, { color: tokens.accent }]}
+                >
+                  {journalCoverVerseRef}
+                </Text>
+              ) : null}
+
+              <View
+                style={[
+                  styles.personalizeBadge,
+                  {
+                    backgroundColor: tokens.isDarkCover
+                      ? "rgba(255, 255, 255, 0.12)"
+                      : (isDark ? "#2A241F" : "#F5EFE6"),
+                    borderColor: tokens.isDarkCover ? tokens.accent + "40" : colors.paperLine,
+                  },
+                ]}
+              >
+                <Ionicons name="pencil" size={11} color={tokens.isDarkCover ? tokens.accent : colors.inkMuted} />
+                <Text
+                  style={[
+                    styles.personalizeBadgeText,
+                    { color: tokens.isDarkCover ? tokens.textColor : colors.inkMuted },
+                  ]}
+                >
+                  Tap to Personalize
+                </Text>
+              </View>
             </Pressable>
+
+            {/* Bottom Stats & Write Today CTA */}
+            <View style={styles.coverFooter}>
+              <View style={styles.coverStatsRow}>
+                <View
+                  style={[
+                    styles.coverStatsBadge,
+                    {
+                      backgroundColor: tokens.isDarkCover ? "rgba(0,0,0,0.35)" : colors.cardBg,
+                      borderColor: tokens.isDarkCover ? tokens.accent + "40" : colors.paperLine,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[styles.coverStatsText, { color: tokens.isDarkCover ? tokens.textColor : colors.inkPrimary }]}
+                  >
+                    {isPremium
+                      ? `${entries.length} ${entries.length === 1 ? "Page" : "Pages"} (Unlimited)`
+                      : `Volume 1 • ${entries.length} / ${FREE_JOURNAL_PAGE_LIMIT} Pages`}
+                  </Text>
+                </View>
+
+                {bookmarkedCount > 0 ? (
+                  <Pressable
+                    onPress={() => setIsBookmarkIndexOpen(true)}
+                    style={[
+                      styles.coverBookmarkBadge,
+                      {
+                        backgroundColor: colors.tapeRhema + "18",
+                        borderColor: colors.tapeRhema + "45",
+                      },
+                    ]}
+                  >
+                    <Ionicons
+                      name="bookmark"
+                      size={11}
+                      color={colors.tapeRhema}
+                    />
+                    <Text
+                      style={[
+                        styles.coverBookmarkText,
+                        { color: colors.tapeRhema },
+                      ]}
+                    >
+                      {bookmarkedCount} Bookmarked
+                    </Text>
+                  </Pressable>
+                ) : null}
+              </View>
+
+              {/* Single Primary Action: Write Today */}
+              <Pressable
+                onPress={onStartNew}
+                style={[
+                  styles.writeTodayBtn,
+                  { backgroundColor: colors.brandGreen },
+                ]}
+              >
+                <Ionicons name="create-outline" size={15} color="#FFFFFF" />
+                <Text style={styles.writeTodayBtnText}>Write</Text>
+              </Pressable>
+            </View>
           </View>
         </View>
-      </View>
-    </NotebookPageFrame>
-  );
+      </NotebookPageFrame>
+    );
+  };
 
   const renderEntryPage = (entry: DevotionalSummary, pageNumber: number) => {
     const isBookmarked = bookmarkedIds[entry.id] ?? entry.isBookmarked;
@@ -1148,40 +1193,29 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1.5,
     borderStyle: "dashed",
-    paddingVertical: SPACING.md,
+    paddingTop: SPACING.base,
+    paddingBottom: SPACING.base,
     paddingHorizontal: SPACING.sm,
     justifyContent: "space-between",
     alignItems: "center",
   },
-  coverHeader: {
-    alignItems: "center",
-    gap: 4,
-    width: "100%",
-  },
-  coverVolumeText: {
-    fontFamily: FONTS.bodyBold,
-    fontSize: 9,
-    fontWeight: "800",
-    letterSpacing: 1.5,
-  },
-  goldLine: {
-    height: 1,
-    width: 48,
-  },
   coverCenter: {
+    flex: 1,
     alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: SPACING.sm,
-    gap: 5,
+    width: "100%",
+    gap: 6,
   },
   coverMascotArea: {
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 4,
+    marginBottom: 6,
   },
   coverMascotOuterRing: {
-    width: 82,
-    height: 82,
-    borderRadius: 41,
+    width: 84,
+    height: 84,
+    borderRadius: 42,
     borderWidth: 1.2,
     borderStyle: "dashed",
     alignItems: "center",
@@ -1189,9 +1223,9 @@ const styles = StyleSheet.create({
     padding: 3,
   },
   coverMascotHalo: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     borderWidth: 1.5,
     alignItems: "center",
     justifyContent: "center",
@@ -1199,47 +1233,49 @@ const styles = StyleSheet.create({
     ...SHADOWS.subtle,
   },
   coverMascotImage: {
-    width: 60,
-    height: 60,
+    width: 62,
+    height: 62,
   },
   coverTitle: {
     fontFamily: FONTS.sectionHeader,
-    fontSize: 19,
+    fontSize: 20,
     fontWeight: "700",
     textAlign: "center",
-    lineHeight: 24,
+    lineHeight: 26,
   },
   coverScripture: {
     fontFamily: FONTS.scriptureItalic,
-    fontSize: 12,
+    fontSize: 13,
     textAlign: "center",
-    lineHeight: 16,
+    lineHeight: 18,
     marginTop: 2,
+    maxWidth: "92%",
   },
   coverScriptureRef: {
     fontFamily: FONTS.scriptureBold,
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: "700",
   },
   personalizeBadge: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     borderRadius: RADIUS.pill,
     borderWidth: 0.8,
-    marginTop: 4,
+    marginTop: 6,
   },
   personalizeBadgeText: {
     fontFamily: FONTS.bodyBold,
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: "700",
   },
   coverFooter: {
     alignItems: "center",
-    gap: 8,
+    gap: 10,
     width: "100%",
+    paddingBottom: SPACING.xs,
   },
   coverStatsRow: {
     flexDirection: "row",

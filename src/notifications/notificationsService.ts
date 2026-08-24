@@ -14,19 +14,26 @@ const DEVOTIONAL_CHANNEL_ID = 'daily-devotional-habits';
 export const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
 
 function getNotificationsModule(): typeof import('expo-notifications') | null {
+  // Expo Go removed remote push notifications in SDK 53+.
+  // In Expo Go, return null to prevent loud push warning popups while allowing UI simulation.
+  // In standalone / development builds, load the full native notifications module.
+  if (isExpoGo) {
+    return null;
+  }
+
   try {
     return require('expo-notifications');
   } catch (err) {
-    console.warn('expo-notifications module not found:', err);
     return null;
   }
 }
-
 
 /**
  * Configure default foreground notification behavior
  */
 export function configureNotificationHandler() {
+  if (isExpoGo) return;
+
   const Notifications = getNotificationsModule();
   if (!Notifications) return;
 
@@ -60,7 +67,9 @@ export function configureNotificationHandler() {
 }
 
 // Automatically configure handler on module initialization
-configureNotificationHandler();
+if (!isExpoGo) {
+  configureNotificationHandler();
+}
 
 
 /**

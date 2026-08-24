@@ -32,6 +32,8 @@ export interface SettingsState {
   journalCoverTitle: string;
   journalCoverSubtitle: string;
   journalCoverVerseRef: string;
+  journalCoverMaterial: string;
+  journalCoverEmblem: string;
 
   // Actions
   setThemeMode: (mode: ThemeMode) => void;
@@ -40,7 +42,13 @@ export interface SettingsState {
   setMorningReminder: (enabled: boolean, time?: string) => void;
   setEveningReminder: (enabled: boolean, time?: string) => void;
   setPaperLined: (enabled: boolean) => void;
-  setJournalCover: (title: string, subtitle?: string, verseRef?: string) => void;
+  setJournalCover: (
+    title: string,
+    subtitle?: string,
+    verseRef?: string,
+    material?: string,
+    emblem?: string
+  ) => void;
 }
 
 // Migration map for old string-based font sizes → numeric px
@@ -65,6 +73,8 @@ export const useSettingsStore = create<SettingsState>()(
       journalCoverTitle: 'My Devotional Journal',
       journalCoverSubtitle: 'Thy word is a lamp unto my feet, and a light unto my path.',
       journalCoverVerseRef: 'Psalm 119:105',
+      journalCoverMaterial: 'linen',
+      journalCoverEmblem: 'mascot',
 
       setThemeMode: (themeMode) => set({ themeMode }),
       setFontSize: (fontSize) =>
@@ -81,13 +91,17 @@ export const useSettingsStore = create<SettingsState>()(
           eveningReminderTime: time || state.eveningReminderTime,
         })),
       setPaperLined: (paperLined) => set({ paperLined }),
-      setJournalCover: (title, subtitle, verseRef) =>
+      setJournalCover: (title, subtitle, verseRef, material, emblem) =>
         set((state) => ({
           journalCoverTitle: title.trim() || state.journalCoverTitle,
           journalCoverSubtitle:
             subtitle !== undefined ? subtitle.trim() : state.journalCoverSubtitle,
           journalCoverVerseRef:
             verseRef !== undefined ? verseRef.trim() : state.journalCoverVerseRef,
+          journalCoverMaterial:
+            material !== undefined ? material : state.journalCoverMaterial || 'linen',
+          journalCoverEmblem:
+            emblem !== undefined ? emblem : state.journalCoverEmblem || 'mascot',
         })),
     }),
     {

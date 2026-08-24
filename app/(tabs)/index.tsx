@@ -3,9 +3,10 @@ import { View, StyleSheet } from 'react-native';
 import { DailyDashboard } from '../../src/daily-dashboard';
 import { ShareCardModal } from '../../src/share-card';
 import { useDevotional } from '../../src/devotional-core/hooks';
-import { COLORS } from '../../src/design-system/tokens/colors';
+import { useTheme } from '../../src/design-system';
 
 export default function HomeScreen() {
+  const { colors } = useTheme();
   const [sharingId, setSharingId] = useState<string | null>(null);
   const [customShareDevotional, setCustomShareDevotional] = useState<any | null>(null);
   const { data: sharingDevotional } = useDevotional(sharingId);
@@ -13,7 +14,7 @@ export default function HomeScreen() {
   const activeDevotional = customShareDevotional || sharingDevotional || null;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.paperBg }]}>
       <DailyDashboard
         onShareEntry={(id) => {
           setCustomShareDevotional(null);
@@ -54,6 +55,5 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.paperBg,
   },
 });

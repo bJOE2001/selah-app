@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { Text, StyleSheet, Pressable, ViewStyle, Animated } from 'react-native';
-import { COLORS } from '../tokens/colors';
+import { useTheme } from '../theme/useTheme';
 import { FONTS } from '../tokens/typography';
 import { SPACING, RADIUS } from '../tokens/spacing';
 
@@ -19,6 +19,7 @@ export interface MoodChipProps {
 }
 
 export function MoodChip({ tag, isSelected, onPress, style }: MoodChipProps) {
+  const { colors } = useTheme();
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
   const handlePressIn = () => {
@@ -50,8 +51,8 @@ export function MoodChip({ tag, isSelected, onPress, style }: MoodChipProps) {
           styles.chip,
           {
             transform: [{ scale: scaleAnim }],
-            backgroundColor: isSelected ? tag.color + '2E' : COLORS.chipBg,
-            borderColor: isSelected ? tag.color : COLORS.chipBorder,
+            backgroundColor: isSelected ? tag.color + '2E' : colors.chipBg,
+            borderColor: isSelected ? tag.color : colors.chipBorder,
           },
           style,
         ]}
@@ -60,7 +61,8 @@ export function MoodChip({ tag, isSelected, onPress, style }: MoodChipProps) {
         <Text
           style={[
             styles.label,
-            isSelected && styles.labelSelected,
+            { color: colors.inkSecondary },
+            isSelected && [styles.labelSelected, { color: colors.inkPrimary }],
           ]}
         >
           {displayLabel}
@@ -88,11 +90,9 @@ const styles = StyleSheet.create({
   label: {
     fontFamily: FONTS.body,
     fontSize: 13,
-    color: COLORS.inkSecondary,
   },
   labelSelected: {
     fontFamily: FONTS.bodyBold,
-    color: COLORS.inkPrimary,
     fontWeight: '700',
   },
 });

@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ApplicationTask } from '../../devotional-core/types';
 import { JournalCheckbox } from '../../design-system/primitives/JournalCheckbox';
-import { COLORS } from '../../design-system/tokens/colors';
+import { useTheme } from '../../design-system';
 import { FONTS } from '../../design-system/tokens/typography';
 import { SPACING, RADIUS, SHADOWS } from '../../design-system/tokens/spacing';
 
@@ -18,17 +18,19 @@ export function TodayTasks({
   onToggleTask,
   onNavigateJournal,
 }: TodayTasksProps) {
+  const { colors, isDark } = useTheme();
+
   return (
     <View style={styles.container}>
-      <View style={styles.card}>
+      <View style={[styles.card, { backgroundColor: colors.cardBg, borderColor: colors.paperLine }]}>
         <View style={styles.header}>
           <View style={styles.titleRow}>
-            <View style={styles.iconCircle}>
+            <View style={[styles.iconCircle, { backgroundColor: isDark ? '#1F2937' : '#F0F5FA' }]}>
               <Ionicons name="checkbox-outline" size={13} color="#3B6E8C" />
             </View>
-            <Text style={styles.title}>Today’s Action Steps</Text>
+            <Text style={[styles.title, { color: colors.inkPrimary }]}>Today’s Action Steps</Text>
           </View>
-          <Text style={styles.taskCountBadge}>{tasks.length} pending</Text>
+          <Text style={[styles.taskCountBadge, { color: colors.inkMuted }]}>{tasks.length} pending</Text>
         </View>
 
         {tasks.length > 0 ? (
@@ -45,12 +47,12 @@ export function TodayTasks({
           </View>
         ) : (
           <View style={styles.emptyContainer}>
-            <View style={styles.emptyIconCircle}>
-              <Ionicons name="checkmark" size={16} color={COLORS.brandGreen} />
+            <View style={[styles.emptyIconCircle, { backgroundColor: isDark ? '#1C291C' : '#F2F7F2' }]}>
+              <Ionicons name="checkmark" size={16} color={colors.brandGreen} />
             </View>
-            <Text style={styles.emptyText}>All caught up for today!</Text>
+            <Text style={[styles.emptyText, { color: colors.inkSecondary }]}>All caught up for today!</Text>
             <Pressable onPress={onNavigateJournal} hitSlop={4}>
-              <Text style={styles.emptyLink}>View Past Journal Entries →</Text>
+              <Text style={[styles.emptyLink, { color: colors.brandGreen }]}>View Past Journal Entries →</Text>
             </Pressable>
           </View>
         )}
@@ -94,13 +96,11 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: FONTS.sectionHeader,
     fontSize: 14,
-    color: COLORS.inkPrimary,
     fontWeight: '700',
   },
   taskCountBadge: {
     fontFamily: FONTS.body,
     fontSize: 11,
-    color: COLORS.inkMuted,
   },
   tasksList: {
     paddingTop: SPACING.xs,
@@ -114,7 +114,6 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#F2F7F2',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 2,
@@ -122,12 +121,10 @@ const styles = StyleSheet.create({
   emptyText: {
     fontFamily: FONTS.body,
     fontSize: 12,
-    color: COLORS.inkSecondary,
   },
   emptyLink: {
     fontFamily: FONTS.bodyBold,
     fontSize: 11,
-    color: COLORS.brandGreen,
     fontWeight: '700',
     marginTop: 2,
   },

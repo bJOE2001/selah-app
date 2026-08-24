@@ -5,6 +5,7 @@ import { Devotional } from '../../devotional-core/types';
 import { COLORS } from '../../design-system/tokens/colors';
 import { FONTS } from '../../design-system/tokens/typography';
 import { SPACING, RADIUS, SHADOWS } from '../../design-system/tokens/spacing';
+import { useHasFeature } from '../../entitlements';
 
 export type CardTheme = 'classic' | 'minimal' | 'midnight';
 
@@ -17,10 +18,13 @@ export interface ShareCardCanvasProps {
   devotional: ShareableDevotional;
   theme?: CardTheme;
   includeReflection?: boolean;
+  hideWatermark?: boolean;
 }
 
 export const ShareCardCanvas = forwardRef<View, ShareCardCanvasProps>(
-  ({ devotional, theme = 'classic', includeReflection = true }, ref) => {
+  ({ devotional, theme = 'classic', includeReflection = true, hideWatermark }, ref) => {
+    const hasWatermarkFree = useHasFeature('watermarkFreeCards');
+    const isWatermarkHidden = hideWatermark ?? hasWatermarkFree;
     const isMidnight = theme === 'midnight';
     const isMinimal = theme === 'minimal';
 
@@ -180,9 +184,18 @@ export const ShareCardCanvas = forwardRef<View, ShareCardCanvasProps>(
                 Holy Scripture
               </Text>
             </View>
-            <Text style={[styles.watermark, { color: palette.textSecondary }]}>
-              shepema.app
-            </Text>
+            {isWatermarkHidden ? (
+              <View style={styles.footerBrandRow}>
+                <Ionicons name="sparkles" size={11} color={palette.accentGold} />
+                <Text style={[styles.footerVerseTag, { color: palette.accentGold, marginLeft: 4 }]}>
+                  Grace
+                </Text>
+              </View>
+            ) : (
+              <Text style={[styles.watermark, { color: palette.textSecondary }]}>
+                shepema.app
+              </Text>
+            )}
           </View>
         </View>
       </View>

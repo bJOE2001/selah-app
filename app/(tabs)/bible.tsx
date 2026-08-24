@@ -15,6 +15,12 @@ import {
   TranslationPickerModal,
 } from '../../src/bible-reader';
 import { useDraftStore } from '../../src/devotional-core/store';
+import { useRecentDevotionals } from '../../src/devotional-core/hooks';
+import {
+  useIsPremium,
+  FREE_JOURNAL_PAGE_LIMIT,
+  PaywallModal,
+} from '../../src/entitlements';
 import { useTheme, toast } from '../../src/design-system';
 import { FONTS } from '../../src/design-system/tokens/typography';
 import { SPACING, RADIUS, SHADOWS } from '../../src/design-system/tokens/spacing';
@@ -27,6 +33,10 @@ export default function BibleTabScreen() {
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [selectedChapter, setSelectedChapter] = useState<number | null>(null);
   const [isTranslationPickerOpen, setIsTranslationPickerOpen] = useState(false);
+  const [isPaywallOpen, setIsPaywallOpen] = useState(false);
+
+  const isPremium = useIsPremium();
+  const { data: recentEntries } = useRecentDevotionals(100);
 
   const { selectedTranslation, setTranslation } = useTranslationStore();
   const {
@@ -54,6 +64,11 @@ export default function BibleTabScreen() {
   const { setRhema } = useDraftStore();
 
   const handleSelectRhema = (verse: Verse, reference: string) => {
+    if (!isPremium && (recentEntries || []).length >= FREE_JOURNAL_PAGE_LIMIT) {
+      setIsPaywallOpen(true);
+      return;
+    }
+
     const fullReference =
       selectedTranslation.code !== 'KJV'
         ? `${reference} (${selectedTranslation.code})`
@@ -227,6 +242,13 @@ export default function BibleTabScreen() {
       <TranslationPickerModal
         visible={isTranslationPickerOpen}
         onClose={() => setIsTranslationPickerOpen(false)}
+      />
+
+      {/* Shepema Grace Paywall Modal */}
+      <PaywallModal
+        visible={isPaywallOpen}
+        onClose={() => setIsPaywallOpen(false)}
+        triggerFeature="Unlimited Devotional Pages (30/30 Limit Reached)"
       />
     </View>
   );
