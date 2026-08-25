@@ -1,8 +1,8 @@
-# Shepema — Installation & Setup Guide
+# Selah: Daily Bible & Devotions — Installation & Setup Guide
 
-> *Guided by God's Word*
+> *Pause, Reflect & Praise*
 
-Welcome to **Shepema**, an aesthetic devotional journaling and Scripture reader app built with **React Native**, **Expo SDK 54**, **Expo Router**, **TypeScript**, and **Expo SQLite**.
+Welcome to **Selah: Daily Bible & Devotions**, an aesthetic devotional journaling and Scripture reader app built with **React Native**, **Expo SDK 54**, **Expo Router**, **TypeScript**, and **Expo SQLite**.
 
 This guide walks you through setting up, configuring, and running the project from scratch on your local development machine.
 
@@ -28,8 +28,8 @@ Before you start, make sure you have the following installed on your machine:
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/rhema-app.git
-cd rhema-app
+git clone https://github.com/your-username/selah-app.git
+cd selah-app
 ```
 
 ### 2. Install Dependencies
@@ -46,7 +46,7 @@ npm install
 
 ### 3. Bible Database Setup
 
-Shepema includes a local SQLite database of the King James Version (KJV) Bible located at:
+Selah includes a local SQLite database of the King James Version (KJV) Bible located at:
 ```
 assets/db/KJV.db (~33MB)
 ```
@@ -142,7 +142,7 @@ npx expo run:android
    ```
 
 ### F. Web Browser
-Shepema supports web preview via React Native Web:
+Selah supports web preview via React Native Web:
 ```bash
 npm run web
 # or press 'w' in the interactive Expo terminal
@@ -155,7 +155,7 @@ Your default browser will open `http://localhost:8081`.
 ## 📂 Project Architecture
 
 ```
-rhema-app/
+selah-app/
 ├── app/                        # Expo Router navigation & screen routes
 │   ├── (tabs)/                 # Bottom tab navigator (Home, Bible, Journal, Profile)
 │   ├── devotional/             # Devotional creation & detail screens

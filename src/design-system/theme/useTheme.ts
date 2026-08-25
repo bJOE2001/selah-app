@@ -11,7 +11,8 @@ export interface ThemeContextValue {
 
 export function useTheme(): ThemeContextValue {
   const systemScheme = useColorScheme();
-  const themeMode = useSettingsStore((s) => s.themeMode);
+  const rawThemeMode = useSettingsStore((s) => s.themeMode);
+  const themeMode: ThemeMode = rawThemeMode || 'system';
   const setThemeMode = useSettingsStore((s) => s.setThemeMode);
 
   const isDark =

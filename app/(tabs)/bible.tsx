@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { Book, Verse } from '../../src/bible-data/types';
 import { useChapterVerses } from '../../src/bible-data/hooks';
@@ -21,6 +21,8 @@ import {
   FREE_JOURNAL_PAGE_LIMIT,
   PaywallModal,
 } from '../../src/entitlements';
+import { useReadingStore } from '../../src/bible-data/readingStore';
+import { CANONICAL_BOOKS } from '../../src/bible-data/constants';
 import { useTheme, toast } from '../../src/design-system';
 import { FONTS } from '../../src/design-system/tokens/typography';
 import { SPACING, RADIUS, SHADOWS } from '../../src/design-system/tokens/spacing';
@@ -30,10 +32,12 @@ export default function BibleTabScreen() {
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
   const { colors, isDark } = useTheme();
+  const params = useLocalSearchParams<{ bookId?: string; chapter?: string }>();
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [selectedChapter, setSelectedChapter] = useState<number | null>(null);
   const [isTranslationPickerOpen, setIsTranslationPickerOpen] = useState(false);
   const [isPaywallOpen, setIsPaywallOpen] = useState(false);
+  const { setLastRead } = useReadingStore();
 
   const isPremium = useIsPremium();
   const { data: recentEntries } = useRecentDevotionals(100);
@@ -49,6 +53,19 @@ export default function BibleTabScreen() {
   useEffect(() => {
     initDownloads();
   }, [initDownloads]);
+
+  // Deep-link: resume reading from Home "Continue Reading" card
+  useEffect(() => {
+    if (params.bookId && params.chapter) {
+      const bookId = Number(params.bookId);
+      const chapter = Number(params.chapter);
+      const book = CANONICAL_BOOKS.find((b) => b.id === bookId) || null;
+      if (book) {
+        setSelectedBook(book);
+        setSelectedChapter(chapter);
+      }
+    }
+  }, [params.bookId, params.chapter]);
 
   const { data: verses, isLoading: versesLoading } = useChapterVerses(
     selectedBook?.id || 0,
@@ -166,7 +183,10 @@ export default function BibleTabScreen() {
       ) : selectedChapter === null ? (
         <ChapterGrid
           book={selectedBook}
-          onSelectChapter={(ch) => setSelectedChapter(ch)}
+          onSelectChapter={(ch) => {
+            setSelectedChapter(ch);
+            setLastRead(selectedBook.id, selectedBook.name, ch);
+          }}
         />
       ) : versesLoading ? (
         <View style={styles.loadingContainer}>
@@ -235,6 +255,10 @@ export default function BibleTabScreen() {
           chapter={selectedChapter}
           verses={verses || []}
           onSelectRhema={handleSelectRhema}
+          onChapterChange={(ch) => {
+            setSelectedChapter(ch);
+            setLastRead(selectedBook.id, selectedBook.name, ch);
+          }}
         />
       )}
 

@@ -1,6 +1,6 @@
-import * as SQLite from 'expo-sqlite';
-import * as FileSystem from 'expo-file-system/legacy';
 import { Asset } from 'expo-asset';
+import * as FileSystem from 'expo-file-system/legacy';
+import * as SQLite from 'expo-sqlite';
 
 let userDbInstance: SQLite.SQLiteDatabase | null = null;
 let bibleDbInstance: SQLite.SQLiteDatabase | null = null;
@@ -38,14 +38,31 @@ export async function initDatabase(): Promise<SQLite.SQLiteDatabase> {
 }
 
 async function _doInitDatabase(): Promise<SQLite.SQLiteDatabase> {
-  // --- Step 1: Copy KJV.db asset to device if needed ---
-  await ensureBibleDb();
-
-  // --- Step 2: Open user database ---
+  // --- Step 1: Open user database ---
   const db = await SQLite.openDatabaseAsync(USER_DB_NAME);
-  await db.execAsync('PRAGMA foreign_keys = ON;');
-  await initDevotionalTables(db);
   userDbInstance = db;
+
+  // Set high-concurrency PRAGMAs individually outside of any transaction
+  try {
+    await db.runAsync('PRAGMA journal_mode = WAL;');
+  } catch (_) {}
+
+  try {
+    await db.runAsync('PRAGMA busy_timeout = 10000;');
+  } catch (_) {}
+
+  try {
+    await db.runAsync('PRAGMA foreign_keys = ON;');
+  } catch (_) {}
+
+  // --- Step 2: Initialize DDL tables ---
+  await initDevotionalTables(db);
+
+  // --- Step 3: Copy KJV.db Bible asset in background (non-blocking) ---
+  ensureBibleDb().catch((err) => {
+    console.warn('Background Bible DB asset copy note:', err);
+  });
+
   return db;
 }
 
@@ -89,8 +106,6 @@ async function ensureBibleDb(): Promise<void> {
       } else {
         console.error('Could not resolve KJV.db asset URI!');
       }
-    } else {
-      console.log('KJV.db already exists, size:', fileInfo.size);
     }
   } catch (error) {
     console.warn('Bible DB asset copy error:', error);
@@ -114,6 +129,12 @@ export async function getBibleDatabase(): Promise<SQLite.SQLiteDatabase> {
     // Make sure the file is copied first
     await ensureBibleDb();
     const db = await SQLite.openDatabaseAsync(BIBLE_DB_NAME);
+    try {
+      await db.runAsync('PRAGMA journal_mode = WAL;');
+    } catch (_) {}
+    try {
+      await db.runAsync('PRAGMA busy_timeout = 10000;');
+    } catch (_) {}
     bibleDbInstance = db;
     return db;
   })();
@@ -141,13 +162,17 @@ export function getDatabase(): SQLite.SQLiteDatabase {
   if (userDbInstance) {
     return userDbInstance;
   }
-  // This should rarely happen if getUserDatabase() is used properly
   console.warn('getDatabase() called before init — opening sync fallback');
-  return SQLite.openDatabaseSync(USER_DB_NAME);
+  const db = SQLite.openDatabaseSync(USER_DB_NAME);
+  try {
+    db.execSync('PRAGMA journal_mode = WAL; PRAGMA busy_timeout = 10000;');
+  } catch (_) {}
+  userDbInstance = db;
+  return db;
 }
 
 async function initDevotionalTables(db: SQLite.SQLiteDatabase) {
-  // Create tables one at a time to avoid issues with multi-statement exec
+  // Execute core tables and indices
   await db.execAsync(`
     CREATE TABLE IF NOT EXISTS mood_tags (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -155,9 +180,7 @@ async function initDevotionalTables(db: SQLite.SQLiteDatabase) {
       emoji TEXT NOT NULL,
       color TEXT NOT NULL
     );
-  `);
 
-  await db.execAsync(`
     CREATE TABLE IF NOT EXISTS devotionals (
       id TEXT PRIMARY KEY,
       rhema_verse_id INTEGER NOT NULL,
@@ -171,9 +194,7 @@ async function initDevotionalTables(db: SQLite.SQLiteDatabase) {
       is_draft INTEGER NOT NULL DEFAULT 1,
       is_bookmarked INTEGER NOT NULL DEFAULT 0
     );
-  `);
 
-  await db.execAsync(`
     CREATE TABLE IF NOT EXISTS devotional_mood_tags (
       devotional_id TEXT NOT NULL,
       mood_tag_id INTEGER NOT NULL,
@@ -181,9 +202,7 @@ async function initDevotionalTables(db: SQLite.SQLiteDatabase) {
       FOREIGN KEY (devotional_id) REFERENCES devotionals(id) ON DELETE CASCADE,
       FOREIGN KEY (mood_tag_id) REFERENCES mood_tags(id)
     );
-  `);
 
-  await db.execAsync(`
     CREATE TABLE IF NOT EXISTS application_tasks (
       id TEXT PRIMARY KEY,
       devotional_id TEXT NOT NULL,
@@ -194,68 +213,20 @@ async function initDevotionalTables(db: SQLite.SQLiteDatabase) {
       created_at TEXT NOT NULL,
       FOREIGN KEY (devotional_id) REFERENCES devotionals(id) ON DELETE CASCADE
     );
-  `);
 
-  await db.execAsync(`CREATE INDEX IF NOT EXISTS idx_devotionals_created ON devotionals(created_at);`);
-  await db.execAsync(`CREATE INDEX IF NOT EXISTS idx_devotionals_draft ON devotionals(is_draft);`);
-  await db.execAsync(`CREATE INDEX IF NOT EXISTS idx_tasks_devotional ON application_tasks(devotional_id);`);
-  await db.execAsync(`CREATE INDEX IF NOT EXISTS idx_tasks_completed ON application_tasks(is_completed);`);
+    CREATE INDEX IF NOT EXISTS idx_devotionals_created ON devotionals(created_at);
+    CREATE INDEX IF NOT EXISTS idx_devotionals_draft ON devotionals(is_draft);
+    CREATE INDEX IF NOT EXISTS idx_tasks_devotional ON application_tasks(devotional_id);
+    CREATE INDEX IF NOT EXISTS idx_tasks_completed ON application_tasks(is_completed);
 
-  // Migration: add application column for existing databases
-  try {
-    await db.execAsync(`ALTER TABLE devotionals ADD COLUMN application TEXT NOT NULL DEFAULT '';`);
-  } catch (_) {
-    // Column already exists, ignore
-  }
-
-  // Migration: add is_bookmarked column for existing databases
-  try {
-    await db.execAsync(`ALTER TABLE devotionals ADD COLUMN is_bookmarked INTEGER NOT NULL DEFAULT 0;`);
-  } catch (_) {
-    // Column already exists, ignore
-  }
-
-  await db.execAsync(`
     CREATE TABLE IF NOT EXISTS verse_highlights (
       id TEXT PRIMARY KEY,
       verse_id INTEGER NOT NULL UNIQUE,
       color TEXT NOT NULL,
       created_at TEXT NOT NULL
     );
-  `);
-  await db.execAsync(`CREATE INDEX IF NOT EXISTS idx_highlights_verse ON verse_highlights(verse_id);`);
+    CREATE INDEX IF NOT EXISTS idx_highlights_verse ON verse_highlights(verse_id);
 
-  // Migration: Automatically upgrade any legacy KJV row IDs (< 1000000) to universal canonical verse IDs
-  try {
-    const legacyHighlights = await db.getAllAsync<{
-      id: string;
-      verse_id: number;
-      color: string;
-      created_at: string;
-    }>(`SELECT id, verse_id, color, created_at FROM verse_highlights WHERE verse_id < 1000000;`);
-
-    if (legacyHighlights && legacyHighlights.length > 0) {
-      const bibleDb = await getBibleDatabase();
-      for (const h of legacyHighlights) {
-        const kjvRow = await bibleDb.getFirstAsync<{
-          book_id: number;
-          chapter: number;
-          verse: number;
-        }>(`SELECT book_id, chapter, verse FROM KJV_verses WHERE id = ?;`, [h.verse_id]);
-
-        if (kjvRow) {
-          const canonicalId = (kjvRow.book_id * 1000000) + (kjvRow.chapter * 1000) + kjvRow.verse;
-          await db.runAsync(`DELETE FROM verse_highlights WHERE verse_id = ? AND id != ?;`, [canonicalId, h.id]);
-          await db.runAsync(`UPDATE verse_highlights SET verse_id = ? WHERE id = ?;`, [canonicalId, h.id]);
-        }
-      }
-    }
-  } catch (migErr) {
-    // Non-critical migration failure caught safely
-    console.warn('Verse highlights canonical migration note:', migErr);
-  }
-
-  await db.execAsync(`
     CREATE TABLE IF NOT EXISTS downloaded_translations (
       id TEXT PRIMARY KEY,
       code TEXT NOT NULL,
@@ -264,9 +235,7 @@ async function initDevotionalTables(db: SQLite.SQLiteDatabase) {
       verse_count INTEGER NOT NULL,
       size_bytes INTEGER NOT NULL
     );
-  `);
 
-  await db.execAsync(`
     CREATE TABLE IF NOT EXISTS downloaded_verses (
       id TEXT PRIMARY KEY,
       translation_id TEXT NOT NULL,
@@ -276,12 +245,9 @@ async function initDevotionalTables(db: SQLite.SQLiteDatabase) {
       verse INTEGER NOT NULL,
       text TEXT NOT NULL
     );
-  `);
-  await db.execAsync(`CREATE INDEX IF NOT EXISTS idx_downloaded_verses_lookup ON downloaded_verses(translation_id, book_id, chapter);`);
-  await db.execAsync(`CREATE INDEX IF NOT EXISTS idx_downloaded_verses_search ON downloaded_verses(translation_id, text);`);
+    CREATE INDEX IF NOT EXISTS idx_downloaded_verses_lookup ON downloaded_verses(translation_id, book_id, chapter);
+    CREATE INDEX IF NOT EXISTS idx_downloaded_verses_search ON downloaded_verses(translation_id, text);
 
-  // Legacy cached_verses table for backward-compatible fallback
-  await db.execAsync(`
     CREATE TABLE IF NOT EXISTS cached_verses (
       id TEXT PRIMARY KEY,
       translation_id TEXT NOT NULL,
@@ -291,21 +257,37 @@ async function initDevotionalTables(db: SQLite.SQLiteDatabase) {
       verse INTEGER NOT NULL,
       text TEXT NOT NULL
     );
+    CREATE INDEX IF NOT EXISTS idx_cached_verses_lookup ON cached_verses(translation_id, book_id, chapter);
   `);
-  await db.execAsync(`CREATE INDEX IF NOT EXISTS idx_cached_verses_lookup ON cached_verses(translation_id, book_id, chapter);`);
+
+  // Safe Column Migrations: check columns first to avoid failing ALTER TABLE commands
+  try {
+    const tableInfo = await db.getAllAsync<{ name: string }>(`PRAGMA table_info(devotionals);`);
+    const columnNames = new Set(tableInfo.map((col) => col.name));
+    if (!columnNames.has('application')) {
+      await db.runAsync(`ALTER TABLE devotionals ADD COLUMN application TEXT NOT NULL DEFAULT '';`);
+    }
+    if (!columnNames.has('is_bookmarked')) {
+      await db.runAsync(`ALTER TABLE devotionals ADD COLUMN is_bookmarked INTEGER NOT NULL DEFAULT 0;`);
+    }
+  } catch (colErr) {
+    console.warn('Devotionals column check note:', colErr);
+  }
 
   // Seed standard mood tags if empty
-  await db.execAsync(`
-    INSERT OR IGNORE INTO mood_tags (id, value, emoji, color) VALUES
-      (1, 'peace', '☮️', '#81C784'),
-      (2, 'joy', '😊', '#FFD54F'),
-      (3, 'conviction', '⚡', '#FF8A65'),
-      (4, 'surrender', '🤲', '#90CAF9'),
-      (5, 'gratitude', '🙏', '#CE93D8'),
-      (6, 'hope', '🌅', '#4FC3F7'),
-      (7, 'repentance', '💔', '#EF9A9A'),
-      (8, 'awe', '✨', '#FFF176'),
-      (9, 'comfort', '🫂', '#A5D6A7'),
-      (10, 'boldness', '🦁', '#FFAB91');
-  `);
+  try {
+    await db.runAsync(`
+      INSERT OR IGNORE INTO mood_tags (id, value, emoji, color) VALUES
+        (1, 'peace', '☮️', '#81C784'),
+        (2, 'joy', '😊', '#FFD54F'),
+        (3, 'conviction', '⚡', '#FF8A65'),
+        (4, 'surrender', '🤲', '#90CAF9'),
+        (5, 'gratitude', '🙏', '#CE93D8'),
+        (6, 'hope', '🌅', '#4FC3F7'),
+        (7, 'repentance', '💔', '#EF9A9A'),
+        (8, 'awe', '✨', '#FFF176'),
+        (9, 'comfort', '🫂', '#A5D6A7'),
+        (10, 'boldness', '🦁', '#FFAB91');
+    `);
+  } catch (_) {}
 }

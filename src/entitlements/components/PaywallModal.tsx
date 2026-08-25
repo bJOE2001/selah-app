@@ -41,22 +41,22 @@ interface TierDisplayOption {
 const FALLBACK_TIERS: TierDisplayOption[] = [
   {
     tier: 'grace_annual',
-    badge: 'MOST POPULAR • SAVE 37%',
+    badge: 'MOST POPULAR • SAVE 44%',
     title: 'Annual Pass',
-    priceDisplay: '$29.99 / year',
-    subtext: 'Includes 7-day free trial ($2.50/mo)',
+    priceDisplay: '$19.99 / year',
+    subtext: 'Includes 7-day free trial ($1.66/mo)',
   },
   {
     tier: 'grace_monthly',
     title: 'Monthly Pass',
-    priceDisplay: '$3.99 / month',
+    priceDisplay: '$2.99 / month',
     subtext: 'Billed monthly, cancel anytime',
   },
   {
     tier: 'patron_lifetime',
     badge: 'LIFETIME OWNERSHIP',
     title: 'Founding Patron',
-    priceDisplay: '$59.99',
+    priceDisplay: '$49.99',
     subtext: 'One-time payment, forever yours',
   },
 ];
@@ -146,7 +146,7 @@ export function PaywallModal({ visible, onClose, triggerFeature }: PaywallModalP
         // Live RevenueCat purchase flow
         const success = await purchasePackage(selectedOption.rcPackage);
         if (success) {
-          toast.success('Welcome to Shepema Grace!', 'Your premium features are now active.');
+          toast.success('Welcome to Selah Grace!', 'Your premium features are now active.');
           onClose();
         }
       } else {
@@ -182,7 +182,7 @@ export function PaywallModal({ visible, onClose, triggerFeature }: PaywallModalP
         toast.success('Purchases Restored', 'Your previous subscription has been restored.');
         onClose();
       } else {
-        promptModal.info('No Active Subscription', 'We could not find any active Shepema subscriptions for your store account.');
+        promptModal.info('No Active Subscription', 'We could not find any active Selah subscriptions for your store account.');
       }
     } catch (err: any) {
       promptModal.error('Restore Error', err?.message || 'Unable to restore purchases at this time.');
@@ -240,10 +240,10 @@ export function PaywallModal({ visible, onClose, triggerFeature }: PaywallModalP
               <Ionicons name="ribbon-outline" size={32} color="#C59B27" />
             </View>
             <Text style={[styles.heroTitle, { color: colors.inkPrimary }]}>
-              Shepema Grace
+              Selah Grace
             </Text>
             <Text style={[styles.heroSubtitle, { color: colors.inkSecondary }]}>
-              Deepen your spiritual walk with luxury notebook craftsmanship, guided devotionals, and secure cloud backups.
+              Deepen your spiritual walk with luxury notebook craftsmanship, Scripture reflections, and secure cloud backups.
             </Text>
             {triggerFeature && (
               <View style={[styles.triggerBadge, { backgroundColor: isDark ? 'rgba(197, 155, 39, 0.15)' : 'rgba(197, 155, 39, 0.12)' }]}>
@@ -329,7 +329,7 @@ export function PaywallModal({ visible, onClose, triggerFeature }: PaywallModalP
             ]}
           >
             <Text style={[styles.featuresHeader, { color: colors.inkPrimary }]}>
-              Included in Shepema Grace:
+              Included in Selah Grace:
             </Text>
 
             {PREMIUM_PERKS.map((perk, idx) => (

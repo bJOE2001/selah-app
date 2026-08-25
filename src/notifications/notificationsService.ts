@@ -8,7 +8,7 @@ LogBox.ignoreLogs([
 
 const MORNING_NOTIFICATION_ID = 'morning-devotion-reminder';
 const EVENING_NOTIFICATION_ID = 'evening-reflection-reminder';
-const TEST_NOTIFICATION_ID = 'test-shepema-reminder';
+const TEST_NOTIFICATION_ID = 'test-selah-reminder';
 const DEVOTIONAL_CHANNEL_ID = 'daily-devotional-habits';
 
 export const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
@@ -144,8 +144,8 @@ export async function syncMorningReminder(enabled: boolean, timeStr: string): Pr
     await Notifications.scheduleNotificationAsync({
       identifier: MORNING_NOTIFICATION_ID,
       content: {
-        title: '🌅 Morning Devotion • Shepema',
-        body: 'Start your day with God’s presence. Discover today’s Rhema Scripture.',
+        title: '🌅 Morning Devotion • Selah',
+        body: 'Start your day with God’s presence. Discover today’s Scripture & devotion.',
         sound: true,
         data: { targetScreen: '/(tabs)/journal' },
       },
@@ -188,7 +188,7 @@ export async function syncEveningReminder(enabled: boolean, timeStr: string): Pr
     await Notifications.scheduleNotificationAsync({
       identifier: EVENING_NOTIFICATION_ID,
       content: {
-        title: '🌙 Evening Reflection • Shepema',
+        title: '🌙 Evening Reflection • Selah',
         body: 'Pause and reflect on God’s faithfulness today. Record your thoughts before bed.',
         sound: true,
         data: { targetScreen: '/(tabs)/journal' },

@@ -96,7 +96,7 @@ export function AppOpeningScreen() {
                 },
               ]}
             >
-              SHEPEMA
+              SELAH
             </Text>
             <View
               style={[
@@ -105,7 +105,7 @@ export function AppOpeningScreen() {
               ]}
             />
             <Text style={[styles.subtitle, { color: colors.inkSecondary }]}>
-              Guided by God’s Word
+              Daily Bible & Devotions
             </Text>
           </View>
         </Animated.View>

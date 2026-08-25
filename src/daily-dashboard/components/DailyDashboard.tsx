@@ -5,11 +5,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { DashboardHeader } from './DashboardHeader';
 import { WeeklyStreakTracker } from './WeeklyStreakTracker';
-import { DailyVerseCard, DailyVerse } from './DailyVerseCard';
 import { QuickEntry } from './QuickEntry';
 import { EntryCard } from '../../journal-history/components/EntryCard';
 import { useRecentDevotionals } from '../../devotional-core/hooks';
 import { useDraftStore } from '../../devotional-core/store';
+import { useReadingStore } from '../../bible-data/readingStore';
+import { ContinueReadingCard } from './ContinueReadingCard';
 import { useTheme } from '../../design-system';
 import { FONTS } from '../../design-system/tokens/typography';
 import { SPACING, RADIUS } from '../../design-system/tokens/spacing';
@@ -21,10 +22,10 @@ import {
 
 export interface DailyDashboardProps {
   onShareEntry?: (id: string) => void;
-  onShareQuote?: (verse: DailyVerse) => void;
+  onShareQuote?: (verse: { text: string; reference: string }) => void;
 }
 
-export function DailyDashboard({ onShareEntry, onShareQuote }: DailyDashboardProps) {
+export function DailyDashboard({ onShareEntry }: DailyDashboardProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
@@ -33,6 +34,7 @@ export function DailyDashboard({ onShareEntry, onShareQuote }: DailyDashboardPro
   const [isPaywallOpen, setIsPaywallOpen] = useState(false);
 
   const isPremium = useIsPremium();
+  const { lastBookId, lastBookName, lastChapter, lastReadAt } = useReadingStore();
 
   const now = new Date();
   const formattedDate = now.toLocaleDateString('en-US', {
@@ -74,7 +76,7 @@ export function DailyDashboard({ onShareEntry, onShareQuote }: DailyDashboardPro
           <View style={[styles.brandIconCircle, { backgroundColor: colors.brandGreenLight }]}>
             <Ionicons name="book" size={13} color={colors.brandGreen} />
           </View>
-          <Text style={[styles.brandTitle, { color: colors.inkPrimary }]}>SHEPEMA</Text>
+          <Text style={[styles.brandTitle, { color: colors.inkPrimary }]}>SELAH</Text>
         </View>
 
         <View style={styles.topRightActions}>
@@ -111,12 +113,7 @@ export function DailyDashboard({ onShareEntry, onShareQuote }: DailyDashboardPro
           streakDays={currentWeekDays.length}
         />
 
-        {/* 3. Verse of the Day Card */}
-        <DailyVerseCard
-          onShareVerse={onShareQuote}
-        />
-
-        {/* 4. Bento Action Hub: Begin Devotion & Holy Scripture */}
+        {/* 3. Bento Action Hub: Begin Devotion & Holy Scripture */}
         <QuickEntry
           onStartDevotion={() => {
             if (!isPremium && (entries || []).length >= FREE_JOURNAL_PAGE_LIMIT) {
@@ -128,6 +125,21 @@ export function DailyDashboard({ onShareEntry, onShareQuote }: DailyDashboardPro
           }}
           onOpenBible={() => router.push('/(tabs)/bible')}
         />
+
+        {/* 4. Continue Reading Card (only if user has reading history) */}
+        {lastBookId !== null && lastChapter !== null ? (
+          <ContinueReadingCard
+            bookName={lastBookName}
+            chapter={lastChapter}
+            lastReadAt={lastReadAt}
+            onPress={() =>
+              router.push({
+                pathname: '/(tabs)/bible',
+                params: { bookId: String(lastBookId), chapter: String(lastChapter) },
+              })
+            }
+          />
+        ) : null}
 
         {/* 5. Recent Devotions Section (Latest 3) */}
         {(entries || []).length > 0 ? (

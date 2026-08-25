@@ -62,7 +62,7 @@ const LEGACY_FONT_SIZE_MAP: Record<string, number> = {
 export const useSettingsStore = create<SettingsState>()(
   persist(
     (set) => ({
-      themeMode: 'light',
+      themeMode: 'system',
       fontSize: FONT_SIZE_DEFAULT,
       redLetter: true,
       morningReminderEnabled: false,
@@ -107,15 +107,20 @@ export const useSettingsStore = create<SettingsState>()(
     {
       name: 'shepema-settings-storage',
       storage: createJSONStorage(() => AsyncStorage),
-      // Migrate old string-based fontSize ('S','M','L','XL') to numeric px
-      migrate: (persistedState: any, _version: number) => {
-        if (persistedState && typeof persistedState.fontSize === 'string') {
-          persistedState.fontSize =
-            LEGACY_FONT_SIZE_MAP[persistedState.fontSize] || FONT_SIZE_DEFAULT;
+      // Migrate old settings
+      migrate: (persistedState: any, oldVersion: number) => {
+        if (persistedState) {
+          if (typeof persistedState.fontSize === 'string') {
+            persistedState.fontSize =
+              LEGACY_FONT_SIZE_MAP[persistedState.fontSize] || FONT_SIZE_DEFAULT;
+          }
+          if (oldVersion < 2 || !persistedState.themeMode) {
+            persistedState.themeMode = 'system';
+          }
         }
         return persistedState;
       },
-      version: 1,
+      version: 2,
     }
   )
 );

@@ -1,8 +1,8 @@
-# Shepema 📖✨
+# Selah: Daily Bible & Devotions 📖✨
 
-> *Guided by God's Word* — An aesthetic devotional journaling and Scripture reader app crafted with a classic paper notebook aesthetic.
+> *Pause, Reflect & Praise* — An aesthetic devotional journaling and Scripture reader app crafted with a classic paper notebook aesthetic and warm companion mascot.
 
-Shepema is a mobile application built with **React Native**, **Expo SDK 54**, and **Expo SQLite**, designed for thoughtful Scripture meditation, structured devotional reflection (R.R.M.A. method), habit tracking, and aesthetic shareable cards.
+**Selah: Daily Bible & Devotions** is a mobile application built with **React Native**, **Expo SDK 54**, and **Expo SQLite**, designed for thoughtful Scripture meditation, structured devotional reflection (R.R.M.A. method), habit tracking, and aesthetic shareable cards.
 
 ---
 

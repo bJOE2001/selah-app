@@ -100,10 +100,10 @@ export const ShareCardCanvas = forwardRef<View, ShareCardCanvasProps>(
               />
               <View>
                 <Text style={[styles.appName, { color: palette.textPrimary }]}>
-                  SHEPEMA
+                  SELAH
                 </Text>
                 <Text style={[styles.appTaglineSub, { color: palette.textSecondary }]}>
-                  Guided by God's Word
+                  Daily Bible & Devotions
                 </Text>
               </View>
             </View>
@@ -193,7 +193,7 @@ export const ShareCardCanvas = forwardRef<View, ShareCardCanvasProps>(
               </View>
             ) : (
               <Text style={[styles.watermark, { color: palette.textSecondary }]}>
-                shepema.app
+                selah.app
               </Text>
             )}
           </View>

@@ -30,8 +30,8 @@ export function LockScreen() {
           />
         </View>
 
-        <Text style={[styles.title, { color: colors.inkPrimary }]}>Shepema</Text>
-        <Text style={[styles.subtitle, { color: colors.inkSecondary }]}>Guided by God's Word</Text>
+        <Text style={[styles.title, { color: colors.inkPrimary }]}>Selah</Text>
+        <Text style={[styles.subtitle, { color: colors.inkSecondary }]}>Daily Bible & Devotions</Text>
 
         <View style={[styles.lockBadge, { backgroundColor: colors.chipBg, borderColor: colors.chipBorder }]}>
           <Ionicons name="lock-closed" size={24} color={colors.brandGreen} />

@@ -17,7 +17,7 @@ export function useBiometricAuth() {
       }
 
       const result = await LocalAuthentication.authenticateAsync({
-        promptMessage: 'Unlock Rhema',
+        promptMessage: 'Unlock Selah',
         fallbackLabel: 'Enter Passcode',
         cancelLabel: 'Cancel',
         disableDeviceFallback: false,

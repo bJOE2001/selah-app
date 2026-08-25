@@ -18,7 +18,7 @@ import {
 } from './types';
 
 // RevenueCat entitlement identifier (configured in RevenueCat dashboard)
-const ENTITLEMENT_ID = 'shepema_grace';
+const ENTITLEMENT_ID = 'selah_grace';
 
 // RevenueCat API keys — set these from your RevenueCat project dashboard
 // In production, these should come from environment variables / EAS secrets
@@ -63,11 +63,12 @@ function parseCustomerInfo(
   customerInfo: any,
   source: EntitlementSource = 'revenueCat'
 ): EntitlementInfo {
-  if (!customerInfo?.entitlements?.active?.[ENTITLEMENT_ID]) {
+  const activeEntitlements = customerInfo?.entitlements?.active;
+  const entitlement = activeEntitlements?.[ENTITLEMENT_ID] || activeEntitlements?.['rhema_grace'] || activeEntitlements?.['shepema_grace'];
+  if (!entitlement) {
     return DEFAULT_ENTITLEMENT;
   }
 
-  const entitlement = customerInfo.entitlements.active[ENTITLEMENT_ID];
   const productId = entitlement.productIdentifier || '';
   const tier = productIdToTier(productId);
 
@@ -148,6 +149,16 @@ export async function getOfferings(): Promise<PaywallPackage[]> {
   const Purchases = getPurchasesModule();
   if (!Purchases) return [];
 
+  const apiKey = Platform.OS === 'ios'
+    ? REVENUECAT_API_KEYS.ios
+    : REVENUECAT_API_KEYS.android;
+
+  // In development / Expo Go or when API keys are placeholder, return empty
+  // so PaywallModal displays custom configured FALLBACK_TIERS ($2.99/mo, $19.99/yr, $49.99).
+  if (!apiKey || apiKey.startsWith('YOUR_')) {
+    return [];
+  }
+
   try {
     const offerings = await Purchases.default.getOfferings();
     const currentOffering = offerings.current;
@@ -170,7 +181,7 @@ export async function getOfferings(): Promise<PaywallPackage[]> {
           break;
         case 'grace_annual':
           title = 'Annual';
-          description = 'Best value — save 37%';
+          description = 'Best value — save 44%';
           break;
         case 'patron_lifetime':
           title = 'Founding Patron';

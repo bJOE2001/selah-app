@@ -24,7 +24,7 @@ import { useDownloadStore } from '../../bible-data/downloadStore';
 import { TranslationPickerModal } from '../../bible-reader/components/TranslationPickerModal';
 import { EditJournalCoverModal } from '../../journal-history';
 import { DevotionalTimePickerModal } from './DevotionalTimePickerModal';
-import { getDatabase } from '../../bible-data/db';
+import { getUserDatabase } from '../../bible-data/db';
 import { useRecentDevotionals } from '../../devotional-core/hooks';
 import { useSettingsStore, ThemeMode } from '../store';
 import { useTheme, promptModal, toast, JournalToggle, ThemeSegmentedControl } from '../../design-system';
@@ -299,13 +299,13 @@ export function SettingsScreen() {
 
     try {
       setIsExporting(true);
-      const db = await getDatabase();
+      const db = await getUserDatabase();
       const fullEntries = await db.getAllAsync<any>(
         'SELECT * FROM devotionals ORDER BY created_at DESC;'
       );
 
       const exportData = {
-        app: 'Shepema Devotional',
+        app: 'Selah: Daily Bible & Devotions',
         version: '1.0.1',
         exportedAt: new Date().toISOString(),
         totalEntries: fullEntries.length,
@@ -313,7 +313,7 @@ export function SettingsScreen() {
       };
 
       const jsonString = JSON.stringify(exportData, null, 2);
-      const fileUri = `${FileSystem.cacheDirectory}rhema_devotional_backup_${Date.now()}.json`;
+      const fileUri = `${FileSystem.cacheDirectory}selah_devotional_backup_${Date.now()}.json`;
 
       await FileSystem.writeAsStringAsync(fileUri, jsonString, {
         encoding: FileSystem.EncodingType.UTF8,
@@ -413,7 +413,7 @@ export function SettingsScreen() {
             <View style={styles.heroTextCol}>
               <View style={[styles.appBadge, { backgroundColor: colors.brandGreenLight, borderColor: colors.brandGreen + '40' }]}>
                 <Ionicons name="sparkles" size={12} color={colors.brandGreen} />
-                <Text style={[styles.appBadgeText, { color: colors.brandGreen }]}>SHEPEMA DEVOTIONAL</Text>
+                <Text style={[styles.appBadgeText, { color: colors.brandGreen }]}>SELAH DEVOTIONAL</Text>
               </View>
               <Text style={[styles.heroHeadline, { color: colors.inkPrimary }]}>Preferences & Privacy</Text>
               <Text style={[styles.heroSubtitle, { color: colors.inkSecondary }]}>
@@ -447,7 +447,7 @@ export function SettingsScreen() {
           </View>
         </View>
 
-        {/* ═══════════ SECTION 0: SHEPEMA GRACE MEMBERSHIP ═══════════ */}
+        {/* ═══════════ SECTION 0: SELAH GRACE MEMBERSHIP ═══════════ */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Ionicons name="ribbon-outline" size={16} color="#C59B27" />
@@ -470,7 +470,7 @@ export function SettingsScreen() {
                     {isPremium
                       ? currentTier === 'patron_lifetime'
                         ? 'Founding Patron (Lifetime)'
-                        : 'Shepema Grace Active'
+                        : 'Selah Grace Active'
                       : 'Free Plan (Guest)'}
                   </Text>
                   {isPremium && (
@@ -495,7 +495,7 @@ export function SettingsScreen() {
                   style={[styles.graceUpgradeBtn, { backgroundColor: '#8B3A2B' }]}
                 >
                   <Ionicons name="sparkles" size={15} color="#FFFFFF" />
-                  <Text style={styles.graceUpgradeBtnText}>Upgrade to Shepema Grace</Text>
+                  <Text style={styles.graceUpgradeBtnText}>Upgrade to Selah Grace</Text>
                 </Pressable>
               </View>
             ) : null}
@@ -1139,11 +1139,11 @@ export function SettingsScreen() {
           </View>
         </View>
 
-        {/* ═══════════ SECTION 6: ABOUT SHEPEMA ═══════════ */}
+        {/* ═══════════ SECTION 6: ABOUT SELAH ═══════════ */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Ionicons name="information-circle" size={16} color={colors.brandGreen} />
-            <Text style={[styles.sectionTitle, { color: colors.inkMuted }]}>ABOUT SHEPEMA</Text>
+            <Text style={[styles.sectionTitle, { color: colors.inkMuted }]}>ABOUT SELAH</Text>
           </View>
 
           <View style={[styles.card, { backgroundColor: colors.cardBg, borderColor: colors.paperLine }]}>
@@ -1158,27 +1158,27 @@ export function SettingsScreen() {
               <View style={styles.aboutHeaderTextCol}>
                 <View style={[styles.aboutBuddyPill, { backgroundColor: colors.brandGreenLight, borderColor: colors.brandGreen + '35' }]}>
                   <Ionicons name="sparkles" size={10} color={colors.brandGreen} />
-                  <Text style={[styles.aboutBuddyPillText, { color: colors.brandGreen }]}>Devotional Buddy</Text>
+                  <Text style={[styles.aboutBuddyPillText, { color: colors.brandGreen }]}>Daily Bible & Devotions</Text>
                 </View>
-                <Text style={[styles.aboutAppName, { color: colors.inkPrimary }]}>Shepema</Text>
-                <Text style={[styles.aboutVersion, { color: colors.inkSecondary }]}>Guided by God's Word • v1.0.1</Text>
+                <Text style={[styles.aboutAppName, { color: colors.inkPrimary }]}>Selah</Text>
+                <Text style={[styles.aboutVersion, { color: colors.inkSecondary }]}>Daily Bible & Devotions • v1.0.1</Text>
               </View>
             </View>
 
             {/* Mission Quote Highlight from Web */}
             <View style={[styles.aboutQuoteBox, { backgroundColor: isDark ? 'rgba(82, 167, 82, 0.12)' : 'rgba(58, 125, 58, 0.08)', borderColor: colors.brandGreen + '30' }]}>
               <Text style={[styles.aboutQuoteText, { color: colors.inkPrimary }]}>
-                "Your faithful devotional buddy — keeping you company in God's Word every single day."
+                "Pause, reflect, and meditate — inscribe His living Word upon your heart every day."
               </Text>
             </View>
 
-            {/* Origin & Meaning of Shepema */}
+            {/* Origin & Meaning of Selah */}
             <Text style={[styles.aboutDescription, { color: colors.inkSecondary }]}>
-              <Text style={{ fontWeight: '700', color: colors.inkPrimary }}>Shepema</Text> (from <Text style={{ fontStyle: 'italic', fontWeight: '700', color: colors.inkPrimary }}>"Sheep"</Text> + <Text style={{ fontStyle: 'italic', fontWeight: '700', color: colors.inkPrimary }}>"Rhema"</Text> — God's living Word) is designed to be the warm, encouraging <Text style={{ fontWeight: '700', color: colors.inkPrimary }}>devotional buddy</Text> for every believer. Whether you are doing morning quiet time, reflecting on a verse during lunch, or unwinding at night with prayer, Shepema is right there with you.
+              <Text style={{ fontWeight: '700', color: colors.inkPrimary }}>Selah</Text> (סֶלָה — to pause, reflect, and praise) is your sacred space for daily Scripture meditation, prayer, and Holy Spirit reflection. Accompanied by <Text style={{ fontWeight: '700', color: colors.inkPrimary }}>Selah the Lamb</Text> (inspired by John 10:27 — <Text style={{ fontStyle: 'italic' }}>"My sheep hear My voice"</Text>), the app provides a warm, peaceful sanctuary for your daily quiet time with Jesus.
             </Text>
 
             <Text style={[styles.aboutDescription, { color: colors.inkSecondary, marginTop: -4 }]}>
-              Built with a classic paper notebook feel and powered 100% offline, your devotions and reflections stay private, peaceful, and always accessible on your journey with God.
+              Built with a classic tactile paper notebook feel and powered 100% offline, your devotions and reflections stay private, peaceful, and always accessible on your walk with Jesus.
             </Text>
 
             {/* Value Badges Grid (100% Offline, Private, No Ads, Free) */}
@@ -1293,7 +1293,7 @@ export function SettingsScreen() {
               onPress={() => {
                 promptModal.info(
                   'Privacy Policy',
-                  'Shepema is built on a Zero-Knowledge & Local-First philosophy:\n\n1. All scripture readings and local notes remain on your device by default.\n2. When using Cloud Vault, your reflections are encrypted with AES-256 before leaving your device.\n3. We never sell, track, or harvest personal devotional data.\n\nFor questions, contact support@shepema.app'
+                  'Selah is built on a Zero-Knowledge & Local-First philosophy:\n\n1. All scripture readings and local notes remain on your device by default.\n2. When using Cloud Vault, your reflections are encrypted with AES-256 before leaving your device.\n3. We never sell, track, or harvest personal devotional data.\n\nFor questions, contact support@selah.app'
                 );
               }}
               style={styles.rowItem}
@@ -1318,7 +1318,7 @@ export function SettingsScreen() {
               onPress={() => {
                 promptModal.info(
                   'Terms of Service',
-                  'Shepema Grace Subscriptions & Purchases:\n\n1. Subscriptions auto-renew unless cancelled at least 24 hours before the period ends.\n2. Subscriptions can be managed or cancelled in Google Play / App Store account settings.\n3. Lifetime purchases grant perpetual access to all current and future Grace features.'
+                  'Selah Grace Subscriptions & Purchases:\n\n1. Subscriptions auto-renew unless cancelled at least 24 hours before the period ends.\n2. Subscriptions can be managed or cancelled in Google Play / App Store account settings.\n3. Lifetime purchases grant perpetual access to all current and future Grace features.'
                 );
               }}
               style={styles.rowItem}
@@ -1340,7 +1340,7 @@ export function SettingsScreen() {
             {/* Version & Soli Deo Gloria Footer */}
             <View style={{ alignItems: 'center', paddingTop: 14, paddingBottom: 4 }}>
               <Text style={{ fontFamily: FONTS.body, fontSize: 11, color: colors.inkMuted }}>
-                Shepema Devotional • Version 1.0.1 (Build 2)
+                Selah: Daily Bible & Devotions • Version 1.0.1 (Build 2)
               </Text>
               <Text style={{ fontFamily: FONTS.scriptureItalic, fontSize: 11, color: colors.inkSecondary, marginTop: 3 }}>
                 Soli Deo Gloria ✦ To God Alone Be the Glory

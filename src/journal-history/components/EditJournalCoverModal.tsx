@@ -302,7 +302,7 @@ export function SacredCross({
 export const COVER_EMBLEMS: CoverEmblem[] = [
   {
     id: 'mascot',
-    name: 'Shepema Lamb',
+    name: 'Rhema Lamb',
     isPremium: false,
     emoji: '🐑',
   },

@@ -1,18 +1,18 @@
 {
   "expo": {
-    "name": "Shepema",
-    "slug": "shepema-app",
+    "name": "Selah: Daily Bible & Devotions",
+    "slug": "selah-app",
     "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/app-icon.jpg",
-    "scheme": "shepema",
+    "scheme": "selah",
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.shepema.app"
+      "bundleIdentifier": "com.selah.app"
     },
     "android": {
-      "package": "com.shepema.app",
+      "package": "com.selah.app",
       "versionCode": 2,
       "adaptiveIcon": {
         "backgroundColor": "#377333",

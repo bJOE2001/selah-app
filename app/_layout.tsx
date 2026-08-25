@@ -1,15 +1,22 @@
 import { Caveat_400Regular, Caveat_700Bold } from "@expo-google-fonts/caveat";
 import {
-    Lora_400Regular,
-    Lora_400Regular_Italic,
-    Lora_700Bold,
+  CormorantGaramond_400Regular,
+  CormorantGaramond_400Regular_Italic,
+  CormorantGaramond_600SemiBold,
+  CormorantGaramond_700Bold,
+  CormorantGaramond_700Bold_Italic,
+} from "@expo-google-fonts/cormorant-garamond";
+import {
+  Lora_400Regular,
+  Lora_400Regular_Italic,
+  Lora_700Bold,
 } from "@expo-google-fonts/lora";
 import {
-    PlayfairDisplay_400Regular,
-    PlayfairDisplay_400Regular_Italic,
-    PlayfairDisplay_700Bold,
-    useFonts,
+  PlayfairDisplay_400Regular,
+  PlayfairDisplay_400Regular_Italic,
+  PlayfairDisplay_700Bold,
 } from "@expo-google-fonts/playfair-display";
+import { useFonts } from "expo-font";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -61,6 +68,11 @@ export default function RootLayout() {
   const [isOpeningComplete, setIsOpeningComplete] = useState(false);
 
   const [fontsLoaded, fontError] = useFonts({
+    CormorantGaramond_400Regular,
+    CormorantGaramond_400Regular_Italic,
+    CormorantGaramond_600SemiBold,
+    CormorantGaramond_700Bold,
+    CormorantGaramond_700Bold_Italic,
     PlayfairDisplay_400Regular,
     PlayfairDisplay_700Bold,
     PlayfairDisplay_400Regular_Italic,

@@ -1,4 +1,4 @@
-import { getDatabase } from '../bible-data/db';
+import { getUserDatabase } from '../bible-data/db';
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 import { useCloudAuthStore } from './authStore';
 import { deriveUserVaultKey, encryptText, decryptText } from './encryption';
@@ -40,7 +40,7 @@ export async function syncToCloud(): Promise<SyncResult> {
 
   try {
     const vaultKey = deriveUserVaultKey(user.id);
-    const db = await getDatabase();
+    const db = await getUserDatabase();
 
     // 1. Fetch all local devotionals
     const localDevotionals = await db.getAllAsync<any>(
@@ -128,7 +128,7 @@ export async function restoreFromCloud(): Promise<SyncResult> {
 
   try {
     const vaultKey = deriveUserVaultKey(user.id);
-    const db = await getDatabase();
+    const db = await getUserDatabase();
 
     // 1. Download encrypted rows
     const { data: remoteRows, error } = await supabase

@@ -99,13 +99,6 @@ export async function ensureDownloadTables(db: SQLiteDatabase): Promise<void> {
         verse_count INTEGER NOT NULL,
         size_bytes INTEGER NOT NULL
       );
-    `);
-  } catch (e) {
-    console.warn('Error ensuring downloaded_translations table:', e);
-  }
-
-  try {
-    await db.execAsync(`
       CREATE TABLE IF NOT EXISTS downloaded_verses (
         id TEXT PRIMARY KEY,
         translation_id TEXT NOT NULL,
@@ -115,18 +108,10 @@ export async function ensureDownloadTables(db: SQLiteDatabase): Promise<void> {
         verse INTEGER NOT NULL,
         text TEXT NOT NULL
       );
+      CREATE INDEX IF NOT EXISTS idx_downloaded_verses_lookup ON downloaded_verses(translation_id, book_id, chapter);
+      CREATE INDEX IF NOT EXISTS idx_downloaded_verses_search ON downloaded_verses(translation_id, text);
     `);
-  } catch (e) {
-    console.warn('Error ensuring downloaded_verses table:', e);
-  }
-
-  try {
-    await db.execAsync(`CREATE INDEX IF NOT EXISTS idx_downloaded_verses_lookup ON downloaded_verses(translation_id, book_id, chapter);`);
-  } catch {}
-
-  try {
-    await db.execAsync(`CREATE INDEX IF NOT EXISTS idx_downloaded_verses_search ON downloaded_verses(translation_id, text);`);
-  } catch {}
+  } catch (_) {}
 }
 
 /**
@@ -207,8 +192,8 @@ export async function downloadTranslation(
   const sizeBytes = Math.max(totalChars, cleanVerses.length * 120);
 
   // SQLite max host parameter limit is 999.
-  // With 7 columns per row: 80 rows * 7 = 560 parameters, well below the limit.
-  const CHUNK_SIZE = 80;
+  // 40 rows * 7 columns = 280 parameters (well within all native statement limits)
+  const CHUNK_SIZE = 40;
   const totalChunks = Math.ceil(cleanVerses.length / CHUNK_SIZE);
 
   await db.withTransactionAsync(async () => {

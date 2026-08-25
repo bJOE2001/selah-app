@@ -1,20 +1,20 @@
-# 📖 Shepema — Complete Build & Deployment Guide
+# 📖 Selah: Daily Bible & Devotions — Complete Build & Deployment Guide
 
 This guide provides step-by-step instructions for:
-1. Building the **Shepema Android APK** (`shepema-app`).
-2. Running & building the **Shepema Web Landing Page** (`shepema-web`).
+1. Building the **Selah Android APK** (`selah-app`).
+2. Running & building the **Selah Web Landing Page** (`selah-web`).
 3. Deploying the website to **Vercel**.
 
 ---
 
-## 📱 Part 1: Building the Android APK (`shepema-app`)
+## 📱 Part 1: Building the Android APK (`selah-app`)
 
 ### 🌟 Option A: Cloud Build with EAS (Recommended & Easiest)
 *No Android Studio needed. Expo builds your APK on cloud servers for free.*
 
 1. Open your terminal in the mobile app directory:
    ```bash
-   cd C:\xampp\htdocs\shepema-app
+   cd C:\xampp\htdocs\selah-app
    ```
 
 2. Log in to your Expo account (create a free account at [expo.dev](https://expo.dev) if needed):
@@ -37,7 +37,7 @@ This guide provides step-by-step instructions for:
 
 1. Open your terminal in the app directory:
    ```bash
-   cd C:\xampp\htdocs\shepema-app
+   cd C:\xampp\htdocs\selah-app
    ```
 
 2. Generate the native Android project:
@@ -53,7 +53,7 @@ This guide provides step-by-step instructions for:
 
 4. Your compiled APK will be located at:
    ```
-   C:\xampp\htdocs\shepema-app\android\app\build\outputs\apk\release\app-release.apk
+   C:\xampp\htdocs\selah-app\android\app\build\outputs\apk\release\app-release.apk
    ```
 
 ---
@@ -61,19 +61,19 @@ This guide provides step-by-step instructions for:
 ### 📥 Connecting the APK to Your Website
 
 Once you have your built APK file:
-1. **Rename** the file to: `shepema.apk`
+1. **Rename** the file to: `selah.apk`
 2. **Copy / Replace** it into:
    ```
-   C:\xampp\htdocs\shepema-web\public\downloads\shepema.apk
+   C:\xampp\htdocs\selah-web\public\downloads\selah.apk
    ```
 
 ---
 
-## 🌐 Part 2: Running & Building the Web App (`shepema-web`)
+## 🌐 Part 2: Running & Building the Web App (`selah-web`)
 
 ### 1. Install Dependencies
 ```bash
-cd C:\xampp\htdocs\shepema-web
+cd C:\xampp\htdocs\selah-web
 npm install
 ```
 
@@ -102,22 +102,22 @@ npm run preview
 
 1. Open your terminal in the web directory:
    ```bash
-   cd C:\xampp\htdocs\shepema-web
+   cd C:\xampp\htdocs\selah-web
    ```
 
 2. Initialize Git and commit your files:
    ```bash
    git init
    git add .
-   git commit -m "feat: initial shepema web landing page"
+   git commit -m "feat: initial selah web landing page"
    ```
 
-3. Create a new repository on **[GitHub](https://github.com/new)** (e.g., `shepema-web`).
+3. Create a new repository on **[GitHub](https://github.com/new)** (e.g., `selah-web`).
 
 4. Link and push to GitHub:
    ```bash
    git branch -M main
-   git remote add origin https://github.com/<your-username>/shepema-web.git
+   git remote add origin https://github.com/<your-username>/selah-web.git
    git push -u origin main
    ```
 
@@ -128,7 +128,7 @@ npm run preview
 1. Go to **[Vercel Dashboard](https://vercel.com/new)**.
 2. Sign in with your GitHub account.
 3. Click **"Add New..."** ➔ **"Project"**.
-4. Select your **`shepema-web`** repository and click **"Import"**.
+4. Select your **`selah-web`** repository and click **"Import"**.
 5. Configure Project Settings:
    - **Framework Preset**: `Vite` *(detected automatically)*
    - **Root Directory**: `./`
@@ -140,8 +140,8 @@ npm run preview
 ---
 
 ### Step 3: Your Site is Live! 🎉
-- Vercel will provide you with a live production URL (e.g. `https://shepema-web.vercel.app`).
-- The APK download button will serve the file directly from `https://your-domain.com/downloads/shepema.apk`.
+- Vercel will provide you with a live production URL (e.g. `https://selah-web.vercel.app`).
+- The APK download button will serve the file directly from `https://your-domain.com/downloads/selah.apk`.
 - Every time you `git push` new changes to GitHub, Vercel will **automatically rebuild and redeploy** your website!
 
 ---
@@ -149,10 +149,10 @@ npm run preview
 ## 📂 Project Structure Overview
 
 ```
-shepema-web/
+selah-web/
 ├── public/
 │   ├── downloads/
-│   │   └── shepema.apk            # Downloadable Android APK (~101 MB)
+│   │   └── selah.apk            # Downloadable Android APK (~101 MB)
 │   └── images/
 │       ├── app-icon.jpg            # Branding favicon & icons
 │       ├── mascot-cozy-reading-transparent.png # Hero section mascot

@@ -6,12 +6,14 @@ import {
   FlatList,
   Pressable,
 } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
+import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Verse, Book } from '../../bible-data/types';
 import { useChapterHighlights, HIGHLIGHT_COLORS, getHighlightStyle } from '../../bible-data/highlights';
 import { useSettingsStore } from '../../settings/store';
-import { useTheme } from '../../design-system';
+import { useTheme, toast } from '../../design-system';
 import { FONTS } from '../../design-system/tokens/typography';
 import { SPACING, RADIUS, SHADOWS } from '../../design-system/tokens/spacing';
 
@@ -20,6 +22,7 @@ export interface VerseListProps {
   chapter: number;
   verses: Verse[];
   onSelectRhema: (verse: Verse, reference: string) => void;
+  onChapterChange?: (chapter: number) => void;
 }
 
 export function VerseList({
@@ -27,6 +30,7 @@ export function VerseList({
   chapter,
   verses,
   onSelectRhema,
+  onChapterChange,
 }: VerseListProps) {
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
@@ -162,6 +166,13 @@ export function VerseList({
         </View>
       </View>
 
+      {/* Decorative Drop Cap Chapter Number */}
+      <View style={styles.dropCapContainer}>
+        <Text style={[styles.dropCapNumber, { color: isDark ? 'rgba(74, 124, 89, 0.25)' : 'rgba(74, 124, 89, 0.15)' }]}>
+          {chapter}
+        </Text>
+      </View>
+
       {/* Main Verse FlatList */}
       <FlatList
         data={verses}
@@ -179,6 +190,14 @@ export function VerseList({
           return (
             <Pressable
               onPress={() => handleVersePress(item)}
+              onLongPress={() => {
+                const ref = `${book.name} ${chapter}:${item.verse}`;
+                const copyText = `"${item.text.trim()}" — ${ref}`;
+                Clipboard.setStringAsync(copyText);
+                try { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); } catch {}
+                toast.success('Verse Copied', ref);
+              }}
+              delayLongPress={400}
               style={[
                 styles.verseRow,
                 highlightStyle && {
@@ -212,7 +231,7 @@ export function VerseList({
                   {
                     color: colors.inkPrimary,
                     fontSize: fontSize,
-                    lineHeight: Math.round(fontSize * 1.62),
+                    lineHeight: Math.round(fontSize * 1.65),
                   },
                   isSelected && {
                     color: isDark ? '#FFFFFF' : '#1B3B1B',
@@ -225,6 +244,33 @@ export function VerseList({
             </Pressable>
           );
         }}
+        ListFooterComponent={
+          onChapterChange ? (
+            <View style={[styles.chapterNavFooter, { borderTopColor: colors.paperLine }]}>
+              {chapter > 1 ? (
+                <Pressable
+                  onPress={() => onChapterChange(chapter - 1)}
+                  style={[styles.chapterNavBtn, { backgroundColor: colors.cardBg, borderColor: colors.paperLine }]}
+                  hitSlop={6}
+                >
+                  <Ionicons name="chevron-back" size={16} color={colors.brandGreen} />
+                  <Text style={[styles.chapterNavBtnText, { color: colors.brandGreen }]}>Chapter {chapter - 1}</Text>
+                </Pressable>
+              ) : <View />}
+
+              {chapter < book.chapter_count ? (
+                <Pressable
+                  onPress={() => onChapterChange(chapter + 1)}
+                  style={[styles.chapterNavBtn, { backgroundColor: colors.cardBg, borderColor: colors.paperLine }]}
+                  hitSlop={6}
+                >
+                  <Text style={[styles.chapterNavBtnText, { color: colors.brandGreen }]}>Chapter {chapter + 1}</Text>
+                  <Ionicons name="chevron-forward" size={16} color={colors.brandGreen} />
+                </Pressable>
+              ) : <View />}
+            </View>
+          ) : undefined
+        }
       />
 
       {/* Floating Multi-Verse & Highlight Action Palette */}
@@ -292,7 +338,7 @@ export function VerseList({
                 hitSlop={6}
               >
                 <Ionicons name="create-outline" size={15} color="#FFFFFF" />
-                <Text style={styles.journalRhemaBtnText}>Make Rhema</Text>
+                <Text style={styles.journalRhemaBtnText}>Journal This Verse</Text>
               </Pressable>
             </View>
           </View>
@@ -359,6 +405,18 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '800',
   },
+  dropCapContainer: {
+    alignItems: 'center',
+    marginTop: -4,
+    marginBottom: -12,
+    paddingHorizontal: SPACING.base,
+  },
+  dropCapNumber: {
+    fontFamily: FONTS.scriptureDisplay,
+    fontSize: 72,
+    fontWeight: '700',
+    lineHeight: 80,
+  },
   listContent: {
     paddingHorizontal: SPACING.base,
     paddingVertical: SPACING.sm,
@@ -394,8 +452,32 @@ const styles = StyleSheet.create({
   },
   verseText: {
     flex: 1,
-    fontFamily: FONTS.body,
-    letterSpacing: 0.15,
+    fontFamily: FONTS.scriptureDisplay,
+    letterSpacing: 0.1,
+  },
+  chapterNavFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: SPACING.lg,
+    paddingBottom: SPACING.xl,
+    marginTop: SPACING.md,
+    borderTopWidth: 1,
+  },
+  chapterNavBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: RADIUS.pill,
+    borderWidth: 1,
+    ...SHADOWS.subtle,
+  },
+  chapterNavBtnText: {
+    fontFamily: FONTS.bodyBold,
+    fontSize: 13,
+    fontWeight: '700',
   },
 
   // Floating Action Card

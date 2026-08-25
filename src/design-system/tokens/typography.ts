@@ -1,8 +1,10 @@
 export const FONTS = {
-  // Scripture & Quotes (Classic Elegant Serif)
-  scriptureDisplay: 'PlayfairDisplay_400Regular',
+  // Scripture & Quotes (Crisp High-Legibility Editorial Serif)
+  scriptureDisplay: 'PlayfairDisplay_700Bold',
   scriptureBold: 'PlayfairDisplay_700Bold',
-  scriptureItalic: 'PlayfairDisplay_400Regular_Italic',
+  scriptureSemiBold: 'Lora_700Bold',
+  scriptureItalic: 'Lora_400Regular_Italic',
+  scriptureBoldItalic: 'Lora_700Bold',
 
   // Section Headers & UI Titles (Refined Editorial Serif)
   sectionHeader: 'Lora_700Bold',
@@ -10,8 +12,8 @@ export const FONTS = {
   bodyBold: 'Lora_700Bold',
   bodyItalic: 'Lora_400Regular_Italic',
 
-  // User Hand-journaling entries (Natural Handwriting)
-  userInput: 'Caveat_400Regular',
+  // User Hand-journaling entries (Natural Handwriting - Bold for Screen Clarity)
+  userInput: 'Caveat_700Bold',
   userInputBold: 'Caveat_700Bold',
 
   // System Fallbacks for instant load
