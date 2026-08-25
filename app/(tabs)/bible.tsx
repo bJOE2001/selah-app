@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { Book, Verse } from '../../src/bible-data/types';
@@ -23,9 +24,7 @@ import {
 } from '../../src/entitlements';
 import { useReadingStore } from '../../src/bible-data/readingStore';
 import { CANONICAL_BOOKS } from '../../src/bible-data/constants';
-import { useTheme, toast } from '../../src/design-system';
-import { FONTS } from '../../src/design-system/tokens/typography';
-import { SPACING, RADIUS, SHADOWS } from '../../src/design-system/tokens/spacing';
+import { useTheme, toast, FONTS, SPACING, RADIUS, SHADOWS } from '../../src/design-system';
 
 export default function BibleTabScreen() {
   const router = useRouter();
@@ -96,6 +95,9 @@ export default function BibleTabScreen() {
   };
 
   const handleBack = () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {}
     if (selectedChapter !== null) {
       setSelectedChapter(null);
     } else if (selectedBook !== null) {
@@ -123,17 +125,29 @@ export default function BibleTabScreen() {
       {!selectedBook ? (
         <View style={styles.topAppBar}>
           <View style={styles.brandTitleGroup}>
-            <View style={[styles.brandIconCircle, { backgroundColor: colors.brandGreenLight }]}>
+            <View
+              style={[
+                styles.brandIconCircle,
+                { backgroundColor: isDark ? 'rgba(82, 167, 82, 0.2)' : colors.brandGreenLight },
+              ]}
+            >
               <Ionicons name="book" size={13} color={colors.brandGreen} />
             </View>
             <Text style={[styles.brandTitle, { color: colors.inkPrimary }]}>HOLY SCRIPTURE</Text>
           </View>
 
           <View style={styles.topRightActions}>
-            {/* Interactive Translation Switcher Pill */}
+            {/* Minimal Translation Switcher Pill */}
             <Pressable
-              onPress={() => setIsTranslationPickerOpen(true)}
-              style={[styles.versionBadge, { backgroundColor: colors.brandGreenLight, borderColor: colors.brandGreen + '40' }]}
+              onPress={() => {
+                try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+                setIsTranslationPickerOpen(true);
+              }}
+              style={({ pressed }) => [
+                styles.versionBadge,
+                { backgroundColor: isDark ? '#1C1916' : '#F3ECE1' },
+                pressed && { opacity: 0.8 },
+              ]}
               hitSlop={6}
             >
               <Text style={[styles.versionText, { color: colors.brandGreen }]}>{selectedTranslation.code}</Text>
@@ -141,33 +155,57 @@ export default function BibleTabScreen() {
             </Pressable>
 
             <Pressable
-              onPress={() => router.push('/settings')}
-              style={[styles.settingsIconButton, { backgroundColor: colors.cardBg, borderColor: colors.paperLine }]}
+              onPress={() => {
+                try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+                router.push('/settings');
+              }}
+              style={({ pressed }) => [
+                styles.settingsIconButton,
+                { backgroundColor: isDark ? '#1C1916' : '#F3ECE1' },
+                pressed && { opacity: 0.8 },
+              ]}
               hitSlop={8}
               accessibilityLabel="Settings"
             >
-              <Ionicons name="settings-outline" size={18} color={colors.inkSecondary} />
+              <Ionicons name="settings-outline" size={17} color={colors.inkSecondary} />
             </Pressable>
           </View>
         </View>
       ) : (
-        <View style={[styles.breadcrumbBar, { backgroundColor: colors.cardBg, borderColor: colors.paperLine }]}>
-          <Pressable onPress={handleBack} style={styles.backButton} hitSlop={8}>
-            <Ionicons name="chevron-back" size={20} color={colors.brandGreen} />
+        /* Minimal Breadcrumb Bar in Reading / Chapter View */
+        <View style={styles.breadcrumbBar}>
+          <Pressable
+            onPress={handleBack}
+            style={({ pressed }) => [
+              styles.backButton,
+              pressed && { opacity: 0.7 },
+            ]}
+            hitSlop={8}
+          >
+            <Ionicons name="chevron-back" size={18} color={colors.brandGreen} />
             <Text style={[styles.backButtonText, { color: colors.brandGreen }]}>
-              {selectedChapter !== null ? selectedBook.name : 'All Books'}
+              {selectedChapter !== null ? selectedBook.name : 'Books'}
             </Text>
           </Pressable>
 
           <View style={styles.rightHeaderGroup}>
-            <Text style={[styles.breadcrumbTitle, { color: colors.inkPrimary }]}>
-              {selectedBook.name} {selectedChapter ? `• Ch. ${selectedChapter}` : ''}
-            </Text>
+            {selectedChapter !== null ? (
+              <Text style={[styles.breadcrumbTitle, { color: colors.inkMuted }]}>
+                Ch. {selectedChapter}
+              </Text>
+            ) : null}
 
             {/* Translation Pill in Chapter View */}
             <Pressable
-              onPress={() => setIsTranslationPickerOpen(true)}
-              style={[styles.chapterVersionBadge, { backgroundColor: colors.brandGreenLight, borderColor: colors.brandGreen + '40' }]}
+              onPress={() => {
+                try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+                setIsTranslationPickerOpen(true);
+              }}
+              style={({ pressed }) => [
+                styles.chapterVersionBadge,
+                { backgroundColor: isDark ? '#1C1916' : '#F3ECE1' },
+                pressed && { opacity: 0.8 },
+              ]}
               hitSlop={6}
             >
               <Text style={[styles.chapterVersionText, { color: colors.brandGreen }]}>{selectedTranslation.code}</Text>
@@ -198,7 +236,14 @@ export default function BibleTabScreen() {
       ) : !isCurrentVersionDownloaded && (!verses || verses.length === 0) ? (
         <View style={styles.notDownloadedContainer}>
           <View style={[styles.notDownloadedCard, { backgroundColor: colors.cardBg, borderColor: colors.paperLine }]}>
-            <View style={[styles.cloudIconCircle, { backgroundColor: colors.brandGreenLight }]}>
+            <View
+              style={[
+                styles.cloudIconCircle,
+                {
+                  backgroundColor: isDark ? 'rgba(82, 167, 82, 0.18)' : colors.brandGreenLight,
+                },
+              ]}
+            >
               <Ionicons name="cloud-download-outline" size={32} color={colors.brandGreen} />
             </View>
 
@@ -226,7 +271,11 @@ export default function BibleTabScreen() {
             ) : (
               <Pressable
                 onPress={handleDownloadActiveTranslation}
-                style={[styles.downloadActionButton, { backgroundColor: colors.brandGreen }]}
+                style={({ pressed }) => [
+                  styles.downloadActionButton,
+                  { backgroundColor: colors.brandGreen },
+                  pressed && { opacity: 0.9 },
+                ]}
               >
                 <Ionicons name="arrow-down-circle" size={18} color="#FFFFFF" />
                 <Text style={styles.downloadActionButtonText}>
@@ -268,7 +317,7 @@ export default function BibleTabScreen() {
         onClose={() => setIsTranslationPickerOpen(false)}
       />
 
-      {/* Shepema Grace Paywall Modal */}
+      {/* Selah Grace Paywall Modal */}
       <PaywallModal
         visible={isPaywallOpen}
         onClose={() => setIsPaywallOpen(false)}
@@ -288,7 +337,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginHorizontal: SPACING.base,
     marginBottom: SPACING.xs,
-    paddingHorizontal: 4,
+    paddingHorizontal: 2,
   },
   brandTitleGroup: {
     flexDirection: 'row',
@@ -317,7 +366,6 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -326,9 +374,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
     paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingVertical: 5,
     borderRadius: RADIUS.pill,
-    borderWidth: 1,
   },
   versionText: {
     fontFamily: FONTS.bodyBold,
@@ -341,12 +388,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginHorizontal: SPACING.base,
-    paddingVertical: SPACING.sm,
-    paddingHorizontal: SPACING.md,
-    borderRadius: 16,
-    borderWidth: 1,
-    marginBottom: SPACING.sm,
-    ...SHADOWS.subtle,
+    paddingVertical: 6,
+    paddingHorizontal: 2,
+    marginBottom: SPACING.xs,
   },
   backButton: {
     flexDirection: 'row',
@@ -355,7 +399,7 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     fontFamily: FONTS.bodyBold,
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
   },
   rightHeaderGroup: {
@@ -364,18 +408,16 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   breadcrumbTitle: {
-    fontFamily: FONTS.sectionHeader,
+    fontFamily: FONTS.body,
     fontSize: 13,
-    fontWeight: '700',
   },
   chapterVersionBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 3,
-    paddingHorizontal: 7,
-    paddingVertical: 2,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     borderRadius: RADIUS.pill,
-    borderWidth: 1,
   },
   chapterVersionText: {
     fontFamily: FONTS.bodyBold,
@@ -401,16 +443,16 @@ const styles = StyleSheet.create({
   notDownloadedCard: {
     width: '100%',
     maxWidth: 380,
-    borderRadius: 24,
+    borderRadius: 20,
     borderWidth: 1,
     padding: SPACING.xl,
     alignItems: 'center',
     ...SHADOWS.card,
   },
   cloudIconCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: SPACING.md,

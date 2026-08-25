@@ -9,6 +9,7 @@ import {
   Pressable,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { DevotionalSummary } from '../../devotional-core/types';
 import { useDeleteDevotional } from '../../devotional-core/hooks';
@@ -83,44 +84,94 @@ export function EntryTimeline({
 
   const renderHeader = () => (
     <View>
-      {/* Hero Journal Card */}
-      <View style={[styles.heroCard, { backgroundColor: colors.cardBg, borderColor: colors.paperLine }]}>
+      {/* Editorial Hero Journal Card */}
+      <View
+        style={[
+          styles.heroCard,
+          {
+            backgroundColor: colors.cardBg,
+            borderColor: colors.paperLine,
+          },
+        ]}
+      >
         <View style={styles.heroRow}>
           {/* Left: Title & Stats */}
           <View style={styles.heroTextCol}>
-            <View style={[styles.journalBadge, { backgroundColor: colors.brandGreenLight, borderColor: colors.brandGreen + '40' }]}>
-              <Ionicons name="journal" size={12} color={colors.brandGreen} />
-              <Text style={[styles.journalBadgeText, { color: colors.brandGreen }]}>MY JOURNAL</Text>
+            <View
+              style={[
+                styles.journalBadge,
+                {
+                  backgroundColor: isDark ? 'rgba(82, 167, 82, 0.18)' : colors.brandGreenLight,
+                  borderColor: isDark ? 'rgba(82, 167, 82, 0.35)' : '#D0E5D3',
+                },
+              ]}
+            >
+              <Ionicons name="sparkles" size={10} color={colors.brandGreen} />
+              <Text style={[styles.journalBadgeText, { color: colors.brandGreen }]}>
+                MY DEVOTIONS
+              </Text>
             </View>
 
-            <Text style={[styles.heroTitle, { color: colors.inkPrimary }]}>Devotional{'\n'}Journal</Text>
+            <Text style={[styles.heroTitle, { color: colors.inkPrimary }]}>
+              Spiritual Journal
+            </Text>
 
             <Text style={[styles.heroSubtitle, { color: colors.inkSecondary }]}>
-              Your spiritual walk, one entry at a time.
+              Your reflections & prayers in His presence.
             </Text>
 
             {/* Stats Row */}
-            <View style={[styles.statsRow, { backgroundColor: isDark ? '#1C1916' : '#FBF9F5', borderColor: colors.paperLine }]}>
+            <View
+              style={[
+                styles.statsRow,
+                {
+                  backgroundColor: isDark ? '#1C1916' : '#F6F0E6',
+                  borderColor: colors.paperLine,
+                },
+              ]}
+            >
               <View style={styles.statItem}>
-                <Ionicons name="book-outline" size={14} color={colors.tapeRhema} />
-                <Text style={[styles.statNumber, { color: colors.inkPrimary }]}>{entries.length}</Text>
+                <Ionicons name="book-outline" size={13} color={colors.tapeRhema} />
+                <Text style={[styles.statNumber, { color: colors.inkPrimary }]}>
+                  {entries.length}
+                </Text>
                 <Text style={[styles.statLabel, { color: colors.inkMuted }]}>Entries</Text>
               </View>
+
               <View style={[styles.statDivider, { backgroundColor: colors.paperLine }]} />
+
               <Pressable
-                onPress={() => setFilterMode(filterMode === 'bookmarked' ? 'all' : 'bookmarked')}
+                onPress={() => {
+                  try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+                  setFilterMode(filterMode === 'bookmarked' ? 'all' : 'bookmarked');
+                }}
                 style={styles.statItem}
+                hitSlop={4}
               >
-                <Ionicons name="bookmark" size={14} color={colors.tapeRhema} />
-                <Text style={[styles.statNumber, { color: colors.tapeRhema }]}>{bookmarkedCount}</Text>
+                <Ionicons name="bookmark" size={13} color={colors.tapeRhema} />
+                <Text style={[styles.statNumber, { color: colors.tapeRhema }]}>
+                  {bookmarkedCount}
+                </Text>
                 <Text style={[styles.statLabel, { color: colors.inkMuted }]}>Bookmarked</Text>
               </Pressable>
             </View>
           </View>
 
-          {/* Right: Writing Mascot with Ambient Halo */}
+          {/* Right: Writing Mascot Vignette */}
           <View style={styles.heroMascotArea}>
-            <View style={[styles.heroMascotHalo, { backgroundColor: isDark ? 'rgba(74, 124, 89, 0.20)' : 'rgba(74, 124, 89, 0.12)', borderColor: isDark ? 'rgba(74, 124, 89, 0.35)' : 'rgba(74, 124, 89, 0.22)' }]} />
+            <View
+              style={[
+                styles.heroMascotHalo,
+                {
+                  backgroundColor: isDark
+                    ? 'rgba(82, 167, 82, 0.16)'
+                    : 'rgba(74, 124, 89, 0.10)',
+                  borderColor: isDark
+                    ? 'rgba(82, 167, 82, 0.28)'
+                    : 'rgba(74, 124, 89, 0.18)',
+                },
+              ]}
+            />
             <Image
               source={require('../../../assets/images/mascot-writing-journal-transparent.png')}
               style={styles.heroMascotImage}
@@ -130,20 +181,27 @@ export function EntryTimeline({
         </View>
       </View>
 
-      {/* Search Row */}
+      {/* Minimal Search Bar */}
       <View style={styles.searchRow}>
-        <View style={[styles.searchBar, { backgroundColor: colors.cardBg, borderColor: colors.paperLine }]}>
-          <Ionicons name="search-outline" size={16} color={colors.inkSecondary} />
+        <View
+          style={[
+            styles.searchBar,
+            {
+              backgroundColor: isDark ? '#1C1916' : '#F3ECE1',
+            },
+          ]}
+        >
+          <Ionicons name="search" size={15} color={colors.inkMuted} />
           <TextInput
             style={[styles.searchInput, { color: colors.inkPrimary }]}
-            placeholder="Search entries, verses, tags..."
+            placeholder="Search entries, verses, reflections..."
             placeholderTextColor={colors.inkPlaceholder}
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
           {searchQuery.length > 0 ? (
             <Pressable onPress={() => setSearchQuery('')} hitSlop={6}>
-              <Ionicons name="close-circle" size={16} color={colors.inkPlaceholder} />
+              <Ionicons name="close-circle" size={16} color={colors.inkMuted} />
             </Pressable>
           ) : null}
         </View>
@@ -152,23 +210,30 @@ export function EntryTimeline({
       {/* Filter Tabs: All vs Bookmarked */}
       <View style={styles.filterTabsRow}>
         <Pressable
-          onPress={() => setFilterMode('all')}
+          onPress={() => {
+            try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+            setFilterMode('all');
+          }}
           style={[
             styles.filterTabBtn,
             filterMode === 'all'
-              ? { backgroundColor: colors.brandGreen, borderColor: colors.brandGreen }
-              : { backgroundColor: colors.cardBg, borderColor: colors.paperLine },
+              ? [
+                  styles.filterTabBtnActive,
+                  { backgroundColor: colors.brandGreen },
+                ]
+              : { backgroundColor: isDark ? '#1C1916' : '#F5EFE6' },
           ]}
         >
           <Ionicons
-            name="reader"
-            size={13}
+            name="reader-outline"
+            size={12}
             color={filterMode === 'all' ? '#FFFFFF' : colors.inkSecondary}
           />
           <Text
             style={[
               styles.filterTabText,
               { color: filterMode === 'all' ? '#FFFFFF' : colors.inkSecondary },
+              filterMode === 'all' && { fontWeight: '700' },
             ]}
           >
             All Entries ({entries.length})
@@ -176,23 +241,30 @@ export function EntryTimeline({
         </Pressable>
 
         <Pressable
-          onPress={() => setFilterMode('bookmarked')}
+          onPress={() => {
+            try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+            setFilterMode('bookmarked');
+          }}
           style={[
             styles.filterTabBtn,
             filterMode === 'bookmarked'
-              ? { backgroundColor: colors.tapeRhema, borderColor: colors.tapeRhema }
-              : { backgroundColor: colors.cardBg, borderColor: colors.paperLine },
+              ? [
+                  styles.filterTabBtnActive,
+                  { backgroundColor: colors.tapeRhema },
+                ]
+              : { backgroundColor: isDark ? '#1C1916' : '#F5EFE6' },
           ]}
         >
           <Ionicons
             name="bookmark"
-            size={13}
+            size={12}
             color={filterMode === 'bookmarked' ? '#FFFFFF' : colors.tapeRhema}
           />
           <Text
             style={[
               styles.filterTabText,
               { color: filterMode === 'bookmarked' ? '#FFFFFF' : colors.inkSecondary },
+              filterMode === 'bookmarked' && { fontWeight: '700' },
             ]}
           >
             Bookmarked ({bookmarkedCount})
@@ -204,10 +276,17 @@ export function EntryTimeline({
       {filteredEntries.length > 0 ? (
         <View style={styles.sectionHeader}>
           <Text style={[styles.sectionTitle, { color: colors.inkPrimary }]}>
-            {filterMode === 'bookmarked' ? 'Bookmarked Entries' : 'Recent Entries'}
+            {filterMode === 'bookmarked' ? 'Bookmarked Entries' : 'Recent Reflections'}
           </Text>
-          <View style={[styles.sectionCountBadge, { backgroundColor: colors.brandGreenLight }]}>
-            <Text style={[styles.sectionCountText, { color: colors.brandGreen }]}>{filteredEntries.length}</Text>
+          <View
+            style={[
+              styles.sectionCountBadge,
+              { backgroundColor: colors.brandGreenLight },
+            ]}
+          >
+            <Text style={[styles.sectionCountText, { color: colors.brandGreen }]}>
+              {filteredEntries.length}
+            </Text>
           </View>
         </View>
       ) : null}
@@ -218,26 +297,49 @@ export function EntryTimeline({
     <View style={[styles.container, { backgroundColor: colors.paperBg }]}>
       {/* Top App Bar (only if not hidden) */}
       {!hideTopBar ? (
-        <View style={[styles.appBar, { paddingTop: Math.max(insets.top, 16) + 4, backgroundColor: colors.paperBg }]}>
+        <View
+          style={[
+            styles.appBar,
+            {
+              paddingTop: Math.max(insets.top, 16) + 4,
+              backgroundColor: colors.paperBg,
+            },
+          ]}
+        >
           <View style={styles.brandGroup}>
-            <View style={[styles.brandIconCircle, { backgroundColor: colors.brandGreenLight }]}>
+            <View
+              style={[
+                styles.brandIconCircle,
+                { backgroundColor: colors.brandGreenLight },
+              ]}
+            >
               <Ionicons name="journal" size={13} color={colors.brandGreen} />
             </View>
             <Text style={[styles.brandTitle, { color: colors.inkPrimary }]}>JOURNAL</Text>
           </View>
 
           <View style={styles.topRightActions}>
-            <View style={[styles.appBarDateBadge, { backgroundColor: colors.cardBg, borderColor: colors.paperLine }]}>
-              <Text style={[styles.appBarDateText, { color: colors.inkSecondary }]}>{formattedDate}</Text>
+            <View
+              style={[
+                styles.appBarDateBadge,
+                { backgroundColor: colors.cardBg, borderColor: colors.paperLine },
+              ]}
+            >
+              <Text style={[styles.appBarDateText, { color: colors.inkSecondary }]}>
+                {formattedDate}
+              </Text>
             </View>
 
             <Pressable
               onPress={() => router.push('/settings')}
-              style={[styles.settingsIconButton, { backgroundColor: colors.cardBg, borderColor: colors.paperLine }]}
+              style={[
+                styles.settingsIconButton,
+                { backgroundColor: colors.cardBg, borderColor: colors.paperLine },
+              ]}
               hitSlop={8}
               accessibilityLabel="Settings"
             >
-              <Ionicons name="settings-outline" size={18} color={colors.inkSecondary} />
+              <Ionicons name="settings-outline" size={17} color={colors.inkSecondary} />
             </Pressable>
           </View>
         </View>
@@ -249,7 +351,7 @@ export function EntryTimeline({
         keyExtractor={(item) => item.id}
         contentContainerStyle={[
           styles.listContent,
-          { paddingBottom: Math.max(insets.bottom, 16) + 110 },
+          { paddingBottom: Math.max(insets.bottom, 16) + 120 },
         ]}
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={renderHeader}
@@ -263,14 +365,42 @@ export function EntryTimeline({
         )}
         ListEmptyComponent={
           <View style={styles.emptyStateContainer}>
-            <View style={[styles.emptyCard, { backgroundColor: colors.cardBg, borderColor: colors.paperLine }]}>
-              <Text style={[styles.emptyTitle, { color: colors.inkPrimary }]}>No Devotional Yet</Text>
-              <Text style={[styles.emptySubtitle, { color: colors.inkSecondary }]}>
-                Open Scripture and begin your{'\n'}daily devotional journey.
+            <View
+              style={[
+                styles.emptyCard,
+                { backgroundColor: colors.cardBg, borderColor: colors.paperLine },
+              ]}
+            >
+              <View style={styles.emptyMascotWrapper}>
+                <Image
+                  source={require('../../../assets/images/mascot-writing-journal-transparent.png')}
+                  style={styles.emptyMascotImage}
+                  resizeMode="contain"
+                />
+              </View>
+
+              <Text style={[styles.emptyTitle, { color: colors.inkPrimary }]}>
+                No Devotions Found
               </Text>
-              <Pressable onPress={onStartNew} style={[styles.startNewButton, { backgroundColor: colors.brandGreen }]}>
-                <Ionicons name="add-circle-outline" size={20} color="#FFFFFF" />
-                <Text style={styles.startNewButtonText}>Start a New Devotion</Text>
+              <Text style={[styles.emptySubtitle, { color: colors.inkSecondary }]}>
+                {searchQuery
+                  ? 'No entries match your search query.'
+                  : 'Start your spiritual journey by writing your first devotional reflection.'}
+              </Text>
+
+              <Pressable
+                onPress={() => {
+                  try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+                  onStartNew();
+                }}
+                style={({ pressed }) => [
+                  styles.startNewButton,
+                  { backgroundColor: colors.brandGreen },
+                  pressed && { opacity: 0.9 },
+                ]}
+              >
+                <Ionicons name="create-outline" size={17} color="#FFFFFF" />
+                <Text style={styles.startNewButtonText}>Begin Devotion</Text>
               </Pressable>
             </View>
           </View>
@@ -346,10 +476,10 @@ const styles = StyleSheet.create({
 
   /* ── Hero Card ── */
   heroCard: {
-    borderRadius: 24,
+    borderRadius: 22,
     borderWidth: 1,
-    padding: SPACING.base + 2,
-    marginBottom: SPACING.sm,
+    padding: SPACING.base,
+    marginBottom: SPACING.sm + 2,
     overflow: 'hidden',
     ...SHADOWS.card,
   },
@@ -381,11 +511,11 @@ const styles = StyleSheet.create({
   },
   heroTitle: {
     fontFamily: FONTS.sectionHeader,
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '700',
-    lineHeight: 24,
-    letterSpacing: -0.3,
-    marginBottom: 4,
+    lineHeight: 25,
+    letterSpacing: -0.2,
+    marginBottom: 3,
   },
   heroSubtitle: {
     fontFamily: FONTS.scriptureItalic,
@@ -422,8 +552,8 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
   heroMascotArea: {
-    width: 120,
-    height: 120,
+    width: 116,
+    height: 116,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
@@ -431,10 +561,10 @@ const styles = StyleSheet.create({
   },
   heroMascotHalo: {
     position: 'absolute',
-    width: 105,
-    height: 105,
+    width: 106,
+    height: 106,
     borderRadius: 53,
-    top: 8,
+    borderWidth: 1,
   },
   heroMascotImage: {
     width: '100%',
@@ -448,12 +578,10 @@ const styles = StyleSheet.create({
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: RADIUS.md,
-    borderWidth: 1,
+    borderRadius: 14,
     paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.xs + 3,
-    gap: SPACING.xs + 2,
-    ...SHADOWS.subtle,
+    paddingVertical: 10,
+    gap: 8,
   },
   searchInput: {
     flex: 1,
@@ -466,7 +594,7 @@ const styles = StyleSheet.create({
   filterTabsRow: {
     flexDirection: 'row',
     gap: 8,
-    marginBottom: SPACING.sm,
+    marginBottom: SPACING.sm + 2,
   },
   filterTabBtn: {
     flexDirection: 'row',
@@ -475,22 +603,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: RADIUS.pill,
-    borderWidth: 1,
+  },
+  filterTabBtnActive: {
     ...SHADOWS.subtle,
   },
   filterTabText: {
-    fontFamily: FONTS.bodyBold,
+    fontFamily: FONTS.body,
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '600',
   },
 
   /* ── Section Header ── */
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    justifyContent: 'space-between',
     marginBottom: SPACING.sm,
     marginTop: SPACING.xs,
+    paddingHorizontal: 2,
   },
   sectionTitle: {
     fontFamily: FONTS.sectionHeader,
@@ -498,8 +628,8 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   sectionCountBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 1,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
     borderRadius: RADIUS.pill,
   },
   sectionCountText: {
@@ -513,19 +643,18 @@ const styles = StyleSheet.create({
     marginTop: SPACING.md,
   },
   emptyCard: {
-    borderRadius: 24,
-    borderWidth: 1.5,
+    borderRadius: 22,
+    borderWidth: 1,
     padding: SPACING.xl,
     alignItems: 'center',
     ...SHADOWS.card,
   },
   emptyMascotWrapper: {
-    width: 110,
-    height: 110,
-    borderRadius: 22,
+    width: 96,
+    height: 96,
+    borderRadius: 20,
     overflow: 'hidden',
     marginBottom: SPACING.md,
-    ...SHADOWS.subtle,
   },
   emptyMascotImage: {
     width: '100%',
@@ -548,9 +677,9 @@ const styles = StyleSheet.create({
   startNewButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.xs,
-    paddingVertical: SPACING.sm + 2,
-    paddingHorizontal: SPACING.lg,
+    gap: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
     borderRadius: RADIUS.pill,
     ...SHADOWS.subtle,
   },

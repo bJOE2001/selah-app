@@ -17,6 +17,7 @@ export interface SettingsState {
 
   // Reading — continuous numeric font size (px)
   fontSize: number;
+  journalFontSize: number;
   redLetter: boolean;
 
   // Reminders
@@ -38,6 +39,7 @@ export interface SettingsState {
   // Actions
   setThemeMode: (mode: ThemeMode) => void;
   setFontSize: (size: number) => void;
+  setJournalFontSize: (size: number) => void;
   setRedLetter: (enabled: boolean) => void;
   setMorningReminder: (enabled: boolean, time?: string) => void;
   setEveningReminder: (enabled: boolean, time?: string) => void;
@@ -64,6 +66,7 @@ export const useSettingsStore = create<SettingsState>()(
     (set) => ({
       themeMode: 'system',
       fontSize: FONT_SIZE_DEFAULT,
+      journalFontSize: 14.5,
       redLetter: true,
       morningReminderEnabled: false,
       morningReminderTime: '07:00 AM',
@@ -79,6 +82,8 @@ export const useSettingsStore = create<SettingsState>()(
       setThemeMode: (themeMode) => set({ themeMode }),
       setFontSize: (fontSize) =>
         set({ fontSize: Math.round(Math.max(FONT_SIZE_MIN, Math.min(FONT_SIZE_MAX, fontSize))) }),
+      setJournalFontSize: (journalFontSize) =>
+        set({ journalFontSize: Math.max(12, Math.min(22, journalFontSize)) }),
       setRedLetter: (redLetter) => set({ redLetter }),
       setMorningReminder: (enabled, time) =>
         set((state) => ({
@@ -105,7 +110,7 @@ export const useSettingsStore = create<SettingsState>()(
         })),
     }),
     {
-      name: 'shepema-settings-storage',
+      name: 'selah-settings-storage',
       storage: createJSONStorage(() => AsyncStorage),
       // Migrate old settings
       migrate: (persistedState: any, oldVersion: number) => {

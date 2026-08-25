@@ -21,7 +21,7 @@ export const useTranslationStore = create<TranslationState>()(
       },
     }),
     {
-      name: 'shepema-translation-storage',
+      name: 'selah-translation-storage',
       storage: createJSONStorage(() => AsyncStorage),
     }
   )

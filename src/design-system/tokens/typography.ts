@@ -1,7 +1,7 @@
 export const FONTS = {
   // Scripture & Quotes (Crisp High-Legibility Editorial Serif)
-  scriptureDisplay: 'PlayfairDisplay_700Bold',
-  scriptureBold: 'PlayfairDisplay_700Bold',
+  scriptureDisplay: 'Lora_700Bold',
+  scriptureBold: 'Lora_700Bold',
   scriptureSemiBold: 'Lora_700Bold',
   scriptureItalic: 'Lora_400Regular_Italic',
   scriptureBoldItalic: 'Lora_700Bold',
@@ -12,9 +12,10 @@ export const FONTS = {
   bodyBold: 'Lora_700Bold',
   bodyItalic: 'Lora_400Regular_Italic',
 
-  // User Hand-journaling entries (Natural Handwriting - Bold for Screen Clarity)
-  userInput: 'Caveat_700Bold',
-  userInputBold: 'Caveat_700Bold',
+  // User Devotional Journaling entries (Clean Editorial Serif - Lora)
+  userInput: 'Lora_400Regular',
+  userInputBold: 'Lora_700Bold',
+  userInputHandwriting: 'Caveat_700Bold',
 
   // System Fallbacks for instant load
   systemSerif: 'serif',

@@ -3,12 +3,11 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { useRecentDevotionals, useDevotional } from '../../src/devotional-core/hooks';
 import { EntryTimeline, NotebookBookView } from '../../src/journal-history';
 import { ShareCardModal } from '../../src/share-card';
-import { useTheme } from '../../src/design-system';
-import { FONTS } from '../../src/design-system/tokens/typography';
-import { SPACING, RADIUS, SHADOWS } from '../../src/design-system/tokens/spacing';
+import { useTheme, FONTS, SPACING, RADIUS, SHADOWS } from '../../src/design-system';
 import {
   useIsPremium,
   FREE_JOURNAL_PAGE_LIMIT,
@@ -38,38 +37,48 @@ export default function JournalTabScreen() {
     router.push('/devotional/new');
   };
 
-  const now = new Date();
-  const formattedDate = now.toLocaleDateString('en-US', {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-  });
+  const handleModeChange = (mode: 'notebook' | 'timeline') => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {}
+    setViewMode(mode);
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.paperBg, paddingTop: Math.max(insets.top, 16) + 4 }]}>
       {/* Top Header & View Mode Switcher */}
       <View style={styles.topHeader}>
         <View style={styles.brandGroup}>
-          <View style={[styles.brandIconCircle, { backgroundColor: colors.brandGreenLight }]}>
+          <View
+            style={[
+              styles.brandIconCircle,
+              { backgroundColor: isDark ? 'rgba(82, 167, 82, 0.2)' : colors.brandGreenLight },
+            ]}
+          >
             <Ionicons name="journal" size={13} color={colors.brandGreen} />
           </View>
           <Text style={[styles.brandTitle, { color: colors.inkPrimary }]}>JOURNAL</Text>
         </View>
 
-        {/* View Mode Pill Switcher */}
-        <View style={[styles.modeToggleGroup, { backgroundColor: colors.cardBg, borderColor: colors.paperLine }]}>
+        {/* View Mode Minimal Switcher */}
+        <View
+          style={[
+            styles.modeToggleGroup,
+            { backgroundColor: isDark ? '#1C1916' : '#F3ECE1' },
+          ]}
+        >
           <Pressable
-            onPress={() => setViewMode('notebook')}
+            onPress={() => handleModeChange('notebook')}
             style={[
               styles.modePill,
               viewMode === 'notebook' && [
                 styles.modePillActive,
-                { backgroundColor: colors.brandGreenLight, borderColor: colors.brandGreen + '50' },
+                { backgroundColor: colors.cardBg },
               ],
             ]}
           >
             <Ionicons
-              name="book"
+              name="book-outline"
               size={12}
               color={viewMode === 'notebook' ? colors.brandGreen : colors.inkMuted}
             />
@@ -77,6 +86,7 @@ export default function JournalTabScreen() {
               style={[
                 styles.modePillText,
                 { color: viewMode === 'notebook' ? colors.brandGreen : colors.inkSecondary },
+                viewMode === 'notebook' && { fontWeight: '800' },
               ]}
             >
               Book
@@ -84,35 +94,43 @@ export default function JournalTabScreen() {
           </Pressable>
 
           <Pressable
-            onPress={() => setViewMode('timeline')}
+            onPress={() => handleModeChange('timeline')}
             style={[
               styles.modePill,
               viewMode === 'timeline' && [
                 styles.modePillActive,
-                { backgroundColor: colors.brandGreenLight, borderColor: colors.brandGreen + '50' },
+                { backgroundColor: colors.cardBg },
               ],
             ]}
           >
             <Ionicons
               name="list"
-              size={12}
+              size={13}
               color={viewMode === 'timeline' ? colors.brandGreen : colors.inkMuted}
             />
             <Text
               style={[
                 styles.modePillText,
                 { color: viewMode === 'timeline' ? colors.brandGreen : colors.inkSecondary },
+                viewMode === 'timeline' && { fontWeight: '800' },
               ]}
             >
-              List
+              Timeline
             </Text>
           </Pressable>
         </View>
 
         <View style={styles.topRightActions}>
           <Pressable
-            onPress={() => router.push('/settings')}
-            style={[styles.settingsIconButton, { backgroundColor: colors.cardBg, borderColor: colors.paperLine }]}
+            onPress={() => {
+              try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+              router.push('/settings');
+            }}
+            style={({ pressed }) => [
+              styles.settingsIconButton,
+              { backgroundColor: isDark ? '#1C1916' : '#F3ECE1' },
+              pressed && { opacity: 0.8 },
+            ]}
             hitSlop={8}
             accessibilityLabel="Settings"
           >
@@ -130,7 +148,7 @@ export default function JournalTabScreen() {
             {
               backgroundColor: isPageLimitReached
                 ? (isDark ? '#2D2314' : '#F5E6CC')
-                : (isDark ? '#1C1914' : '#F5EFE6'),
+                : (isDark ? '#1C1914' : '#F7F2EB'),
               borderColor: isPageLimitReached ? '#C59B27' : colors.paperLine,
             },
           ]}
@@ -186,7 +204,7 @@ export default function JournalTabScreen() {
         onClose={() => setSharingId(null)}
       />
 
-      {/* Shepema Grace Paywall Modal */}
+      {/* Selah Grace Paywall Modal */}
       <PaywallModal
         visible={isPaywallOpen}
         onClose={() => setIsPaywallOpen(false)}
@@ -229,28 +247,25 @@ const styles = StyleSheet.create({
   modeToggleGroup: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 2,
+    padding: 3,
     borderRadius: RADIUS.pill,
-    borderWidth: 1,
     gap: 2,
   },
   modePill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 9,
+    gap: 5,
+    paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: RADIUS.pill,
-    borderWidth: 0.8,
-    borderColor: 'transparent',
   },
   modePillActive: {
     ...SHADOWS.subtle,
   },
   modePillText: {
-    fontFamily: FONTS.bodyBold,
+    fontFamily: FONTS.body,
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '600',
   },
   topRightActions: {
     flexDirection: 'row',
@@ -261,7 +276,6 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 15,
-    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -276,7 +290,7 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.xs,
     paddingHorizontal: 12,
     paddingVertical: 7,
-    borderRadius: RADIUS.md,
+    borderRadius: 12,
     borderWidth: 1,
   },
   volumeCapacityLeft: {

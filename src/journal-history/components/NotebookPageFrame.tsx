@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, ViewStyle } from 'react-native';
 import { useTheme } from '../../design-system';
-import { SHADOWS, RADIUS } from '../../design-system/tokens/spacing';
+import { SHADOWS } from '../../design-system/tokens/spacing';
 
 export interface NotebookPageFrameProps {
   children: React.ReactNode;
@@ -28,7 +28,6 @@ export function NotebookPageFrame({
   canvasBorderColor,
   spineBgColor,
   spineStripeColor,
-  stitchColor,
   stackedLayer1Bg,
   stackedLayer2Bg,
 }: NotebookPageFrameProps) {
@@ -41,7 +40,7 @@ export function NotebookPageFrame({
         style={[
           styles.stackedPageLayer2,
           {
-            backgroundColor: stackedLayer2Bg || (isDark ? '#1C1815' : '#E8DFD1'),
+            backgroundColor: stackedLayer2Bg || (isDark ? '#191614' : '#E8DFD1'),
             borderColor: canvasBorderColor || colors.paperLine,
           },
         ]}
@@ -52,7 +51,7 @@ export function NotebookPageFrame({
         style={[
           styles.stackedPageLayer1,
           {
-            backgroundColor: stackedLayer1Bg || (isDark ? '#1F1B17' : '#F2EADB'),
+            backgroundColor: stackedLayer1Bg || (isDark ? '#1D1A17' : '#F1E9DC'),
             borderColor: canvasBorderColor || colors.paperLine,
           },
         ]}
@@ -69,40 +68,23 @@ export function NotebookPageFrame({
           SHADOWS.card,
         ]}
       >
-        {/* Left Book Spine & Binding Margin */}
+        {/* Subtle Minimal Spine Gutter Accent */}
         {showSpine ? (
           <View
             style={[
-              styles.spineContainer,
+              styles.spineGutter,
               {
-                backgroundColor: spineBgColor || (isDark ? '#161311' : '#F5EFE6'),
+                backgroundColor: spineBgColor || (isDark ? '#171412' : '#F3ECE1'),
                 borderRightColor: canvasBorderColor || colors.paperLine,
               },
             ]}
           >
-            {/* Leftmost leather bound stripe */}
             <View
               style={[
-                styles.spineStripe,
+                styles.spineAccentStripe,
                 { backgroundColor: spineStripeColor || colors.bindingAccent },
               ]}
             />
-
-            {/* Stitching dots along the spine */}
-            <View style={styles.stitchesCol}>
-              {Array.from({ length: 8 }).map((_, i) => (
-                <View
-                  key={i}
-                  style={[
-                    styles.stitchHole,
-                    {
-                      backgroundColor: stitchColor || (isDark ? '#3D342B' : '#C4B7A6'),
-                      borderColor: isDark ? '#0F0D0C' : '#E8DEC8',
-                    },
-                  ]}
-                />
-              ))}
-            </View>
           </View>
         ) : null}
 
@@ -116,7 +98,6 @@ export function NotebookPageFrame({
               },
             ]}
           >
-            {/* Ribbon Tail V-cut */}
             <View style={styles.ribbonTailCut} />
           </View>
         ) : null}
@@ -143,9 +124,9 @@ const styles = StyleSheet.create({
     right: 3,
     top: 6,
     bottom: 2,
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
-    opacity: 0.6,
+    opacity: 0.5,
   },
   stackedPageLayer1: {
     position: 'absolute',
@@ -153,47 +134,33 @@ const styles = StyleSheet.create({
     right: 5,
     top: 4,
     bottom: 3,
-    borderRadius: 15,
+    borderRadius: 17,
     borderWidth: 1,
-    opacity: 0.8,
+    opacity: 0.75,
   },
   activePageCanvas: {
     flex: 1,
-    borderRadius: 16,
-    borderWidth: 1.2,
+    borderRadius: 18,
+    borderWidth: 1,
     flexDirection: 'row',
     overflow: 'hidden',
     position: 'relative',
   },
-  spineContainer: {
-    width: 22,
+  spineGutter: {
+    width: 10,
     height: '100%',
-    borderRightWidth: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    borderRightWidth: StyleSheet.hairlineWidth,
     zIndex: 10,
   },
-  spineStripe: {
-    width: 4,
+  spineAccentStripe: {
+    width: 3,
     height: '100%',
-  },
-  stitchesCol: {
-    flex: 1,
-    height: '88%',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-  },
-  stitchHole: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    borderWidth: 0.5,
+    opacity: 0.85,
   },
   ribbonBookmark: {
     position: 'absolute',
     top: -2,
-    left: 32,
+    left: 20,
     width: 12,
     height: 32,
     borderBottomLeftRadius: 2,

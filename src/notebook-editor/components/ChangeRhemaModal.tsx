@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { Book, Verse } from '../../bible-data/types';
 import { CANONICAL_BOOKS } from '../../bible-data/constants';
@@ -35,6 +36,7 @@ export function ChangeRhemaModal({ visible, onClose }: ChangeRhemaModalProps) {
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [selectedChapter, setSelectedChapter] = useState<number | null>(null);
   const [selectedVerseIds, setSelectedVerseIds] = useState<number[]>([]);
+  const [selectedTestament, setSelectedTestament] = useState<1 | 2>(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [isTranslationPickerOpen, setIsTranslationPickerOpen] = useState(false);
 
@@ -51,7 +53,7 @@ export function ChangeRhemaModal({ visible, onClose }: ChangeRhemaModalProps) {
       .sort((a, b) => a.verse - b.verse);
   }, [verses, selectedVerseIds]);
 
-  // Formatted reference string (e.g. Genesis 3:1-3 or Genesis 3:1, 3 (NLT))
+  // Formatted reference string (e.g. Genesis 3:1-3)
   const selectionReference = useMemo(() => {
     if (sortedSelectedVerses.length === 0 || !selectedBook || !selectedChapter) return '';
     const first = sortedSelectedVerses[0];
@@ -87,6 +89,9 @@ export function ChangeRhemaModal({ visible, onClose }: ChangeRhemaModalProps) {
 
   // Toggle single or multiple verses
   const handleToggleVerse = (verse: Verse) => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {}
     setSelectedVerseIds((prev) => {
       if (prev.includes(verse.id)) {
         return prev.filter((id) => id !== verse.id);
@@ -99,6 +104,9 @@ export function ChangeRhemaModal({ visible, onClose }: ChangeRhemaModalProps) {
   // Confirm multiple or single verse selection
   const handleConfirmSelection = () => {
     if (sortedSelectedVerses.length === 0) return;
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    } catch {}
     const firstVerse = sortedSelectedVerses[0];
     setRhema(firstVerse.id, combinedSelectionText, selectionReference);
     toast.success('Rhema Scripture Updated', `Changed to ${selectionReference}`);
@@ -106,6 +114,9 @@ export function ChangeRhemaModal({ visible, onClose }: ChangeRhemaModalProps) {
   };
 
   const handleClose = () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {}
     setSelectedBook(null);
     setSelectedChapter(null);
     setSelectedVerseIds([]);
@@ -118,11 +129,17 @@ export function ChangeRhemaModal({ visible, onClose }: ChangeRhemaModalProps) {
     router.push('/(tabs)/bible');
   };
 
-  const filteredBooks = CANONICAL_BOOKS.filter(
-    (b) =>
-      b.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      b.abbreviation.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredBooks = useMemo(() => {
+    return CANONICAL_BOOKS.filter((b) => {
+      const isSearching = searchQuery.trim().length > 0;
+      const matchesTestament = isSearching || b.testament_id === selectedTestament;
+      const matchesQuery =
+        !isSearching ||
+        b.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        b.abbreviation.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesTestament && matchesQuery;
+    });
+  }, [searchQuery, selectedTestament]);
 
   const chapterList = useMemo(() => {
     if (!selectedBook) return [];
@@ -143,28 +160,30 @@ export function ChangeRhemaModal({ visible, onClose }: ChangeRhemaModalProps) {
           style={[
             styles.modalContainer,
             {
-              backgroundColor: colors.cardBg,
+              backgroundColor: colors.paperBg,
               borderColor: colors.paperLine,
             },
           ]}
         >
-          {/* Header */}
-          <View style={styles.header}>
+          {/* Top Modal Header */}
+          <View style={[styles.header, { borderBottomColor: colors.paperLine }]}>
             <View style={styles.headerLeft}>
               {selectedChapter !== null ? (
                 <Pressable
                   onPress={() => {
+                    try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
                     setSelectedChapter(null);
                     setSelectedVerseIds([]);
                   }}
                   style={styles.backBtn}
                   hitSlop={8}
                 >
-                  <Ionicons name="arrow-back" size={18} color={colors.inkPrimary} />
+                  <Ionicons name="chevron-back" size={20} color={colors.brandGreen} />
                 </Pressable>
               ) : selectedBook !== null ? (
                 <Pressable
                   onPress={() => {
+                    try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
                     setSelectedBook(null);
                     setSelectedChapter(null);
                     setSelectedVerseIds([]);
@@ -172,19 +191,18 @@ export function ChangeRhemaModal({ visible, onClose }: ChangeRhemaModalProps) {
                   style={styles.backBtn}
                   hitSlop={8}
                 >
-                  <Ionicons name="arrow-back" size={18} color={colors.inkPrimary} />
+                  <Ionicons name="chevron-back" size={20} color={colors.brandGreen} />
                 </Pressable>
               ) : (
                 <View
                   style={[
                     styles.iconCircle,
                     {
-                      backgroundColor: colors.tapeRhema + '18',
-                      borderColor: colors.tapeRhema + '45',
+                      backgroundColor: isDark ? 'rgba(82, 167, 82, 0.2)' : colors.brandGreenLight,
                     },
                   ]}
                 >
-                  <Ionicons name="book" size={16} color={colors.tapeRhema} />
+                  <Ionicons name="book" size={14} color={colors.brandGreen} />
                 </View>
               )}
 
@@ -193,48 +211,52 @@ export function ChangeRhemaModal({ visible, onClose }: ChangeRhemaModalProps) {
                   {selectedChapter !== null && selectedBook !== null
                     ? `${selectedBook.name} ${selectedChapter}`
                     : selectedBook !== null
-                    ? `${selectedBook.name} • Select Chapter`
-                    : 'Select Rhema Scripture'}
+                    ? `${selectedBook.name}`
+                    : 'Select Rhema'}
                 </Text>
-                <Text style={[styles.headerSubtitle, { color: colors.inkSecondary }]}>
+                <Text style={[styles.headerSubtitle, { color: colors.inkMuted }]}>
                   {selectedChapter !== null
-                    ? 'Tap one or more verses to set as your Rhema'
+                    ? 'Select verses for your devotional'
                     : selectedBook !== null
-                    ? `${selectedBook.chapter_count} Chapters available`
-                    : 'Search books or pick a chapter & verse'}
+                    ? `${selectedBook.chapter_count} Chapters`
+                    : 'Choose Scripture to meditate on'}
                 </Text>
               </View>
             </View>
 
             <View style={styles.headerRight}>
-              {/* Active Translation Pill */}
+              {/* Minimal Translation Switcher Pill */}
               <Pressable
-                onPress={() => setIsTranslationPickerOpen(true)}
+                onPress={() => {
+                  try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+                  setIsTranslationPickerOpen(true);
+                }}
                 style={[
                   styles.translationBadge,
                   {
-                    backgroundColor: colors.brandGreenLight,
-                    borderColor: colors.brandGreen + '40',
+                    backgroundColor: isDark ? '#1C1916' : '#F3ECE1',
                   },
                 ]}
+                hitSlop={6}
               >
                 <Text style={[styles.translationText, { color: colors.brandGreen }]}>
                   {selectedTranslation.code}
                 </Text>
-                <Ionicons name="chevron-down" size={11} color={colors.brandGreen} />
+                <Ionicons name="chevron-down" size={10} color={colors.brandGreen} />
               </Pressable>
 
               <Pressable onPress={handleClose} style={styles.closeBtn} hitSlop={8}>
-                <Ionicons name="close" size={20} color={colors.inkSecondary} />
+                <Ionicons name="close" size={20} color={colors.inkMuted} />
               </Pressable>
             </View>
           </View>
 
-          {/* Breadcrumb Navigation Trail */}
+          {/* Breadcrumb Trail when navigating */}
           {selectedBook && (
             <View style={[styles.breadcrumbRow, { borderBottomColor: colors.paperLine }]}>
               <Pressable
                 onPress={() => {
+                  try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
                   setSelectedBook(null);
                   setSelectedChapter(null);
                   setSelectedVerseIds([]);
@@ -242,9 +264,10 @@ export function ChangeRhemaModal({ visible, onClose }: ChangeRhemaModalProps) {
               >
                 <Text style={[styles.breadcrumbLink, { color: colors.brandGreen }]}>Books</Text>
               </Pressable>
-              <Ionicons name="chevron-forward" size={12} color={colors.inkPlaceholder} />
+              <Ionicons name="chevron-forward" size={11} color={colors.inkMuted} />
               <Pressable
                 onPress={() => {
+                  try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
                   setSelectedChapter(null);
                   setSelectedVerseIds([]);
                 }}
@@ -260,7 +283,7 @@ export function ChangeRhemaModal({ visible, onClose }: ChangeRhemaModalProps) {
               </Pressable>
               {selectedChapter && (
                 <>
-                  <Ionicons name="chevron-forward" size={12} color={colors.inkPlaceholder} />
+                  <Ionicons name="chevron-forward" size={11} color={colors.inkMuted} />
                   <Text style={[styles.breadcrumbCurrent, { color: colors.inkPrimary }]}>
                     Ch {selectedChapter}
                   </Text>
@@ -272,33 +295,85 @@ export function ChangeRhemaModal({ visible, onClose }: ChangeRhemaModalProps) {
           {/* Step 1: Book Selection */}
           {!selectedBook && (
             <View style={styles.stepContainer}>
-              {/* Search Bar */}
+              {/* Minimal Search Bar */}
               <View
                 style={[
                   styles.searchBar,
                   {
-                    backgroundColor: isDark ? '#1F1B17' : '#F5EFE6',
-                    borderColor: colors.paperLine,
+                    backgroundColor: isDark ? '#1C1916' : '#F3ECE1',
                   },
                 ]}
               >
-                <Ionicons name="search" size={16} color={colors.inkPlaceholder} />
+                <Ionicons name="search" size={15} color={colors.inkMuted} />
                 <TextInput
                   style={[styles.searchInput, { color: colors.inkPrimary }]}
-                  placeholder="Search Bible book (e.g. John, Psalms, Romans)..."
+                  placeholder="Search Bible book..."
                   placeholderTextColor={colors.inkPlaceholder}
                   value={searchQuery}
                   onChangeText={setSearchQuery}
                   autoCorrect={false}
                 />
                 {searchQuery.length > 0 && (
-                  <Pressable onPress={() => setSearchQuery('')}>
-                    <Ionicons name="close-circle" size={16} color={colors.inkPlaceholder} />
+                  <Pressable onPress={() => setSearchQuery('')} hitSlop={6}>
+                    <Ionicons name="close-circle" size={16} color={colors.inkMuted} />
                   </Pressable>
                 )}
               </View>
 
-              {/* Book List */}
+              {/* Testament Switcher Tabs */}
+              {searchQuery.trim().length === 0 && (
+                <View style={[styles.testamentTabsRow, { borderBottomColor: colors.paperLine }]}>
+                  <Pressable
+                    onPress={() => {
+                      try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+                      setSelectedTestament(1);
+                    }}
+                    style={[
+                      styles.testamentTab,
+                      selectedTestament === 1 && [
+                        styles.testamentTabActive,
+                        { borderBottomColor: colors.brandGreen },
+                      ],
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.testamentTabText,
+                        { color: colors.inkMuted },
+                        selectedTestament === 1 && { color: colors.brandGreen, fontWeight: '700' },
+                      ]}
+                    >
+                      Old Testament (39)
+                    </Text>
+                  </Pressable>
+
+                  <Pressable
+                    onPress={() => {
+                      try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+                      setSelectedTestament(2);
+                    }}
+                    style={[
+                      styles.testamentTab,
+                      selectedTestament === 2 && [
+                        styles.testamentTabActive,
+                        { borderBottomColor: colors.brandGreen },
+                      ],
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.testamentTabText,
+                        { color: colors.inkMuted },
+                        selectedTestament === 2 && { color: colors.brandGreen, fontWeight: '700' },
+                      ]}
+                    >
+                      New Testament (27)
+                    </Text>
+                  </Pressable>
+                </View>
+              )}
+
+              {/* Editorial Book List */}
               <FlatList
                 data={filteredBooks}
                 keyExtractor={(item) => `book_${item.id}`}
@@ -306,42 +381,17 @@ export function ChangeRhemaModal({ visible, onClose }: ChangeRhemaModalProps) {
                 contentContainerStyle={styles.bookListContent}
                 renderItem={({ item }) => (
                   <Pressable
-                    onPress={() => setSelectedBook(item)}
+                    onPress={() => {
+                      try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+                      setSelectedBook(item);
+                    }}
                     style={({ pressed }) => [
                       styles.bookRow,
-                      {
-                        backgroundColor: isDark ? '#1C1916' : '#FBF9F5',
-                        borderColor: colors.paperLine,
-                      },
-                      pressed && { opacity: 0.75 },
+                      { borderBottomColor: colors.paperLine },
+                      pressed && { backgroundColor: isDark ? '#1F1B16' : '#F6F0E6' },
                     ]}
                   >
                     <View style={styles.bookRowLeft}>
-                      <View
-                        style={[
-                          styles.bookNumBadge,
-                          {
-                            backgroundColor:
-                              item.testament_id === 1
-                                ? colors.brandGreenLight
-                                : isDark
-                                ? '#2A231C'
-                                : '#FAF0E6',
-                          },
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            styles.bookNumText,
-                            {
-                              color:
-                                item.testament_id === 1 ? colors.brandGreen : colors.brandGold,
-                            },
-                          ]}
-                        >
-                          {item.abbreviation}
-                        </Text>
-                      </View>
                       <Text style={[styles.bookNameText, { color: colors.inkPrimary }]}>
                         {item.name}
                       </Text>
@@ -349,9 +399,9 @@ export function ChangeRhemaModal({ visible, onClose }: ChangeRhemaModalProps) {
 
                     <View style={styles.bookRowRight}>
                       <Text style={[styles.chapterCountText, { color: colors.inkMuted }]}>
-                        {item.chapter_count} ch
+                        {item.chapter_count} {item.chapter_count === 1 ? 'ch' : 'chs'}
                       </Text>
-                      <Ionicons name="chevron-forward" size={14} color={colors.inkPlaceholder} />
+                      <Ionicons name="chevron-forward" size={13} color={colors.inkMuted} style={{ opacity: 0.6 }} />
                     </View>
                   </Pressable>
                 )}
@@ -359,7 +409,7 @@ export function ChangeRhemaModal({ visible, onClose }: ChangeRhemaModalProps) {
             </View>
           )}
 
-          {/* Step 2: Chapter Selection (Aligned 5-Column Grid) */}
+          {/* Step 2: Chapter Selection (Clean 5-Column Grid) */}
           {selectedBook && selectedChapter === null && (
             <View style={styles.stepContainer}>
               <FlatList
@@ -372,18 +422,18 @@ export function ChangeRhemaModal({ visible, onClose }: ChangeRhemaModalProps) {
                 renderItem={({ item: chNum }) => (
                   <Pressable
                     onPress={() => {
+                      try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
                       setSelectedChapter(chNum);
                       setSelectedVerseIds([]);
                     }}
                     style={({ pressed }) => [
                       styles.chapterCell,
                       {
-                        backgroundColor: isDark ? '#1C1916' : '#FBF9F5',
-                        borderColor: colors.paperLine,
+                        backgroundColor: isDark ? '#1C1916' : '#F3ECE1',
                       },
                       pressed && {
                         backgroundColor: colors.brandGreen,
-                        borderColor: colors.brandGreen,
+                        transform: [{ scale: 0.94 }],
                       },
                     ]}
                   >
@@ -429,7 +479,7 @@ export function ChangeRhemaModal({ visible, onClose }: ChangeRhemaModalProps) {
                   showsVerticalScrollIndicator={false}
                   contentContainerStyle={[
                     styles.versesListContent,
-                    selectedVerseIds.length > 0 && { paddingBottom: 80 },
+                    selectedVerseIds.length > 0 && { paddingBottom: 90 },
                   ]}
                   renderItem={({ item }) => {
                     const isSelected = selectedVerseIds.includes(item.id);
@@ -438,51 +488,41 @@ export function ChangeRhemaModal({ visible, onClose }: ChangeRhemaModalProps) {
                         onPress={() => handleToggleVerse(item)}
                         style={({ pressed }) => [
                           styles.verseRow,
-                          {
-                            backgroundColor: isSelected
-                              ? isDark
-                                ? 'rgba(184, 80, 66, 0.18)'
-                                : 'rgba(184, 80, 66, 0.10)'
-                              : isDark
-                              ? '#1C1916'
-                              : '#FBF9F5',
-                            borderColor: isSelected ? colors.tapeRhema : colors.paperLine,
+                          isSelected && {
+                            backgroundColor: isDark
+                              ? 'rgba(184, 80, 66, 0.22)'
+                              : 'rgba(184, 80, 66, 0.12)',
+                            borderRadius: 8,
                           },
                           pressed && { opacity: 0.8 },
                         ]}
                       >
-                        <View
+                        <Text
                           style={[
-                            styles.verseNumBadge,
-                            {
-                              backgroundColor: isSelected
-                                ? colors.tapeRhema
-                                : colors.tapeRhema + '18',
-                              borderColor: isSelected
-                                ? colors.tapeRhema
-                                : colors.tapeRhema + '45',
-                            },
+                            styles.verseTextFlow,
+                            { color: colors.inkPrimary },
                           ]}
                         >
                           <Text
                             style={[
-                              styles.verseNumText,
-                              { color: isSelected ? '#FFFFFF' : colors.tapeRhema },
+                              styles.verseNumberBadgeInline,
+                              { color: isSelected ? colors.tapeRhema : colors.inkMuted },
+                              isSelected && { fontWeight: '800' },
                             ]}
                           >
-                            v{item.verse}
+                            {item.verse}{'  '}
                           </Text>
-                        </View>
-
-                        <Text style={[styles.verseQuoteText, { color: colors.inkPrimary }]}>
                           {item.text}
                         </Text>
 
-                        <Ionicons
-                          name={isSelected ? 'checkmark-circle' : 'ellipse-outline'}
-                          size={22}
-                          color={isSelected ? colors.tapeRhema : colors.inkPlaceholder}
-                        />
+                        {isSelected && (
+                          <Ionicons
+                            name="checkmark-circle"
+                            size={16}
+                            color={colors.tapeRhema}
+                            style={styles.selectedCheckIcon}
+                          />
+                        )}
                       </Pressable>
                     );
                   }}
@@ -495,8 +535,8 @@ export function ChangeRhemaModal({ visible, onClose }: ChangeRhemaModalProps) {
                   style={[
                     styles.confirmBar,
                     {
-                      backgroundColor: isDark ? '#23201D' : '#FFFDF9',
-                      borderTopColor: colors.paperLine,
+                      backgroundColor: colors.cardBg,
+                      borderColor: colors.paperLine,
                     },
                   ]}
                 >
@@ -504,7 +544,7 @@ export function ChangeRhemaModal({ visible, onClose }: ChangeRhemaModalProps) {
                     <Text style={[styles.confirmBarRef, { color: colors.tapeRhema }]} numberOfLines={1}>
                       {selectionReference}
                     </Text>
-                    <Text style={[styles.confirmBarCount, { color: colors.inkSecondary }]}>
+                    <Text style={[styles.confirmBarCount, { color: colors.inkMuted }]}>
                       {sortedSelectedVerses.length}{' '}
                       {sortedSelectedVerses.length === 1 ? 'verse selected' : 'verses selected'}
                     </Text>
@@ -512,7 +552,10 @@ export function ChangeRhemaModal({ visible, onClose }: ChangeRhemaModalProps) {
 
                   <View style={styles.confirmBarActions}>
                     <Pressable
-                      onPress={() => setSelectedVerseIds([])}
+                      onPress={() => {
+                        try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+                        setSelectedVerseIds([]);
+                      }}
                       style={styles.clearBtn}
                       hitSlop={6}
                     >
@@ -523,9 +566,13 @@ export function ChangeRhemaModal({ visible, onClose }: ChangeRhemaModalProps) {
 
                     <Pressable
                       onPress={handleConfirmSelection}
-                      style={[styles.confirmApplyBtn, { backgroundColor: colors.brandGreen }]}
+                      style={({ pressed }) => [
+                        styles.confirmApplyBtn,
+                        { backgroundColor: colors.brandGreen },
+                        pressed && { opacity: 0.9 },
+                      ]}
                     >
-                      <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+                      <Ionicons name="checkmark" size={14} color="#FFFFFF" />
                       <Text style={styles.confirmApplyText}>Set as Rhema</Text>
                     </Pressable>
                   </View>
@@ -536,12 +583,12 @@ export function ChangeRhemaModal({ visible, onClose }: ChangeRhemaModalProps) {
 
           {/* Footer: Open in Full Bible Link */}
           <View style={[styles.footer, { borderTopColor: colors.paperLine }]}>
-            <Pressable onPress={handleOpenFullBible} style={styles.fullBibleBtn}>
-              <Ionicons name="book-outline" size={14} color={colors.brandGreen} />
+            <Pressable onPress={handleOpenFullBible} style={styles.fullBibleBtn} hitSlop={6}>
+              <Ionicons name="book-outline" size={13} color={colors.brandGreen} />
               <Text style={[styles.fullBibleBtnText, { color: colors.brandGreen }]}>
                 Browse in Full Bible Reader
               </Text>
-              <Ionicons name="arrow-forward" size={13} color={colors.brandGreen} />
+              <Ionicons name="arrow-forward" size={12} color={colors.brandGreen} />
             </Pressable>
           </View>
         </View>
@@ -559,7 +606,7 @@ export function ChangeRhemaModal({ visible, onClose }: ChangeRhemaModalProps) {
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.65)',
+    backgroundColor: 'rgba(0, 0, 0, 0.55)',
     justifyContent: 'flex-end',
     zIndex: 9999,
   },
@@ -568,11 +615,11 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     width: '100%',
-    maxHeight: '88%',
-    minHeight: '75%',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    borderWidth: 1.2,
+    maxHeight: '90%',
+    minHeight: '78%',
+    borderTopLeftRadius: 26,
+    borderTopRightRadius: 26,
+    borderTopWidth: 1,
     overflow: 'hidden',
     ...SHADOWS.card,
   },
@@ -580,14 +627,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: SPACING.lg,
-    paddingTop: SPACING.lg,
+    paddingHorizontal: SPACING.base,
+    paddingTop: SPACING.base,
     paddingBottom: SPACING.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
     flex: 1,
   },
   headerRight: {
@@ -599,10 +647,9 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   iconCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 1,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -620,9 +667,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 3,
     paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingVertical: 4,
     borderRadius: RADIUS.pill,
-    borderWidth: 0.8,
   },
   translationText: {
     fontFamily: FONTS.bodyBold,
@@ -635,19 +681,19 @@ const styles = StyleSheet.create({
   breadcrumbRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: 6,
-    borderBottomWidth: 1,
+    gap: 5,
+    paddingHorizontal: SPACING.base,
+    paddingVertical: 8,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   breadcrumbLink: {
     fontFamily: FONTS.bodyBold,
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
   },
   breadcrumbCurrent: {
     fontFamily: FONTS.bodyBold,
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
   },
   stepContainer: {
@@ -661,50 +707,53 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: RADIUS.pill,
-    borderWidth: 1,
+    borderRadius: 12,
     gap: 8,
-    marginBottom: SPACING.sm,
+    marginBottom: SPACING.xs,
   },
   searchInput: {
     flex: 1,
     fontFamily: FONTS.body,
-    fontSize: 12,
+    fontSize: 13,
     padding: 0,
   },
+  testamentTabsRow: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    marginBottom: SPACING.xs,
+  },
+  testamentTab: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
+  },
+  testamentTabActive: {},
+  testamentTabText: {
+    fontFamily: FONTS.sectionHeader,
+    fontSize: 12.5,
+  },
   bookListContent: {
-    gap: 4,
     paddingBottom: SPACING.md,
   },
   bookRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-    borderRadius: RADIUS.sm,
-    borderWidth: 1,
+    paddingHorizontal: 4,
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   bookRowLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-  },
-  bookNumBadge: {
-    width: 32,
-    height: 22,
-    borderRadius: RADIUS.xs,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  bookNumText: {
-    fontFamily: FONTS.bodyBold,
-    fontSize: 10,
-    fontWeight: '800',
   },
   bookNameText: {
-    fontFamily: FONTS.bodyBold,
-    fontSize: 13,
+    fontFamily: FONTS.sectionHeader,
+    fontSize: 15,
+    fontWeight: '600',
   },
   bookRowRight: {
     flexDirection: 'row',
@@ -713,74 +762,67 @@ const styles = StyleSheet.create({
   },
   chapterCountText: {
     fontFamily: FONTS.body,
-    fontSize: 11,
+    fontSize: 12,
   },
   chapterGridContent: {
     paddingVertical: SPACING.sm,
-    gap: 8,
     paddingBottom: SPACING.lg,
   },
   chapterRow: {
     gap: 8,
+    marginBottom: 8,
   },
   chapterCell: {
     flex: 1,
-    maxWidth: '18.4%',
     aspectRatio: 1,
-    borderRadius: RADIUS.sm,
-    borderWidth: 1,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
   chapterCellText: {
-    fontFamily: FONTS.bodyBold,
-    fontSize: 14,
-    fontWeight: '700',
+    fontFamily: FONTS.sectionHeader,
+    fontSize: 15,
+    fontWeight: '600',
   },
   versesListContent: {
-    gap: 6,
     paddingVertical: SPACING.xs,
     paddingBottom: SPACING.lg,
   },
   verseRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: RADIUS.sm,
-    borderWidth: 1.2,
-    gap: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 7,
+    marginVertical: 1,
   },
-  verseNumBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: RADIUS.pill,
-    borderWidth: 0.8,
-    marginTop: 2,
-  },
-  verseNumText: {
-    fontFamily: FONTS.bodyBold,
-    fontSize: 9,
-    fontWeight: '800',
-  },
-  verseQuoteText: {
+  verseTextFlow: {
     fontFamily: FONTS.body,
-    fontSize: 12,
-    lineHeight: 18,
+    fontSize: 14,
+    lineHeight: 22,
     flex: 1,
+  },
+  verseNumberBadgeInline: {
+    fontFamily: FONTS.bodyBold,
+    fontSize: 11,
+  },
+  selectedCheckIcon: {
+    marginLeft: 6,
+    marginTop: 3,
   },
   confirmBar: {
     position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
+    bottom: 12,
+    left: 8,
+    right: 8,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: SPACING.base,
-    paddingVertical: SPACING.sm + 2,
-    borderTopWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 18,
+    borderWidth: 1,
     ...SHADOWS.card,
+    elevation: 8,
     zIndex: 10,
   },
   confirmBarLeft: {
@@ -788,7 +830,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   confirmBarRef: {
-    fontFamily: FONTS.scriptureBold,
+    fontFamily: FONTS.sectionHeader,
     fontSize: 13,
     fontWeight: '700',
   },
@@ -802,8 +844,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   clearBtn: {
-    paddingHorizontal: 8,
-    paddingVertical: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 4,
   },
   clearBtnText: {
     fontFamily: FONTS.bodyBold,
@@ -813,9 +855,9 @@ const styles = StyleSheet.create({
   confirmApplyBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
     borderRadius: RADIUS.pill,
     ...SHADOWS.subtle,
   },
@@ -866,15 +908,15 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   footer: {
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.sm + 2,
-    borderTopWidth: 1,
+    paddingHorizontal: SPACING.base,
+    paddingVertical: SPACING.sm,
+    borderTopWidth: StyleSheet.hairlineWidth,
     alignItems: 'center',
   },
   fullBibleBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 5,
     paddingVertical: 4,
   },
   fullBibleBtnText: {

@@ -3,6 +3,7 @@ import { View, Text, ScrollView, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { DashboardHeader } from './DashboardHeader';
 import { WeeklyStreakTracker } from './WeeklyStreakTracker';
 import { QuickEntry } from './QuickEntry';
@@ -30,7 +31,7 @@ export function DailyDashboard({ onShareEntry }: DailyDashboardProps) {
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
   const { data: entries } = useRecentDevotionals(20);
-  const { reset, setRhema } = useDraftStore();
+  const { reset } = useDraftStore();
   const [isPaywallOpen, setIsPaywallOpen] = useState(false);
 
   const isPremium = useIsPremium();
@@ -73,24 +74,53 @@ export function DailyDashboard({ onShareEntry }: DailyDashboardProps) {
         ]}
       >
         <View style={styles.brandTitleGroup}>
-          <View style={[styles.brandIconCircle, { backgroundColor: colors.brandGreenLight }]}>
+          <View
+            style={[
+              styles.brandIconCircle,
+              {
+                backgroundColor: isDark ? 'rgba(82, 167, 82, 0.2)' : colors.brandGreenLight,
+                borderColor: isDark ? 'rgba(82, 167, 82, 0.35)' : '#D0E5D3',
+              },
+            ]}
+          >
             <Ionicons name="book" size={13} color={colors.brandGreen} />
           </View>
           <Text style={[styles.brandTitle, { color: colors.inkPrimary }]}>SELAH</Text>
         </View>
 
         <View style={styles.topRightActions}>
-          <View style={[styles.topDateBadge, { backgroundColor: colors.cardBg, borderColor: colors.paperLine }]}>
+          <View
+            style={[
+              styles.topDateBadge,
+              {
+                backgroundColor: colors.cardBg,
+                borderColor: colors.paperLine,
+              },
+            ]}
+          >
+            <Ionicons name="calendar-outline" size={11} color={colors.brandGreen} />
             <Text style={[styles.topDateText, { color: colors.inkSecondary }]}>{formattedDate}</Text>
           </View>
 
           <Pressable
-            onPress={() => router.push('/settings')}
-            style={[styles.settingsIconButton, { backgroundColor: colors.cardBg, borderColor: colors.paperLine }]}
+            onPress={() => {
+              try {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              } catch {}
+              router.push('/settings');
+            }}
+            style={({ pressed }) => [
+              styles.settingsIconButton,
+              {
+                backgroundColor: colors.cardBg,
+                borderColor: colors.paperLine,
+              },
+              pressed && { opacity: 0.8, transform: [{ scale: 0.95 }] },
+            ]}
             hitSlop={8}
             accessibilityLabel="Settings"
           >
-            <Ionicons name="settings-outline" size={18} color={colors.inkSecondary} />
+            <Ionicons name="settings-outline" size={17} color={colors.inkSecondary} />
           </Pressable>
         </View>
       </View>
@@ -104,7 +134,7 @@ export function DailyDashboard({ onShareEntry }: DailyDashboardProps) {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        {/* 1. Hero Greeting Header with Mascot Halo */}
+        {/* 1. Hero Greeting Header with Mascot Halo & Chat Bubble */}
         <DashboardHeader />
 
         {/* 2. Weekly Devotion Tracker */}
@@ -144,6 +174,25 @@ export function DailyDashboard({ onShareEntry }: DailyDashboardProps) {
         {/* 5. Recent Devotions Section (Latest 3) */}
         {(entries || []).length > 0 ? (
           <View style={styles.recentSection}>
+            <View style={styles.sectionHeaderRow}>
+              <View style={styles.sectionTitleGroup}>
+                <Ionicons name="journal-outline" size={15} color={colors.tapeRhema} />
+                <Text style={[styles.sectionTitle, { color: colors.inkPrimary }]}>
+                  Recent Devotions
+                </Text>
+              </View>
+
+              <Pressable
+                onPress={() => router.push('/(tabs)/journal')}
+                style={styles.viewAllButton}
+                hitSlop={8}
+              >
+                <Text style={[styles.viewAllText, { color: colors.brandGreen }]}>
+                  View all →
+                </Text>
+              </Pressable>
+            </View>
+
             {(entries || []).slice(0, 3).map((entry) => (
               <EntryCard
                 key={entry.id}
@@ -156,7 +205,7 @@ export function DailyDashboard({ onShareEntry }: DailyDashboardProps) {
         ) : null}
       </ScrollView>
 
-      {/* Shepema Grace Paywall Modal */}
+      {/* Selah Grace Paywall Modal */}
       <PaywallModal
         visible={isPaywallOpen}
         onClose={() => setIsPaywallOpen(false)}
@@ -187,6 +236,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
+    borderWidth: 0.8,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -210,8 +260,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   topDateBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
     paddingHorizontal: 9,
-    paddingVertical: 3,
+    paddingVertical: 4,
     borderRadius: RADIUS.pill,
     borderWidth: 1,
   },
@@ -230,5 +283,31 @@ const styles = StyleSheet.create({
   recentSection: {
     paddingHorizontal: SPACING.base,
     marginTop: SPACING.xs,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: SPACING.sm,
+    marginTop: SPACING.xs,
+  },
+  sectionTitleGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  sectionTitle: {
+    fontFamily: FONTS.sectionHeader,
+    fontSize: 14.5,
+    fontWeight: '700',
+  },
+  viewAllButton: {
+    paddingVertical: 2,
+    paddingHorizontal: 4,
+  },
+  viewAllText: {
+    fontFamily: FONTS.bodyBold,
+    fontSize: 11.5,
+    fontWeight: '700',
   },
 });

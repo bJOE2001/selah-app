@@ -26,7 +26,7 @@ export const useReadingStore = create<ReadingState>()(
         }),
     }),
     {
-      name: 'shepema-reading-storage',
+      name: 'selah-reading-storage',
       storage: createJSONStorage(() => AsyncStorage),
     }
   )

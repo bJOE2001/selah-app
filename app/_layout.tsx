@@ -169,7 +169,7 @@ export default function RootLayout() {
     }
   }, [fontsLoaded, fontError, dbReady]);
 
-  // Display the dedicated Shepema AppOpeningScreen on app startup
+  // Display the dedicated Selah AppOpeningScreen on app startup
   if ((!fontsLoaded && !fontError) || !dbReady || !isOpeningComplete) {
     return <AppOpeningScreen />;
   }

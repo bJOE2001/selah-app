@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import * as Haptics from "expo-haptics";
 import React, { useRef, useState } from "react";
 import {
     KeyboardAvoidingView,
@@ -9,6 +10,7 @@ import {
     StyleSheet,
     Text,
     View,
+    LayoutChangeEvent,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { promptModal, toast, useTheme } from "../../design-system";
@@ -63,6 +65,22 @@ export function NotebookEditor({ onSaveSuccess }: NotebookEditorProps) {
 
   const saveMutation = useSaveDevotional();
   const deleteMutation = useDeleteDevotional();
+
+  const [sectionLayouts, setSectionLayouts] = useState<{ [key: string]: number }>({});
+
+  const handleSectionLayout = (key: string, e: LayoutChangeEvent) => {
+    const y = e.nativeEvent.layout.y;
+    setSectionLayouts((prev) => ({ ...prev, [key]: y }));
+  };
+
+  const scrollToSection = (key: string) => {
+    setTimeout(() => {
+      const y = sectionLayouts[key];
+      if (y !== undefined) {
+        scrollRef.current?.scrollTo({ y: Math.max(0, y - 10), animated: true });
+      }
+    }, 120);
+  };
 
   const handleDelete = () => {
     if (!editingDevotionalId) return;
@@ -264,13 +282,17 @@ export function NotebookEditor({ onSaveSuccess }: NotebookEditorProps) {
 
               {rhemaText ? (
                 <Pressable
-                  onPress={() => setIsChangeRhemaOpen(true)}
-                  style={[
+                  onPress={() => {
+                    try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+                    setIsChangeRhemaOpen(true);
+                  }}
+                  style={({ pressed }) => [
                     styles.changeRhemaBtn,
                     {
                       backgroundColor: colors.tapeRhema + "18",
                       borderColor: colors.tapeRhema + "45",
                     },
+                    pressed && { opacity: 0.75 },
                   ]}
                   hitSlop={6}
                   accessibilityLabel="Change Rhema Scripture"
@@ -294,15 +316,23 @@ export function NotebookEditor({ onSaveSuccess }: NotebookEditorProps) {
 
             {rhemaText ? (
               <View style={styles.rhemaCardWrapper}>
-                <ScriptureCard reference={rhemaReference} text={rhemaText} />
+                <ScriptureCard
+                  reference={rhemaReference}
+                  text={rhemaText}
+                  collapsible={true}
+                />
                 <Pressable
-                  onPress={() => setIsChangeRhemaOpen(true)}
-                  style={[
+                  onPress={() => {
+                    try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+                    setIsChangeRhemaOpen(true);
+                  }}
+                  style={({ pressed }) => [
                     styles.bottomChangeVerseBtn,
                     {
                       borderColor: colors.paperLine,
                       backgroundColor: isDark ? "#23201D" : "#FAF6F0",
                     },
+                    pressed && { opacity: 0.8 },
                   ]}
                 >
                   <Ionicons
@@ -327,103 +357,117 @@ export function NotebookEditor({ onSaveSuccess }: NotebookEditorProps) {
               </View>
             ) : (
               <Pressable
-                onPress={() => setIsChangeRhemaOpen(true)}
-                style={[
+                onPress={() => {
+                  try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+                  setIsChangeRhemaOpen(true);
+                }}
+                style={({ pressed }) => [
                   styles.emptyRhemaCard,
                   {
                     backgroundColor: colors.cardBg,
-                    borderColor: colors.tapeRhema,
+                    borderColor: colors.paperLine,
                   },
+                  pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] },
                 ]}
               >
-                <Ionicons
-                  name="book-outline"
-                  size={24}
-                  color={colors.tapeRhema}
-                />
-                <Text
-                  style={[styles.emptyRhemaText, { color: colors.tapeRhema }]}
+                <View
+                  style={[
+                    styles.emptyRhemaIconCircle,
+                    {
+                      backgroundColor: isDark
+                        ? "rgba(184, 80, 66, 0.18)"
+                        : "rgba(184, 80, 66, 0.10)",
+                    },
+                  ]}
                 >
-                  Tap here to open the Bible and select today’s Rhema verse
+                  <Ionicons
+                    name="book"
+                    size={22}
+                    color={colors.tapeRhema}
+                  />
+                </View>
+                <Text
+                  style={[styles.emptyRhemaTitle, { color: colors.inkPrimary }]}
+                >
+                  Select Today’s Rhema Scripture
+                </Text>
+                <Text
+                  style={[styles.emptyRhemaText, { color: colors.inkSecondary }]}
+                >
+                  Tap here to browse the Bible and choose verses that speak to your heart
                 </Text>
               </Pressable>
             )}
           </View>
 
           {/* ═══════════════ 2. REFLECTION SECTION ═══════════════ */}
-          <TapeHeader
-            label="✦  R E F L E C T I O N"
-            color={colors.tapeReflection}
-          />
-          <View style={styles.sectionContent}>
-            <Text
-              style={[styles.sectionSubtitle, { color: colors.inkSecondary }]}
-            >
-              What is God saying to you through this verse?
-            </Text>
-            <RuledInput
-              value={reflection}
-              onChangeText={setReflection}
-              onFocus={() => {
-                setTimeout(() => {
-                  scrollRef.current?.scrollTo({ y: 160, animated: true });
-                }, 100);
-              }}
-              placeholder="Write your personal reflections here..."
-              minLines={6}
+          <View onLayout={(e) => handleSectionLayout('reflection', e)}>
+            <TapeHeader
+              label="✦  R E F L E C T I O N"
+              color={colors.tapeReflection}
             />
+            <View style={styles.sectionContent}>
+              <Text
+                style={[styles.sectionSubtitle, { color: colors.inkSecondary }]}
+              >
+                What is God saying to you through this verse?
+              </Text>
+              <RuledInput
+                value={reflection}
+                onChangeText={setReflection}
+                onFocus={() => scrollToSection('reflection')}
+                placeholder="Write your reflection here..."
+                minLines={6}
+              />
+            </View>
           </View>
 
           {/* ═══════════════ 3. MOTIVATION SECTION ═══════════════ */}
-          <TapeHeader
-            label="✦  M O T I V A T I O N"
-            color={colors.tapeMotivation}
-          />
-          <View style={styles.sectionContent}>
-            <Text
-              style={[styles.sectionSubtitle, { color: colors.inkSecondary }]}
-            >
-              What encouragement do you find in this scripture?
-            </Text>
-            <RuledInput
-              value={motivation}
-              onChangeText={setMotivation}
-              onFocus={() => {
-                setTimeout(() => {
-                  scrollRef.current?.scrollTo({ y: 400, animated: true });
-                }, 100);
-              }}
-              placeholder="Write what touched your heart today..."
-              minLines={4}
+          <View onLayout={(e) => handleSectionLayout('motivation', e)}>
+            <TapeHeader
+              label="✦  M O T I V A T I O N"
+              color={colors.tapeMotivation}
             />
+            <View style={styles.sectionContent}>
+              <Text
+                style={[styles.sectionSubtitle, { color: colors.inkSecondary }]}
+              >
+                What encouragement do you find in this scripture?
+              </Text>
+              <RuledInput
+                value={motivation}
+                onChangeText={setMotivation}
+                onFocus={() => scrollToSection('motivation')}
+                placeholder="Write what touched your heart..."
+                minLines={4}
+              />
+            </View>
           </View>
 
           {/* ═══════════════ 4. APPLICATION SECTION ═══════════════ */}
-          <TapeHeader
-            label="✦  A P P L I C A T I O N"
-            color={colors.tapeApplication}
-          />
-          <View style={styles.sectionContent}>
-            <Text
-              style={[styles.sectionSubtitle, { color: colors.inkSecondary }]}
-            >
-              How will you put this verse into practice today?
-            </Text>
-            <RuledInput
-              value={application}
-              onChangeText={setApplication}
-              onFocus={() => {
-                setTimeout(() => {
-                  scrollRef.current?.scrollTo({ y: 640, animated: true });
-                }, 100);
-              }}
-              placeholder="Write your action steps or prayer commitments..."
-              minLines={4}
+          <View onLayout={(e) => handleSectionLayout('application', e)}>
+            <TapeHeader
+              label="✦  A P P L I C A T I O N"
+              color={colors.tapeApplication}
             />
+            <View style={styles.sectionContent}>
+              <Text
+                style={[styles.sectionSubtitle, { color: colors.inkSecondary }]}
+              >
+                How will you put this verse into practice today?
+              </Text>
+              <RuledInput
+                value={application}
+                onChangeText={setApplication}
+                onFocus={() => scrollToSection('application')}
+                placeholder="Write your action steps or prayer..."
+                minLines={4}
+              />
+            </View>
           </View>
 
           {/* Bottom spacing for keyboard */}
-          <View style={{ height: SPACING.huge }} />
+          <View style={{ height: 280 }} />
         </ScrollView>
 
         {/* Change Rhema Verse Selection Modal */}
@@ -432,7 +476,7 @@ export function NotebookEditor({ onSaveSuccess }: NotebookEditorProps) {
           onClose={() => setIsChangeRhemaOpen(false)}
         />
 
-        {/* Shepema Grace Paywall Modal */}
+        {/* Selah Grace Paywall Modal */}
         <PaywallModal
           visible={isPaywallOpen}
           onClose={() => setIsPaywallOpen(false)}
@@ -583,18 +627,32 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   emptyRhemaCard: {
-    borderWidth: 1.5,
-    borderStyle: "dashed",
-    borderRadius: RADIUS.md,
-    padding: SPACING.xl,
+    borderWidth: 1,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.lg,
     alignItems: "center",
     justifyContent: "center",
-    gap: SPACING.sm,
+    gap: 6,
+    ...SHADOWS.subtle,
+  },
+  emptyRhemaIconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 4,
+  },
+  emptyRhemaTitle: {
+    fontFamily: FONTS.sectionHeader,
+    fontSize: 15,
+    fontWeight: "700",
+    textAlign: "center",
   },
   emptyRhemaText: {
     fontFamily: FONTS.body,
-    fontSize: 14,
+    fontSize: 12,
+    lineHeight: 17,
     textAlign: "center",
-    fontWeight: "600",
   },
 });

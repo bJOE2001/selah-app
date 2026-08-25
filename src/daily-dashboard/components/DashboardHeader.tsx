@@ -44,6 +44,7 @@ export function DashboardHeader({}: DashboardHeaderProps) {
 
   const bounceAnim = useRef(new Animated.Value(1)).current;
   const contentFadeAnim = useRef(new Animated.Value(1)).current;
+  const bubbleScaleAnim = useRef(new Animated.Value(1)).current;
   const dismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Dynamic Time-of-Day config
@@ -84,7 +85,7 @@ export function DashboardHeader({}: DashboardHeaderProps) {
       }),
     ]).start();
 
-    // 3. Smooth cross-fade left text inline
+    // 3. Smooth cross-fade and bubble pop
     Animated.timing(contentFadeAnim, {
       toValue: 0,
       duration: 120,
@@ -92,14 +93,25 @@ export function DashboardHeader({}: DashboardHeaderProps) {
     }).start(() => {
       setWhisperIndex((prev) => (prev + 1) % SELAH_WHISPERS.length);
       setShowWhisper(true);
-      Animated.timing(contentFadeAnim, {
-        toValue: 1,
-        duration: 200,
-        useNativeDriver: true,
-      }).start();
+
+      // Bubble pop spring
+      bubbleScaleAnim.setValue(0.92);
+      Animated.parallel([
+        Animated.timing(contentFadeAnim, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.spring(bubbleScaleAnim, {
+          toValue: 1,
+          friction: 4,
+          tension: 180,
+          useNativeDriver: true,
+        }),
+      ]).start();
     });
 
-    // 4. Auto-reset to standard greeting after 6 seconds
+    // 4. Auto-reset to standard greeting after 7 seconds
     if (dismissTimerRef.current) {
       clearTimeout(dismissTimerRef.current);
     }
@@ -116,7 +128,7 @@ export function DashboardHeader({}: DashboardHeaderProps) {
           useNativeDriver: true,
         }).start();
       });
-    }, 6000);
+    }, 7000);
   };
 
   return (
@@ -132,40 +144,67 @@ export function DashboardHeader({}: DashboardHeaderProps) {
         ]}
       >
         <View style={styles.contentRow}>
-          {/* Left Column: Seamless Inline Text (Swaps smoothly between greeting and Selah's whisper) */}
+          {/* Left Column: Swaps smoothly between Greeting and Animated Chat Bubble */}
           <View style={styles.textColumn}>
-            <Animated.View style={{ opacity: contentFadeAnim }}>
+            <Animated.View
+              style={{
+                opacity: contentFadeAnim,
+                transform: [{ scale: showWhisper ? bubbleScaleAnim : 1 }],
+              }}
+            >
               {showWhisper ? (
-                <View>
-                  {/* Selah Voice Pill */}
+                /* ─── Selah's Whisper Interactive Speech / Chat Bubble ─── */
+                <Pressable
+                  onPress={handleMascotTap}
+                  style={({ pressed }) => [
+                    styles.chatBubbleContainer,
+                    {
+                      backgroundColor: isDark ? '#1C2920' : '#EDF6F0',
+                      borderColor: isDark ? '#2E4735' : '#C8E2CF',
+                    },
+                    pressed && { opacity: 0.92, transform: [{ scale: 0.98 }] },
+                  ]}
+                  hitSlop={4}
+                >
+                  {/* Triangular speech bubble tail pointing to Mascot on the right */}
                   <View
                     style={[
-                      styles.greetingPill,
+                      styles.chatBubbleTail,
                       {
-                        backgroundColor: isDark
-                          ? 'rgba(74, 124, 89, 0.25)'
-                          : 'rgba(55, 115, 51, 0.12)',
-                        borderColor: isDark
-                          ? 'rgba(74, 124, 89, 0.45)'
-                          : 'rgba(55, 115, 51, 0.25)',
+                        backgroundColor: isDark ? '#1C2920' : '#EDF6F0',
+                        borderColor: isDark ? '#2E4735' : '#C8E2CF',
                       },
                     ]}
-                  >
-                    <Text style={{ fontSize: 10 }}>🐑</Text>
-                    <Text
+                  />
+
+                  {/* Speech Bubble Header Pill */}
+                  <View style={styles.bubbleHeaderRow}>
+                    <View
                       style={[
-                        styles.greetingTimeText,
-                        { color: isDark ? '#A7F3D0' : '#2D6A35' },
+                        styles.bubbleHeaderPill,
+                        {
+                          backgroundColor: isDark ? 'rgba(74, 124, 89, 0.3)' : 'rgba(55, 115, 51, 0.12)',
+                          borderColor: isDark ? 'rgba(74, 124, 89, 0.5)' : 'rgba(55, 115, 51, 0.25)',
+                        },
                       ]}
                     >
-                      Selah's Whisper
-                    </Text>
+                      <Text style={{ fontSize: 10 }}>🐑</Text>
+                      <Text
+                        style={[
+                          styles.bubbleHeaderText,
+                          { color: isDark ? '#A7F3D0' : '#2D6A35' },
+                        ]}
+                      >
+                        Selah Whispers
+                      </Text>
+                    </View>
+                    <Ionicons name="sparkles" size={10} color={colors.brandGold} />
                   </View>
 
-                  {/* Encouragement Body */}
+                  {/* Speech Bubble Body Text */}
                   <Text
                     style={[
-                      styles.whisperText,
+                      styles.chatBubbleText,
                       { color: colors.inkPrimary },
                     ]}
                     numberOfLines={3}
@@ -173,17 +212,20 @@ export function DashboardHeader({}: DashboardHeaderProps) {
                     “{SELAH_WHISPERS[whisperIndex]}”
                   </Text>
 
-                  {/* Gentle Tap Hint */}
-                  <Text
-                    style={[
-                      styles.whisperHint,
-                      { color: isDark ? '#8EADA0' : '#8A978E' },
-                    ]}
-                  >
-                    Tap Selah for another whisper ↻
-                  </Text>
-                </View>
+                  {/* Footer hint */}
+                  <View style={styles.bubbleFooterRow}>
+                    <Text
+                      style={[
+                        styles.bubbleFooterHint,
+                        { color: isDark ? '#8EADA0' : '#738A79' },
+                      ]}
+                    >
+                      Tap for another whisper ↻
+                    </Text>
+                  </View>
+                </Pressable>
               ) : (
+                /* ─── Standard Peaceful Greeting ─── */
                 <View>
                   {/* Greeting Pill */}
                   <View
@@ -365,10 +407,73 @@ const styles = StyleSheet.create({
   },
   textColumn: {
     flex: 1,
-    paddingRight: SPACING.sm,
+    paddingRight: SPACING.sm + 2,
     justifyContent: 'center',
-    minHeight: 100,
+    minHeight: 106,
   },
+
+  // ─── Chat Bubble Styling ───
+  chatBubbleContainer: {
+    borderRadius: 18,
+    borderTopRightRadius: 6,
+    borderWidth: 1.2,
+    padding: 10,
+    paddingHorizontal: 12,
+    position: 'relative',
+    ...SHADOWS.subtle,
+  },
+  chatBubbleTail: {
+    position: 'absolute',
+    right: -7,
+    top: '32%',
+    width: 13,
+    height: 13,
+    borderTopWidth: 1.2,
+    borderRightWidth: 1.2,
+    transform: [{ rotate: '45deg' }],
+    zIndex: 1,
+  },
+  bubbleHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 5,
+    zIndex: 2,
+  },
+  bubbleHeaderPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: RADIUS.pill,
+    borderWidth: 0.8,
+  },
+  bubbleHeaderText: {
+    fontFamily: FONTS.bodyBold,
+    fontSize: 9.5,
+    fontWeight: '700',
+  },
+  chatBubbleText: {
+    fontFamily: FONTS.scriptureItalic,
+    fontSize: 12.5,
+    lineHeight: 17,
+    marginBottom: 4,
+    zIndex: 2,
+  },
+  bubbleFooterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    zIndex: 2,
+  },
+  bubbleFooterHint: {
+    fontFamily: FONTS.body,
+    fontSize: 9.5,
+    fontWeight: '600',
+  },
+
+  // ─── Standard Greeting Styling ───
   greetingPill: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -403,17 +508,8 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '700',
   },
-  whisperText: {
-    fontFamily: FONTS.scriptureItalic,
-    fontSize: 13.5,
-    lineHeight: 19,
-    marginBottom: 6,
-  },
-  whisperHint: {
-    fontFamily: FONTS.body,
-    fontSize: 10,
-    fontWeight: '600',
-  },
+
+  // ─── Mascot Vignette ───
   mascotTouchTarget: {
     position: 'relative',
   },

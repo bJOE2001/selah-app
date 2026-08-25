@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import React, { useMemo, useRef, useState } from "react";
 import {
   Dimensions,
@@ -66,6 +67,8 @@ export function NotebookBookView({
     journalCoverVerseRef,
     journalCoverMaterial,
     journalCoverEmblem,
+    journalFontSize,
+    setJournalFontSize,
   } = useSettingsStore();
 
   // Initialize bookmarked state mapping from entries
@@ -95,21 +98,30 @@ export function NotebookBookView({
 
   // Page structure:
   // Index 0: Front Cover
-  // Index 1..N: Devotional Entry Pages (Chronological: Page 1 = First Entry, Page N = Latest Entry)
+  // Index 1..N: Devotional Entry Pages (Chronological: 1 Devotion = 1 Complete Page)
   // Index N+1: Blank Page ("Write Today")
   const pages = useMemo(() => {
     const list: Array<{
       type: "cover" | "entry" | "blank";
       data?: DevotionalSummary;
       index: number;
+      entryNumber?: number;
+      pageLabel?: string;
     }> = [];
 
     // 0: Cover
     list.push({ type: "cover", index: 0 });
 
-    // 1..N: Entries (Chronological)
+    // 1..N: Entries (1 Devotion = 1 Complete Page)
     chronologicalEntries.forEach((e, idx) => {
-      list.push({ type: "entry", data: e, index: idx + 1 });
+      const entryNum = idx + 1;
+      list.push({
+        type: "entry",
+        data: e,
+        index: entryNum,
+        entryNumber: entryNum,
+        pageLabel: `PAGE ${entryNum}`,
+      });
     });
 
     // N+1: Blank Page
@@ -146,6 +158,9 @@ export function NotebookBookView({
   };
 
   const turnToPage = (targetIndex: number) => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {}
     const validIndex = Math.max(0, Math.min(targetIndex, totalPages - 1));
     flatListRef.current?.scrollToOffset({
       offset: validIndex * SCREEN_WIDTH,
@@ -155,6 +170,9 @@ export function NotebookBookView({
   };
 
   const toggleBookmark = (id: string) => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {}
     const currentStatus = bookmarkedIds[id] ?? false;
     const nextState = !currentStatus;
     setBookmarkedIds((prev) => ({
@@ -397,7 +415,10 @@ export function NotebookBookView({
     );
   };
 
-  const renderEntryPage = (entry: DevotionalSummary, pageNumber: number) => {
+  const renderEntryPage = (pageItem: (typeof pages)[0]) => {
+    const entry = pageItem.data;
+    if (!entry) return null;
+
     const isBookmarked = bookmarkedIds[entry.id] ?? entry.isBookmarked;
     const dateObj = new Date(entry.createdAt);
     const dateStr = dateObj.toLocaleDateString("en-US", {
@@ -406,6 +427,8 @@ export function NotebookBookView({
       day: "numeric",
       year: "numeric",
     });
+
+    const pageLabel = pageItem.pageLabel || `PAGE ${pageItem.entryNumber || pageItem.index}`;
 
     return (
       <NotebookPageFrame
@@ -424,69 +447,110 @@ export function NotebookBookView({
             style={styles.entryScroll}
             contentContainerStyle={styles.entryScrollContent}
             showsVerticalScrollIndicator={false}
+            nestedScrollEnabled={true}
+            scrollEnabled={true}
           >
+            {/* Clean Editorial Page Folio Header */}
             <View style={styles.pageFolioHeader}>
               <View style={styles.folioDateCol}>
                 <Text
                   style={[styles.folioPageNumber, { color: colors.brandGreen }]}
                 >
-                  PAGE {pageNumber} OF {entries.length}
+                  {pageLabel} OF {chronologicalEntries.length}
                 </Text>
                 <Text
-                  style={[styles.folioDateText, { color: colors.inkSecondary }]}
+                  style={[styles.folioDateText, { color: colors.inkMuted }]}
                 >
                   {dateStr}
                 </Text>
               </View>
 
               <View style={styles.folioActionsRow}>
-                <Pressable
-                  onPress={() => onShareEntry(entry.id)}
+                {/* Minimal Journal Font Size Stepper */}
+                <View
                   style={[
-                    styles.miniHeaderBtn,
+                    styles.fontStepperGroup,
                     {
-                      backgroundColor: colors.cardBg,
+                      backgroundColor: isDark ? '#1C1916' : '#F3ECE1',
                       borderColor: colors.paperLine,
                     },
+                  ]}
+                >
+                  <Pressable
+                    onPress={() => {
+                      try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+                      setJournalFontSize(Math.max(12, (journalFontSize || 14.5) - 1));
+                    }}
+                    style={styles.fontStepperBtn}
+                    hitSlop={6}
+                    accessibilityLabel="Decrease text size"
+                  >
+                    <Text style={[styles.fontStepperTextSmall, { color: colors.inkPrimary }]}>A-</Text>
+                  </Pressable>
+                  <View style={[styles.fontStepperDivider, { backgroundColor: colors.paperLine }]} />
+                  <Pressable
+                    onPress={() => {
+                      try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+                      setJournalFontSize(Math.min(22, (journalFontSize || 14.5) + 1));
+                    }}
+                    style={styles.fontStepperBtn}
+                    hitSlop={6}
+                    accessibilityLabel="Increase text size"
+                  >
+                    <Text style={[styles.fontStepperTextLarge, { color: colors.inkPrimary }]}>A+</Text>
+                  </Pressable>
+                </View>
+
+                <Pressable
+                  onPress={() => {
+                    try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+                    onShareEntry(entry.id);
+                  }}
+                  style={({ pressed }) => [
+                    styles.miniHeaderBtn,
+                    {
+                      backgroundColor: isDark ? '#1C1916' : '#F3ECE1',
+                    },
+                    pressed && { opacity: 0.75 },
                   ]}
                   hitSlop={6}
                   accessibilityLabel="Share Entry"
                 >
                   <Ionicons
                     name="share-social-outline"
-                    size={15}
+                    size={14}
                     color={colors.inkSecondary}
                   />
                 </Pressable>
 
                 <Pressable
-                  onPress={() => handleDeletePage(entry, pageNumber)}
-                  style={[
+                  onPress={() => handleDeletePage(entry, pageItem.index)}
+                  style={({ pressed }) => [
                     styles.miniHeaderBtn,
                     {
-                      backgroundColor: colors.cardBg,
-                      borderColor: colors.paperLine,
+                      backgroundColor: isDark ? '#1C1916' : '#F3ECE1',
                     },
+                    pressed && { opacity: 0.75 },
                   ]}
                   hitSlop={6}
                   accessibilityLabel="Delete Page"
                 >
                   <Ionicons
                     name="trash-outline"
-                    size={15}
+                    size={14}
                     color={colors.tapeRhema}
                   />
                 </Pressable>
               </View>
             </View>
 
-            {/* 1. R — RHEMA (Scripture) */}
+            {/* 1. R — RHEMA (Scripture Box) */}
             <View
               style={[
                 styles.scriptureBox,
                 {
-                  backgroundColor: colors.cardBg,
-                  borderColor: colors.paperLine,
+                  backgroundColor: colors.rhemaCardBg,
+                  borderColor: colors.rhemaCardBorder,
                 },
               ]}
             >
@@ -496,14 +560,13 @@ export function NotebookBookView({
                     styles.stepBadge,
                     {
                       backgroundColor: colors.tapeRhema + "20",
-                      borderColor: colors.tapeRhema + "50",
                     },
                   ]}
                 >
                   <Text
                     style={[styles.stepBadgeText, { color: colors.tapeRhema }]}
                   >
-                    RHEMA
+                    ✦ RHEMA
                   </Text>
                 </View>
                 <Text
@@ -513,7 +576,14 @@ export function NotebookBookView({
                 </Text>
               </View>
               <Text
-                style={[styles.scriptureQuote, { color: colors.inkPrimary }]}
+                style={[
+                  styles.scriptureQuote,
+                  {
+                    color: colors.inkPrimary,
+                    fontSize: journalFontSize || 14.5,
+                    lineHeight: Math.round((journalFontSize || 14.5) * 1.52),
+                  },
+                ]}
               >
                 “{entry.rhemaText}”
               </Text>
@@ -527,7 +597,6 @@ export function NotebookBookView({
                     styles.stepBadge,
                     {
                       backgroundColor: colors.tapeReflection + "20",
-                      borderColor: colors.tapeReflection + "50",
                     },
                   ]}
                 >
@@ -537,7 +606,7 @@ export function NotebookBookView({
                       { color: colors.tapeReflection },
                     ]}
                   >
-                    REFLECTION
+                    ✦ REFLECTION
                   </Text>
                 </View>
               </View>
@@ -548,6 +617,8 @@ export function NotebookBookView({
                     color: entry.reflection
                       ? colors.inkPrimary
                       : colors.inkPlaceholder,
+                    fontSize: journalFontSize || 14.5,
+                    lineHeight: Math.round((journalFontSize || 14.5) * 1.52),
                   },
                 ]}
               >
@@ -565,7 +636,6 @@ export function NotebookBookView({
                     styles.stepBadge,
                     {
                       backgroundColor: colors.tapeMotivation + "20",
-                      borderColor: colors.tapeMotivation + "50",
                     },
                   ]}
                 >
@@ -575,7 +645,7 @@ export function NotebookBookView({
                       { color: colors.tapeMotivation },
                     ]}
                   >
-                    MOTIVATION
+                    ✦ MOTIVATION
                   </Text>
                 </View>
               </View>
@@ -586,6 +656,8 @@ export function NotebookBookView({
                     color: entry.motivation
                       ? colors.inkPrimary
                       : colors.inkPlaceholder,
+                    fontSize: journalFontSize || 14.5,
+                    lineHeight: Math.round((journalFontSize || 14.5) * 1.52),
                   },
                 ]}
               >
@@ -601,7 +673,6 @@ export function NotebookBookView({
                     styles.stepBadge,
                     {
                       backgroundColor: colors.tapeApplication + "20",
-                      borderColor: colors.tapeApplication + "50",
                     },
                   ]}
                 >
@@ -611,7 +682,7 @@ export function NotebookBookView({
                       { color: colors.tapeApplication },
                     ]}
                   >
-                    APPLICATION
+                    ✦ APPLICATION
                   </Text>
                 </View>
               </View>
@@ -622,6 +693,8 @@ export function NotebookBookView({
                     color: entry.application
                       ? colors.inkPrimary
                       : colors.inkPlaceholder,
+                    fontSize: journalFontSize || 14.5,
+                    lineHeight: Math.round((journalFontSize || 14.5) * 1.52),
                   },
                 ]}
               >
@@ -632,30 +705,30 @@ export function NotebookBookView({
               </Text>
             </View>
 
-            {/* Bottom Actions */}
+            {/* Bottom Edit Action */}
             <View style={styles.pageBottomActions}>
               <Pressable
-                onPress={() => onSelectEntry(entry.id)}
-                style={[
+                onPress={() => {
+                  try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+                  onSelectEntry(entry.id);
+                }}
+                style={({ pressed }) => [
                   styles.editPageBtn,
                   {
-                    backgroundColor: colors.cardBg,
-                    borderColor: colors.paperLine,
+                    backgroundColor: colors.brandGreen,
                   },
+                  pressed && { opacity: 0.9 },
                 ]}
               >
                 <Ionicons
                   name="create-outline"
                   size={14}
-                  color={colors.brandGreen}
+                  color="#FFFFFF"
                 />
-                <Text
-                  style={[styles.editPageBtnText, { color: colors.brandGreen }]}
-                >
-                  Edit
+                <Text style={styles.editPageBtnText}>
+                  Edit Entry
                 </Text>
               </Pressable>
-
             </View>
           </ScrollView>
         </View>
@@ -713,36 +786,6 @@ export function NotebookBookView({
                   New Page
                 </Text>
               </View>
-            </View>
-
-            {/* Inspiring Scripture Invocation Card */}
-            <View
-              style={[
-                styles.blankScriptureCard,
-                {
-                  backgroundColor: isDark ? "#23201D" : "#FAF6F0",
-                  borderColor: colors.brandGold + "50",
-                },
-              ]}
-            >
-              <View style={styles.blankVerseHeader}>
-                <Ionicons
-                  name="sunny-outline"
-                  size={13}
-                  color={colors.brandGold}
-                />
-                <Text
-                  style={[styles.blankVerseRef, { color: colors.brandGold }]}
-                >
-                  Lamentations 3:22-23
-                </Text>
-              </View>
-              <Text
-                style={[styles.blankVerseText, { color: colors.inkPrimary }]}
-              >
-                “The steadfast love of the Lord never ceases; His mercies never
-                come to an end; they are new every morning.”
-              </Text>
             </View>
 
             {/* 4-Step R.R.M.A. Outline Guide */}
@@ -915,9 +958,7 @@ export function NotebookBookView({
       <View style={styles.pageSlideWrapper}>
         <View style={styles.pageInnerBox}>
           {item.type === "cover" && renderCoverPage()}
-          {item.type === "entry" &&
-            item.data &&
-            renderEntryPage(item.data, item.index)}
+          {item.type === "entry" && renderEntryPage(item)}
           {item.type === "blank" && renderBlankPage()}
         </View>
       </View>
@@ -1370,6 +1411,36 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  fontStepperGroup: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: RADIUS.pill,
+    borderWidth: 1,
+    paddingHorizontal: 3,
+    paddingVertical: 1,
+    height: 28,
+  },
+  fontStepperBtn: {
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  fontStepperDivider: {
+    width: 1,
+    height: 12,
+    marginHorizontal: 1,
+  },
+  fontStepperTextSmall: {
+    fontFamily: FONTS.bodyBold,
+    fontSize: 10,
+    fontWeight: "700",
+  },
+  fontStepperTextLarge: {
+    fontFamily: FONTS.bodyBold,
+    fontSize: 12,
+    fontWeight: "800",
+  },
   miniShareBtn: {
     width: 28,
     height: 28,
@@ -1403,14 +1474,15 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   rhemaRefText: {
-    fontFamily: FONTS.scriptureBold,
-    fontSize: 13,
+    fontFamily: FONTS.bodyBold,
+    fontSize: 13.5,
     fontWeight: "700",
   },
   scriptureQuote: {
-    fontFamily: FONTS.scriptureItalic,
-    fontSize: 13,
-    lineHeight: 18,
+    fontFamily: FONTS.body,
+    fontSize: 14.5,
+    lineHeight: 22,
+    letterSpacing: 0.1,
   },
   notebookLinesSection: {
     marginBottom: SPACING.md,
@@ -1422,13 +1494,14 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   handwritingText: {
-    fontFamily: FONTS.userInput,
-    fontSize: 16,
-    lineHeight: 24,
+    fontFamily: FONTS.body,
+    fontSize: 14.5,
+    lineHeight: 22,
+    letterSpacing: 0.1,
   },
   handwritingEmptyText: {
     fontFamily: FONTS.body,
-    fontSize: 12,
+    fontSize: 13,
     fontStyle: "italic",
   },
   pageBottomActions: {
@@ -1442,14 +1515,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
     borderRadius: RADIUS.pill,
-    borderWidth: 1,
+    ...SHADOWS.subtle,
   },
   editPageBtnText: {
     fontFamily: FONTS.bodyBold,
-    fontSize: 11,
+    fontSize: 12,
+    color: "#FFFFFF",
     fontWeight: "700",
   },
   deletePageBtn: {

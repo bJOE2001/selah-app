@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { DevotionalSummary } from '../../devotional-core/types';
 import { useTheme } from '../../design-system';
 import { FONTS } from '../../design-system/tokens/typography';
@@ -14,7 +15,7 @@ export interface EntryCardProps {
 }
 
 export function EntryCard({ entry, onPress, onShare, onDelete }: EntryCardProps) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const dateObj = new Date(entry.createdAt);
   const formattedDate = dateObj.toLocaleDateString('en-US', {
     month: 'short',
@@ -26,9 +27,16 @@ export function EntryCard({ entry, onPress, onShare, onDelete }: EntryCardProps)
     weekday: 'short',
   });
 
+  const handlePress = () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {}
+    onPress();
+  };
+
   return (
     <Pressable
-      onPress={onPress}
+      onPress={handlePress}
       style={({ pressed }) => [
         styles.card,
         {
@@ -37,14 +45,33 @@ export function EntryCard({ entry, onPress, onShare, onDelete }: EntryCardProps)
         },
         pressed && styles.cardPressed,
       ]}
+      accessibilityRole="button"
     >
-      {/* Top Header: Date & Mood Emojis & Bookmark Ribbon */}
+      {/* Top Header: Date & Bookmark Badge & Actions */}
       <View style={styles.header}>
         <View style={styles.dateBlock}>
-          <Text style={[styles.weekdayText, { color: colors.brandGreen }]}>{formattedWeekday}</Text>
+          <View
+            style={[
+              styles.weekdayPill,
+              {
+                backgroundColor: isDark ? 'rgba(82, 167, 82, 0.16)' : '#EAF4EC',
+                borderColor: isDark ? 'rgba(82, 167, 82, 0.3)' : '#D0E5D3',
+              },
+            ]}
+          >
+            <Text style={[styles.weekdayText, { color: colors.brandGreen }]}>{formattedWeekday}</Text>
+          </View>
           <Text style={[styles.dateText, { color: colors.inkSecondary }]}>{formattedDate}</Text>
           {entry.isBookmarked ? (
-            <View style={[styles.bookmarkedBadge, { backgroundColor: colors.tapeRhema + '18', borderColor: colors.tapeRhema + '45' }]}>
+            <View
+              style={[
+                styles.bookmarkedBadge,
+                {
+                  backgroundColor: colors.tapeRhema + '18',
+                  borderColor: colors.tapeRhema + '45',
+                },
+              ]}
+            >
               <Ionicons name="bookmark" size={10} color={colors.tapeRhema} />
               <Text style={[styles.bookmarkedBadgeText, { color: colors.tapeRhema }]}>Bookmarked</Text>
             </View>
@@ -56,6 +83,9 @@ export function EntryCard({ entry, onPress, onShare, onDelete }: EntryCardProps)
             <Pressable
               onPress={(e) => {
                 e.stopPropagation();
+                try {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                } catch {}
                 onShare();
               }}
               style={styles.actionIconButton}
@@ -69,6 +99,9 @@ export function EntryCard({ entry, onPress, onShare, onDelete }: EntryCardProps)
             <Pressable
               onPress={(e) => {
                 e.stopPropagation();
+                try {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                } catch {}
                 onDelete();
               }}
               style={styles.actionIconButton}
@@ -83,7 +116,7 @@ export function EntryCard({ entry, onPress, onShare, onDelete }: EntryCardProps)
 
       {/* Rhema Reference Badge */}
       <View style={styles.rhemaBadge}>
-        <Ionicons name="sparkles" size={14} color={colors.tapeRhema} />
+        <Ionicons name="sparkles" size={13} color={colors.tapeRhema} />
         <Text style={[styles.referenceText, { color: colors.tapeRhema }]}>{entry.rhemaReference}</Text>
       </View>
 
@@ -104,35 +137,42 @@ export function EntryCard({ entry, onPress, onShare, onDelete }: EntryCardProps)
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: RADIUS.md,
+    borderRadius: 20,
     borderWidth: 1,
     padding: SPACING.base,
-    marginBottom: SPACING.md,
-    ...SHADOWS.subtle,
+    marginBottom: SPACING.md - 2,
+    ...SHADOWS.card,
   },
   cardPressed: {
-    opacity: 0.92,
+    transform: [{ scale: 0.985 }],
+    opacity: 0.94,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: SPACING.sm,
+    alignItems: 'center',
+    marginBottom: SPACING.sm + 2,
   },
   dateBlock: {
     flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: SPACING.xs,
+    alignItems: 'center',
+    gap: 6,
+  },
+  weekdayPill: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: RADIUS.pill,
+    borderWidth: 0.8,
   },
   weekdayText: {
     fontFamily: FONTS.bodyBold,
-    fontSize: 12,
-    fontWeight: '700',
+    fontSize: 10,
+    fontWeight: '800',
     textTransform: 'uppercase',
   },
   dateText: {
     fontFamily: FONTS.body,
-    fontSize: 13,
+    fontSize: 12.5,
   },
   rightActions: {
     flexDirection: 'row',
@@ -140,32 +180,29 @@ const styles = StyleSheet.create({
     gap: SPACING.sm,
   },
   actionIconButton: {
-    padding: 3,
-  },
-  shareIconButton: {
-    padding: 2,
+    padding: 4,
   },
   rhemaBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.xs,
-    marginBottom: SPACING.xs,
+    gap: 5,
+    marginBottom: 4,
   },
   referenceText: {
-    fontFamily: FONTS.scriptureBold,
-    fontSize: 15,
+    fontFamily: FONTS.sectionHeader,
+    fontSize: 14.5,
     fontWeight: '700',
   },
   verseSnippet: {
-    fontFamily: FONTS.scriptureItalic,
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: SPACING.xs,
+    fontFamily: FONTS.bodyItalic,
+    fontSize: 13.5,
+    lineHeight: 19,
+    marginBottom: 5,
   },
   reflectionSnippet: {
-    fontFamily: FONTS.userInput,
-    fontSize: 15,
-    lineHeight: 20,
+    fontFamily: FONTS.body,
+    fontSize: 13.5,
+    lineHeight: 19,
   },
   bookmarkedBadge: {
     flexDirection: 'row',
@@ -175,7 +212,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: RADIUS.pill,
     borderWidth: 0.8,
-    marginLeft: 6,
+    marginLeft: 4,
   },
   bookmarkedBadgeText: {
     fontFamily: FONTS.bodyBold,
@@ -183,4 +220,3 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 });
-

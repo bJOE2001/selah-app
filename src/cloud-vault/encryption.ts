@@ -8,7 +8,7 @@ import CryptoJS from 'crypto-js';
  * database only ever sees ciphertext.
  */
 
-const DEFAULT_SALT = 'shepema_devotional_vault_salt_2026';
+const DEFAULT_SALT = 'selah_devotional_vault_salt_2026';
 
 /**
  * Derive a robust AES encryption key from a user identifier.

@@ -2,7 +2,7 @@
  * Entitlement Types
  *
  * Central type definitions for the premium/free entitlement system.
- * All feature-gating across Shepema reads from these types.
+ * All feature-gating across Selah reads from these types.
  */
 
 /** Subscription tier identifiers matching RevenueCat product IDs */

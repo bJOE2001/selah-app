@@ -38,7 +38,7 @@ export const useCloudAuthStore = create<CloudAuthState>()(
       signOut: () => set({ user: null, lastSyncTime: null, syncError: null }),
     }),
     {
-      name: 'shepema-cloud-auth-storage',
+      name: 'selah-cloud-auth-storage',
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
         user: state.user,

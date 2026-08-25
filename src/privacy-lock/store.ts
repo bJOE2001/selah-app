@@ -24,7 +24,7 @@ export const usePrivacyAuthStore = create<PrivacyAuthState>()(
       setHasCheckedAuth: (checked) => set({ hasCheckedAuth: checked }),
     }),
     {
-      name: 'shepema-privacy-storage',
+      name: 'selah-privacy-storage',
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({ isLockEnabled: state.isLockEnabled }),
     }

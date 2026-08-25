@@ -64,7 +64,7 @@ function parseCustomerInfo(
   source: EntitlementSource = 'revenueCat'
 ): EntitlementInfo {
   const activeEntitlements = customerInfo?.entitlements?.active;
-  const entitlement = activeEntitlements?.[ENTITLEMENT_ID] || activeEntitlements?.['rhema_grace'] || activeEntitlements?.['shepema_grace'];
+  const entitlement = activeEntitlements?.[ENTITLEMENT_ID];
   if (!entitlement) {
     return DEFAULT_ENTITLEMENT;
   }
