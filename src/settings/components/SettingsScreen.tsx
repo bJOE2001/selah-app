@@ -177,8 +177,6 @@ export function SettingsScreen() {
     paperLined,
     setPaperLined,
     journalCoverTitle,
-    journalFontSize,
-    setJournalFontSize,
   } = useSettingsStore();
 
   // Devotionals stats
@@ -732,48 +730,6 @@ export function SettingsScreen() {
               <JournalToggle
                 value={paperLined}
                 onValueChange={setPaperLined}
-              />
-            </View>
-
-            <View style={[styles.divider, { backgroundColor: colors.paperLine }]} />
-
-            {/* Journal Devotion Text Size */}
-            <View style={styles.columnItem}>
-              <View style={styles.rowLeft}>
-                <View style={[styles.iconBox, { backgroundColor: isDark ? '#33201D' : '#FFF0ED' }]}>
-                  <Ionicons name="book-outline" size={17} color={colors.tapeRhema} />
-                </View>
-                <View style={styles.rowTextCol}>
-                  <Text style={[styles.rowTitle, { color: colors.inkPrimary }]}>Journal Devotion Text Size</Text>
-                  <Text style={[styles.rowSubtitle, { color: colors.inkSecondary }]}>Text size in your Devotional Journal pages</Text>
-                </View>
-              </View>
-
-              {/* Live Preview in Lora Serif */}
-              <View style={[styles.fontPreviewBox, { backgroundColor: isDark ? '#151311' : '#F9F5EE', borderColor: colors.paperLine }]}>
-                <Text
-                  style={{
-                    fontFamily: FONTS.body,
-                    fontSize: journalFontSize || 14.5,
-                    color: colors.inkPrimary,
-                    lineHeight: Math.round((journalFontSize || 14.5) * 1.52),
-                  }}
-                >
-                  Thy word is a lamp unto my feet, and a light unto my path.
-                </Text>
-                <Text style={[styles.fontPreviewLabel, { color: colors.inkSecondary }]}>
-                  {journalFontSize || 14.5}px
-                </Text>
-              </View>
-
-              {/* Draggable Slider */}
-              <FontSizeSlider
-                value={journalFontSize || 14.5}
-                min={12}
-                max={22}
-                onChange={setJournalFontSize}
-                colors={colors}
-                isDark={isDark}
               />
             </View>
           </View>

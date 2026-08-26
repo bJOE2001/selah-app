@@ -63,6 +63,11 @@ const FALLBACK_TIERS: TierDisplayOption[] = [
 
 const PREMIUM_PERKS = [
   {
+    icon: 'print',
+    title: 'Hardbound Journal Print & PDF Export',
+    desc: 'Export 300-DPI publication-ready physical book volumes with gold foil cover spreads & table of contents.',
+  },
+  {
     icon: 'infinite',
     title: 'Unlimited Devotional Pages',
     desc: 'Write without limits. Archive, bind, and fill endless volumes of prayer.',
@@ -81,11 +86,6 @@ const PREMIUM_PERKS = [
     icon: 'image',
     title: 'Watermark-Free HD Share Cards',
     desc: 'Ultra-high-resolution scripture cards ready for social media & ministry.',
-  },
-  {
-    icon: 'musical-notes',
-    title: 'Sanctuary Soundscapes',
-    desc: 'Gentle prayer ambiance and cathedral rain (Coming soon).',
   },
 ];
 

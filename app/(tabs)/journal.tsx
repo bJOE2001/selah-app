@@ -13,6 +13,7 @@ import {
   FREE_JOURNAL_PAGE_LIMIT,
   PaywallModal,
 } from '../../src/entitlements';
+import { PrintJournalModal } from '../../src/journal-export';
 
 export default function JournalTabScreen() {
   const router = useRouter();
@@ -25,16 +26,31 @@ export default function JournalTabScreen() {
 
   const isPremium = useIsPremium();
   const [isPaywallOpen, setIsPaywallOpen] = useState(false);
+  const [paywallFeature, setPaywallFeature] = useState('Unlimited Devotional Pages');
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
 
   const totalEntriesCount = (entries || []).length;
   const isPageLimitReached = !isPremium && totalEntriesCount >= FREE_JOURNAL_PAGE_LIMIT;
 
   const handleStartNew = () => {
     if (isPageLimitReached) {
+      setPaywallFeature('Unlimited Devotional Pages (30/30 Limit Reached)');
       setIsPaywallOpen(true);
       return;
     }
     router.push('/devotional/new');
+  };
+
+  const handleOpenPrint = () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {}
+    if (!isPremium) {
+      setPaywallFeature('Hardbound Journal Print & PDF Book Export');
+      setIsPaywallOpen(true);
+      return;
+    }
+    setIsPrintModalOpen(true);
   };
 
   const handleModeChange = (mode: 'notebook' | 'timeline') => {
@@ -122,6 +138,19 @@ export default function JournalTabScreen() {
 
         <View style={styles.topRightActions}>
           <Pressable
+            onPress={handleOpenPrint}
+            style={({ pressed }) => [
+              styles.settingsIconButton,
+              { backgroundColor: isDark ? '#1C1916' : '#F3ECE1' },
+              pressed && { opacity: 0.8 },
+            ]}
+            hitSlop={8}
+            accessibilityLabel="Print Hardbound Journal"
+          >
+            <Ionicons name="print-outline" size={16} color={colors.inkPrimary} />
+          </Pressable>
+
+          <Pressable
             onPress={() => {
               try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
               router.push('/settings');
@@ -208,7 +237,14 @@ export default function JournalTabScreen() {
       <PaywallModal
         visible={isPaywallOpen}
         onClose={() => setIsPaywallOpen(false)}
-        triggerFeature="Unlimited Devotional Pages (30/30 Limit Reached)"
+        triggerFeature={paywallFeature}
+      />
+
+      {/* Print Hardbound Journal Export Modal */}
+      <PrintJournalModal
+        visible={isPrintModalOpen}
+        onClose={() => setIsPrintModalOpen(false)}
+        entries={entries || []}
       />
     </View>
   );

@@ -34,7 +34,7 @@ export const FONT_SIZES = {
 } as const;
 
 export const LINE_HEIGHTS = {
-  ruledLine: 32, // Default spacing for ruled paper journaling inputs
+  ruledLine: 24, // Standard College Ruled spacing for dense, aesthetic journaling
   tight: 1.2,
   normal: 1.5,
   relaxed: 1.75,

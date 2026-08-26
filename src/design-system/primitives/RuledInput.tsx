@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
   },
   textInput: {
     fontFamily: FONTS.body,
-    fontSize: 16,
+    fontSize: 13.5,
     padding: 0,
     paddingTop: 0,
     paddingBottom: 0,

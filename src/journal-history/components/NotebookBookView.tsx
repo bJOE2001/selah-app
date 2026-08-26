@@ -23,7 +23,11 @@ import {
 } from "../../devotional-core/hooks";
 import { DevotionalSummary } from "../../devotional-core/types";
 import { useSettingsStore } from "../../settings/store";
-import { useIsPremium, FREE_JOURNAL_PAGE_LIMIT } from "../../entitlements";
+import {
+  useIsPremium,
+  FREE_JOURNAL_PAGE_LIMIT,
+  PaywallModal,
+} from "../../entitlements";
 import { BookmarkIndexModal, BookmarkItemData } from "./BookmarkIndexModal";
 import { DogEarFold } from "./DogEarFold";
 import {
@@ -34,6 +38,7 @@ import {
 } from "./EditJournalCoverModal";
 import { NotebookPageFrame } from "./NotebookPageFrame";
 import { TableOfContentsModal } from "./TableOfContentsModal";
+import { PrintJournalModal } from "../../journal-export";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 
@@ -57,6 +62,8 @@ export function NotebookBookView({
   const [isEditCoverOpen, setIsEditCoverOpen] = useState(false);
   const [isBookmarkIndexOpen, setIsBookmarkIndexOpen] = useState(false);
   const [isNavigatorOpen, setIsNavigatorOpen] = useState(false);
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+  const [isPaywallOpen, setIsPaywallOpen] = useState(false);
   const toggleBookmarkMutation = useToggleBookmarkDevotional();
   const deleteMutation = useDeleteDevotional();
   const isPremium = useIsPremium();
@@ -67,8 +74,7 @@ export function NotebookBookView({
     journalCoverVerseRef,
     journalCoverMaterial,
     journalCoverEmblem,
-    journalFontSize,
-    setJournalFontSize,
+    paperLined,
   } = useSettingsStore();
 
   // Initialize bookmarked state mapping from entries
@@ -430,6 +436,71 @@ export function NotebookBookView({
 
     const pageLabel = pageItem.pageLabel || `PAGE ${pageItem.entryNumber || pageItem.index}`;
 
+    const renderRuledSection = (
+      badgeLabel: string,
+      badgeColor: string,
+      content: string | undefined,
+      fallbackText: string
+    ) => {
+      const isFilled = !!content;
+      const text = content || fallbackText;
+      const totalChars = text.length;
+      const explicitNewlines = text.split("\n").length - 1;
+      const computedLineCount = Math.max(
+        3,
+        Math.ceil(totalChars / 38) + explicitNewlines
+      );
+
+      return (
+        <View style={styles.notebookLinesSection}>
+          <View style={styles.sectionHeaderRow}>
+            <View
+              style={[
+                styles.stepBadge,
+                {
+                  backgroundColor: badgeColor + "20",
+                },
+              ]}
+            >
+              <Text style={[styles.stepBadgeText, { color: badgeColor }]}>
+                {badgeLabel}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.ruledTextWrapper}>
+            {paperLined ? (
+              <View style={styles.pageRuledLinesContainer} pointerEvents="none">
+                {Array.from({ length: computedLineCount + 1 }).map((_, i) => (
+                  <View
+                    key={`line-${i}`}
+                    style={[
+                      styles.pageRuledLine,
+                      {
+                        top: (i + 1) * 24 - 1,
+                        backgroundColor: colors.paperLine,
+                      },
+                    ]}
+                  />
+                ))}
+              </View>
+            ) : null}
+
+            <Text
+              style={[
+                styles.handwritingText,
+                {
+                  color: isFilled ? colors.inkPrimary : colors.inkPlaceholder,
+                },
+              ]}
+            >
+              {text}
+            </Text>
+          </View>
+        </View>
+      );
+    };
+
     return (
       <NotebookPageFrame
         showSpine={true}
@@ -447,8 +518,7 @@ export function NotebookBookView({
             style={styles.entryScroll}
             contentContainerStyle={styles.entryScrollContent}
             showsVerticalScrollIndicator={false}
-            nestedScrollEnabled={true}
-            scrollEnabled={true}
+            scrollEnabled={false}
           >
             {/* Clean Editorial Page Folio Header */}
             <View style={styles.pageFolioHeader}>
@@ -466,41 +536,6 @@ export function NotebookBookView({
               </View>
 
               <View style={styles.folioActionsRow}>
-                {/* Minimal Journal Font Size Stepper */}
-                <View
-                  style={[
-                    styles.fontStepperGroup,
-                    {
-                      backgroundColor: isDark ? '#1C1916' : '#F3ECE1',
-                      borderColor: colors.paperLine,
-                    },
-                  ]}
-                >
-                  <Pressable
-                    onPress={() => {
-                      try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
-                      setJournalFontSize(Math.max(12, (journalFontSize || 14.5) - 1));
-                    }}
-                    style={styles.fontStepperBtn}
-                    hitSlop={6}
-                    accessibilityLabel="Decrease text size"
-                  >
-                    <Text style={[styles.fontStepperTextSmall, { color: colors.inkPrimary }]}>A-</Text>
-                  </Pressable>
-                  <View style={[styles.fontStepperDivider, { backgroundColor: colors.paperLine }]} />
-                  <Pressable
-                    onPress={() => {
-                      try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
-                      setJournalFontSize(Math.min(22, (journalFontSize || 14.5) + 1));
-                    }}
-                    style={styles.fontStepperBtn}
-                    hitSlop={6}
-                    accessibilityLabel="Increase text size"
-                  >
-                    <Text style={[styles.fontStepperTextLarge, { color: colors.inkPrimary }]}>A+</Text>
-                  </Pressable>
-                </View>
-
                 <Pressable
                   onPress={() => {
                     try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
@@ -576,134 +611,35 @@ export function NotebookBookView({
                 </Text>
               </View>
               <Text
-                style={[
-                  styles.scriptureQuote,
-                  {
-                    color: colors.inkPrimary,
-                    fontSize: journalFontSize || 14.5,
-                    lineHeight: Math.round((journalFontSize || 14.5) * 1.52),
-                  },
-                ]}
+                style={[styles.scriptureQuote, { color: colors.inkPrimary }]}
               >
                 “{entry.rhemaText}”
               </Text>
             </View>
 
             {/* 2. R — REFLECTION */}
-            <View style={styles.notebookLinesSection}>
-              <View style={styles.sectionHeaderRow}>
-                <View
-                  style={[
-                    styles.stepBadge,
-                    {
-                      backgroundColor: colors.tapeReflection + "20",
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.stepBadgeText,
-                      { color: colors.tapeReflection },
-                    ]}
-                  >
-                    ✦ REFLECTION
-                  </Text>
-                </View>
-              </View>
-              <Text
-                style={[
-                  styles.handwritingText,
-                  {
-                    color: entry.reflection
-                      ? colors.inkPrimary
-                      : colors.inkPlaceholder,
-                    fontSize: journalFontSize || 14.5,
-                    lineHeight: Math.round((journalFontSize || 14.5) * 1.52),
-                  },
-                ]}
-              >
-                {entry.reflection ||
-                  entry.reflectionPreview ||
-                  "No reflection written yet"}
-              </Text>
-            </View>
+            {renderRuledSection(
+              "✦ REFLECTION",
+              colors.tapeReflection,
+              entry.reflection || entry.reflectionPreview,
+              "No reflection written yet"
+            )}
 
             {/* 3. M — MOTIVATION */}
-            <View style={styles.notebookLinesSection}>
-              <View style={styles.sectionHeaderRow}>
-                <View
-                  style={[
-                    styles.stepBadge,
-                    {
-                      backgroundColor: colors.tapeMotivation + "20",
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.stepBadgeText,
-                      { color: colors.tapeMotivation },
-                    ]}
-                  >
-                    ✦ MOTIVATION
-                  </Text>
-                </View>
-              </View>
-              <Text
-                style={[
-                  styles.handwritingText,
-                  {
-                    color: entry.motivation
-                      ? colors.inkPrimary
-                      : colors.inkPlaceholder,
-                    fontSize: journalFontSize || 14.5,
-                    lineHeight: Math.round((journalFontSize || 14.5) * 1.52),
-                  },
-                ]}
-              >
-                {entry.motivation || "No motivation written yet"}
-              </Text>
-            </View>
+            {renderRuledSection(
+              "✦ MOTIVATION",
+              colors.tapeMotivation,
+              entry.motivation,
+              "No motivation written yet"
+            )}
 
             {/* 4. A — APPLICATION */}
-            <View style={styles.notebookLinesSection}>
-              <View style={styles.sectionHeaderRow}>
-                <View
-                  style={[
-                    styles.stepBadge,
-                    {
-                      backgroundColor: colors.tapeApplication + "20",
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.stepBadgeText,
-                      { color: colors.tapeApplication },
-                    ]}
-                  >
-                    ✦ APPLICATION
-                  </Text>
-                </View>
-              </View>
-              <Text
-                style={[
-                  styles.handwritingText,
-                  {
-                    color: entry.application
-                      ? colors.inkPrimary
-                      : colors.inkPlaceholder,
-                    fontSize: journalFontSize || 14.5,
-                    lineHeight: Math.round((journalFontSize || 14.5) * 1.52),
-                  },
-                ]}
-              >
-                {entry.application ||
-                  (entry.totalTasks > 0
-                    ? `(${entry.completedTasks}/${entry.totalTasks} Action tasks)`
-                    : "No application written yet")}
-              </Text>
-            </View>
+            {renderRuledSection(
+              "✦ APPLICATION",
+              colors.tapeApplication,
+              entry.application || (entry.totalTasks > 0 ? `(${entry.completedTasks}/${entry.totalTasks} Action tasks)` : undefined),
+              "No application written yet"
+            )}
 
             {/* Bottom Edit Action */}
             <View style={styles.pageBottomActions}>
@@ -1199,6 +1135,27 @@ export function NotebookBookView({
         totalPages={totalPages}
         onSelectPage={(pageIdx) => turnToPage(pageIdx)}
         onStartNew={onStartNew}
+        onOpenPrint={() => {
+          if (!isPremium) {
+            setIsPaywallOpen(true);
+          } else {
+            setIsPrintModalOpen(true);
+          }
+        }}
+      />
+
+      {/* Selah Grace Paywall Modal */}
+      <PaywallModal
+        visible={isPaywallOpen}
+        onClose={() => setIsPaywallOpen(false)}
+        triggerFeature="Hardbound Journal Print & PDF Book Export"
+      />
+
+      {/* Print Hardbound Journal Export Modal */}
+      <PrintJournalModal
+        visible={isPrintModalOpen}
+        onClose={() => setIsPrintModalOpen(false)}
+        entries={chronologicalEntries}
       />
     </View>
   );
@@ -1411,36 +1368,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  fontStepperGroup: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderRadius: RADIUS.pill,
-    borderWidth: 1,
-    paddingHorizontal: 3,
-    paddingVertical: 1,
-    height: 28,
-  },
-  fontStepperBtn: {
-    paddingHorizontal: 5,
-    paddingVertical: 2,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  fontStepperDivider: {
-    width: 1,
-    height: 12,
-    marginHorizontal: 1,
-  },
-  fontStepperTextSmall: {
-    fontFamily: FONTS.bodyBold,
-    fontSize: 10,
-    fontWeight: "700",
-  },
-  fontStepperTextLarge: {
-    fontFamily: FONTS.bodyBold,
-    fontSize: 12,
-    fontWeight: "800",
-  },
   miniShareBtn: {
     width: 28,
     height: 28,
@@ -1480,28 +1407,49 @@ const styles = StyleSheet.create({
   },
   scriptureQuote: {
     fontFamily: FONTS.body,
-    fontSize: 14.5,
-    lineHeight: 22,
+    fontSize: 13.5,
+    lineHeight: 20,
     letterSpacing: 0.1,
   },
   notebookLinesSection: {
-    marginBottom: SPACING.md,
+    marginBottom: SPACING.sm + 4,
   },
   sectionHeaderRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 5,
-    marginBottom: 6,
+    marginBottom: 4,
+  },
+  ruledTextWrapper: {
+    position: "relative",
+    width: "100%",
+  },
+  pageRuledLinesContainer: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    zIndex: 0,
+  },
+  pageRuledLine: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    height: 1,
+    opacity: 0.65,
   },
   handwritingText: {
     fontFamily: FONTS.body,
-    fontSize: 14.5,
-    lineHeight: 22,
+    fontSize: 13.5,
+    lineHeight: 24,
     letterSpacing: 0.1,
+    zIndex: 1,
+    includeFontPadding: false,
   },
   handwritingEmptyText: {
     fontFamily: FONTS.body,
-    fontSize: 13,
+    fontSize: 12.5,
     fontStyle: "italic",
   },
   pageBottomActions: {
