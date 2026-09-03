@@ -43,15 +43,15 @@ export function EntryTimeline({
 
   const handleDeleteEntry = (entry: DevotionalSummary) => {
     promptModal.confirm({
-      title: 'Delete Devotional Entry?',
-      message: `Are you sure you want to delete "${entry.rhemaReference}"? This entry will be permanently removed from your journal.`,
+      title: 'Delete Journal Entry?',
+      message: `Are you sure you want to delete "${entry.notesPreview?.substring(0, 30)}..."? This entry will be permanently removed from your journal.`,
       confirmText: 'Delete Entry',
       cancelText: 'Keep Entry',
       isDestructive: true,
       onConfirm: async () => {
         try {
           await deleteMutation.mutateAsync(entry.id);
-          toast.success('Entry Deleted', 'The devotional entry has been deleted.');
+          toast.success('Entry Deleted', 'The journal entry has been deleted.');
         } catch (err) {
           console.error('Failed to delete entry:', err);
           toast.error('Error', 'Could not delete this entry. Please try again.');
@@ -69,9 +69,7 @@ export function EntryTimeline({
     if (!searchQuery.trim()) return true;
     const q = searchQuery.toLowerCase();
     return (
-      e.rhemaReference.toLowerCase().includes(q) ||
-      e.rhemaText.toLowerCase().includes(q) ||
-      (e.reflectionPreview && e.reflectionPreview.toLowerCase().includes(q))
+      (e.notesPreview && e.notesPreview.toLowerCase().includes(q))
     );
   });
 

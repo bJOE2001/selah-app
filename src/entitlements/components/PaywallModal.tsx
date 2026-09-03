@@ -63,16 +63,6 @@ const FALLBACK_TIERS: TierDisplayOption[] = [
 
 const PREMIUM_PERKS = [
   {
-    icon: 'print',
-    title: 'Hardbound Journal Print & PDF Export',
-    desc: 'Export 300-DPI publication-ready physical book volumes with gold foil cover spreads & table of contents.',
-  },
-  {
-    icon: 'infinite',
-    title: 'Unlimited Devotional Pages',
-    desc: 'Write without limits. Archive, bind, and fill endless volumes of prayer.',
-  },
-  {
     icon: 'shield-checkmark',
     title: 'Encrypted Cloud Vault & Sync',
     desc: 'Zero-knowledge encrypted cloud backup. Real-time multi-device restore.',

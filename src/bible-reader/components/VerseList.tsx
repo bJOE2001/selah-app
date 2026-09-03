@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
+import * as Speech from 'expo-speech';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Verse, Book } from '../../bible-data/types';
@@ -21,7 +22,6 @@ export interface VerseListProps {
   book: Book;
   chapter: number;
   verses: Verse[];
-  onSelectRhema: (verse: Verse, reference: string) => void;
   onChapterChange?: (chapter: number) => void;
 }
 
@@ -29,7 +29,6 @@ export function VerseList({
   book,
   chapter,
   verses,
-  onSelectRhema,
   onChapterChange,
 }: VerseListProps) {
   const insets = useSafeAreaInsets();
@@ -37,6 +36,36 @@ export function VerseList({
   const fontSize = useSettingsStore((s) => s.fontSize);
   const setFontSize = useSettingsStore((s) => s.setFontSize);
   const [selectedVerseIds, setSelectedVerseIds] = useState<number[]>([]);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      Speech.stop();
+      setIsSpeaking(false);
+    };
+  }, [chapter, book.id]);
+
+  const toggleSpeech = async () => {
+    try {
+      const speaking = await Speech.isSpeakingAsync();
+      if (speaking || isSpeaking) {
+        Speech.stop();
+        setIsSpeaking(false);
+      } else {
+        const textToRead = verses.map(v => v.text.trim()).join(' ');
+        setIsSpeaking(true);
+        Speech.speak(textToRead, {
+          rate: 0.9,
+          pitch: 1.0,
+          onDone: () => setIsSpeaking(false),
+          onStopped: () => setIsSpeaking(false),
+          onError: () => setIsSpeaking(false),
+        });
+      }
+    } catch (err) {
+      setIsSpeaking(false);
+    }
+  };
 
   const verseIds = useMemo(() => verses.map((v) => v.id), [verses]);
   const { highlights, applyHighlight, clearHighlight } = useChapterHighlights(verseIds);
@@ -135,19 +164,7 @@ export function VerseList({
     setSelectedVerseIds([]);
   };
 
-  const handleConfirmSelection = () => {
-    if (sortedSelectedVerses.length === 0) return;
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    } catch {}
-    const firstVerse = sortedSelectedVerses[0];
-    const synthesizedVerse: Verse = {
-      ...firstVerse,
-      text: combinedSelectionText,
-    };
-    onSelectRhema(synthesizedVerse, selectionReference);
-    setSelectedVerseIds([]);
-  };
+
 
   return (
     <View style={[styles.container, { backgroundColor: colors.paperBg }]}>
@@ -159,13 +176,28 @@ export function VerseList({
           </Text>
         </View>
 
-        {/* Minimal Font Stepper */}
-        <View
-          style={[
-            styles.fontSizeControls,
-            { backgroundColor: isDark ? '#1C1916' : '#F3ECE1' },
-          ]}
-        >
+        <View style={styles.topHeaderRight}>
+          <Pressable
+            onPress={toggleSpeech}
+            style={[
+              styles.playBtn,
+              { backgroundColor: isSpeaking ? colors.brandGreen : (isDark ? '#1C1916' : '#F3ECE1') }
+            ]}
+          >
+            <Ionicons
+              name={isSpeaking ? "stop" : "volume-medium"}
+              size={18}
+              color={isSpeaking ? "#FFFFFF" : colors.inkPrimary}
+            />
+          </Pressable>
+
+          {/* Minimal Font Stepper */}
+          <View
+            style={[
+              styles.fontSizeControls,
+              { backgroundColor: isDark ? '#1C1916' : '#F3ECE1' },
+            ]}
+          >
           <Pressable
             onPress={() => {
               try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
@@ -187,6 +219,7 @@ export function VerseList({
           >
             <Text style={[styles.fontBtnTextLarge, { color: colors.inkPrimary }]}>A+</Text>
           </Pressable>
+        </View>
         </View>
       </View>
 
@@ -358,9 +391,15 @@ export function VerseList({
                 ) : null}
               </View>
 
-              {/* Journal Rhema CTA */}
+              {/* Copy Selection CTA */}
               <Pressable
-                onPress={handleConfirmSelection}
+                onPress={() => {
+                  try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); } catch {}
+                  const copyText = `"${combinedSelectionText}" — ${selectionReference}`;
+                  Clipboard.setStringAsync(copyText);
+                  toast.success('Verses Copied', selectionReference);
+                  handleClearSelection();
+                }}
                 style={({ pressed }) => [
                   styles.journalRhemaBtn,
                   { backgroundColor: colors.brandGreen },
@@ -368,8 +407,8 @@ export function VerseList({
                 ]}
                 hitSlop={6}
               >
-                <Ionicons name="create-outline" size={14} color="#FFFFFF" />
-                <Text style={styles.journalRhemaBtnText}>Set as Rhema</Text>
+                <Ionicons name="copy-outline" size={14} color="#FFFFFF" />
+                <Text style={styles.journalRhemaBtnText}>Copy</Text>
               </Pressable>
             </View>
           </View>
@@ -400,6 +439,18 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '700',
     letterSpacing: -0.2,
+  },
+  topHeaderRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  playBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   fontSizeControls: {
     flexDirection: 'row',

@@ -149,7 +149,7 @@ export function BookmarkIndexModal({
                           style={[styles.rhemaRef, { color: colors.tapeRhema }]}
                           numberOfLines={1}
                         >
-                          {item.entry.rhemaReference}
+                          {item.entry.notesPreview?.substring(0, 30)}...
                         </Text>
                         <Text
                           style={[styles.dateText, { color: colors.inkMuted }]}
@@ -161,19 +161,10 @@ export function BookmarkIndexModal({
 
                       <Text
                         style={[styles.verseSnippet, { color: colors.inkPrimary }]}
-                        numberOfLines={1}
+                        numberOfLines={2}
                       >
-                        “{item.entry.rhemaText}”
+                        {item.entry.notesPreview || 'No preview available'}
                       </Text>
-
-                      {item.entry.reflectionPreview ? (
-                        <Text
-                          style={[styles.reflectionPreview, { color: colors.inkSecondary }]}
-                          numberOfLines={1}
-                        >
-                          {item.entry.reflectionPreview}
-                        </Text>
-                      ) : null}
                     </View>
 
                     {/* Turn to Page CTA */}

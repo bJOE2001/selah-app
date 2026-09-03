@@ -290,3 +290,51 @@ export async function searchVerses(
     return [];
   }
 }
+
+export async function getHighlightsByChapter(
+  db: SQLiteDatabase,
+  bookId: number,
+  chapter: number
+): Promise<Record<number, string>> {
+  try {
+    // verse_id format: Book * 1000000 + Chapter * 1000 + Verse
+    const minVerseId = bookId * 1000000 + chapter * 1000;
+    const maxVerseId = minVerseId + 999;
+
+    const rows = await db.getAllAsync<{ verse_id: number; color: string }>(
+      `SELECT verse_id, color FROM verse_highlights WHERE verse_id >= ? AND verse_id <= ?;`,
+      [minVerseId, maxVerseId]
+    );
+
+    const highlights: Record<number, string> = {};
+    for (const row of rows) {
+      highlights[row.verse_id] = row.color;
+    }
+    return highlights;
+  } catch (err) {
+    console.error('Failed to get highlights:', err);
+    return {};
+  }
+}
+
+export async function toggleHighlight(
+  db: SQLiteDatabase,
+  verseId: number,
+  color: string | null
+): Promise<void> {
+  if (color) {
+    const id = generateId();
+    const createdAt = new Date().toISOString();
+    await db.runAsync(
+      `INSERT INTO verse_highlights (id, verse_id, color, created_at)
+       VALUES (?, ?, ?, ?)
+       ON CONFLICT(verse_id) DO UPDATE SET color = excluded.color;`,
+      [id, verseId, color, createdAt]
+    );
+  } else {
+    await db.runAsync(
+      `DELETE FROM verse_highlights WHERE verse_id = ?;`,
+      [verseId]
+    );
+  }
+}

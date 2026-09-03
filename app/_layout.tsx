@@ -103,7 +103,7 @@ export default function RootLayout() {
         }
         if (Platform.OS === "android") {
           try {
-            await NavigationBar.setButtonStyleAsync(isDark ? "light" : "dark");
+            await (NavigationBar as any).setButtonStyleAsync(isDark ? "light" : "dark");
           } catch {}
         } else if (Platform.OS === "web" && typeof document !== "undefined") {
           document.body.style.backgroundColor = colors.paperBg;
@@ -126,7 +126,7 @@ export default function RootLayout() {
     if (Platform.OS === "android") {
       const syncNavBar = async () => {
         try {
-          await NavigationBar.setButtonStyleAsync(isDark ? "light" : "dark");
+          await (NavigationBar as any).setButtonStyleAsync(isDark ? "light" : "dark");
         } catch {}
       };
       syncNavBar();

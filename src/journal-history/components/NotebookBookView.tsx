@@ -23,11 +23,7 @@ import {
 } from "../../devotional-core/hooks";
 import { DevotionalSummary } from "../../devotional-core/types";
 import { useSettingsStore } from "../../settings/store";
-import {
-  useIsPremium,
-  FREE_JOURNAL_PAGE_LIMIT,
-  PaywallModal,
-} from "../../entitlements";
+import { useIsPremium } from "../../entitlements";
 import { BookmarkIndexModal, BookmarkItemData } from "./BookmarkIndexModal";
 import { DogEarFold } from "./DogEarFold";
 import {
@@ -38,7 +34,6 @@ import {
 } from "./EditJournalCoverModal";
 import { NotebookPageFrame } from "./NotebookPageFrame";
 import { TableOfContentsModal } from "./TableOfContentsModal";
-import { PrintJournalModal } from "../../journal-export";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 
@@ -62,8 +57,6 @@ export function NotebookBookView({
   const [isEditCoverOpen, setIsEditCoverOpen] = useState(false);
   const [isBookmarkIndexOpen, setIsBookmarkIndexOpen] = useState(false);
   const [isNavigatorOpen, setIsNavigatorOpen] = useState(false);
-  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
-  const [isPaywallOpen, setIsPaywallOpen] = useState(false);
   const toggleBookmarkMutation = useToggleBookmarkDevotional();
   const deleteMutation = useDeleteDevotional();
   const isPremium = useIsPremium();
@@ -198,7 +191,7 @@ export function NotebookBookView({
   const handleDeletePage = (entry: DevotionalSummary, pageNumber: number) => {
     promptModal.confirm({
       title: "Delete Journal Page?",
-      message: `Are you sure you want to delete Page ${pageNumber} (${entry.rhemaReference})?\n\nThis entry will be permanently removed from your journal.`,
+      message: `Are you sure you want to delete Page ${pageNumber}? \n\nThis entry will be permanently removed from your journal.`,
       confirmText: "Delete Page",
       cancelText: "Keep Page",
       isDestructive: true,
@@ -369,9 +362,7 @@ export function NotebookBookView({
                   <Text
                     style={[styles.coverStatsText, { color: tokens.isDarkCover ? tokens.textColor : colors.inkPrimary }]}
                   >
-                    {isPremium
-                      ? `${entries.length} ${entries.length === 1 ? "Page" : "Pages"} (Unlimited)`
-                      : `Volume 1 • ${entries.length} / ${FREE_JOURNAL_PAGE_LIMIT} Pages`}
+                    {`${entries.length} ${entries.length === 1 ? "Page" : "Pages"}`}
                   </Text>
                 </View>
 
@@ -518,7 +509,6 @@ export function NotebookBookView({
             style={styles.entryScroll}
             contentContainerStyle={styles.entryScrollContent}
             showsVerticalScrollIndicator={false}
-            scrollEnabled={false}
           >
             {/* Clean Editorial Page Folio Header */}
             <View style={styles.pageFolioHeader}>
@@ -579,66 +569,12 @@ export function NotebookBookView({
               </View>
             </View>
 
-            {/* 1. R — RHEMA (Scripture Box) */}
-            <View
-              style={[
-                styles.scriptureBox,
-                {
-                  backgroundColor: colors.rhemaCardBg,
-                  borderColor: colors.rhemaCardBorder,
-                },
-              ]}
-            >
-              <View style={styles.rhemaTapeHeader}>
-                <View
-                  style={[
-                    styles.stepBadge,
-                    {
-                      backgroundColor: colors.tapeRhema + "20",
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[styles.stepBadgeText, { color: colors.tapeRhema }]}
-                  >
-                    ✦ RHEMA
-                  </Text>
-                </View>
-                <Text
-                  style={[styles.rhemaRefText, { color: colors.tapeRhema }]}
-                >
-                  {entry.rhemaReference}
-                </Text>
-              </View>
-              <Text
-                style={[styles.scriptureQuote, { color: colors.inkPrimary }]}
-              >
-                “{entry.rhemaText}”
-              </Text>
-            </View>
-
-            {/* 2. R — REFLECTION */}
+            {/* SINGLE NOTES SECTION */}
             {renderRuledSection(
-              "✦ REFLECTION",
+              "JOURNAL ENTRY",
               colors.tapeReflection,
-              entry.reflection || entry.reflectionPreview,
-              "No reflection written yet"
-            )}
-
-            {/* 3. M — MOTIVATION */}
-            {renderRuledSection(
-              "✦ MOTIVATION",
-              colors.tapeMotivation,
-              entry.motivation,
-              "No motivation written yet"
-            )}
-
-            {/* 4. A — APPLICATION */}
-            {renderRuledSection(
-              "✦ APPLICATION",
-              colors.tapeApplication,
-              entry.application || (entry.totalTasks > 0 ? `(${entry.completedTasks}/${entry.totalTasks} Action tasks)` : undefined),
-              "No application written yet"
+              entry.notes || entry.notesPreview,
+              "No notes written yet"
             )}
 
             {/* Bottom Edit Action */}
@@ -724,148 +660,29 @@ export function NotebookBookView({
               </View>
             </View>
 
-            {/* 4-Step R.R.M.A. Outline Guide */}
+            {/* Ready Guide */}
             <View style={styles.blankStepsOutline}>
               <Text
-                style={[styles.blankSectionHeader, { color: colors.inkMuted }]}
+                style={[styles.blankSectionHeader, { color: colors.inkMuted, textAlign: 'center', marginTop: SPACING.xl }]}
               >
-                READY FOR TODAY'S DEVOTION
+                READY FOR TODAY'S JOURNAL ENTRY
               </Text>
 
-              {/* RHEMA */}
               <View
                 style={[
                   styles.blankStepRow,
                   {
                     backgroundColor: colors.cardBg,
                     borderColor: colors.paperLine,
+                    justifyContent: 'center',
+                    paddingVertical: SPACING.lg,
                   },
                 ]}
               >
-                <View
-                  style={[
-                    styles.stepBadge,
-                    {
-                      backgroundColor: colors.tapeRhema + "18",
-                      borderColor: colors.tapeRhema + "40",
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[styles.stepBadgeText, { color: colors.tapeRhema }]}
-                  >
-                    RHEMA
-                  </Text>
-                </View>
                 <Text
-                  style={[styles.blankStepHint, { color: colors.inkSecondary }]}
+                  style={[styles.blankStepHint, { color: colors.inkSecondary, textAlign: 'center' }]}
                 >
-                  
-                </Text>
-              </View>
-
-              {/* REFLECTION */}
-              <View
-                style={[
-                  styles.blankStepRow,
-                  {
-                    backgroundColor: colors.cardBg,
-                    borderColor: colors.paperLine,
-                  },
-                ]}
-              >
-                <View
-                  style={[
-                    styles.stepBadge,
-                    {
-                      backgroundColor: colors.tapeReflection + "18",
-                      borderColor: colors.tapeReflection + "40",
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.stepBadgeText,
-                      { color: colors.tapeReflection },
-                    ]}
-                  >
-                    REFLECTION
-                  </Text>
-                </View>
-                <Text
-                  style={[styles.blankStepHint, { color: colors.inkSecondary }]}
-                >
-                  
-                </Text>
-              </View>
-
-              {/* MOTIVATION */}
-              <View
-                style={[
-                  styles.blankStepRow,
-                  {
-                    backgroundColor: colors.cardBg,
-                    borderColor: colors.paperLine,
-                  },
-                ]}
-              >
-                <View
-                  style={[
-                    styles.stepBadge,
-                    {
-                      backgroundColor: colors.tapeMotivation + "18",
-                      borderColor: colors.tapeMotivation + "40",
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.stepBadgeText,
-                      { color: colors.tapeMotivation },
-                    ]}
-                  >
-                    MOTIVATION
-                  </Text>
-                </View>
-                <Text
-                  style={[styles.blankStepHint, { color: colors.inkSecondary }]}
-                >
-                  
-                </Text>
-              </View>
-
-              {/* APPLICATION */}
-              <View
-                style={[
-                  styles.blankStepRow,
-                  {
-                    backgroundColor: colors.cardBg,
-                    borderColor: colors.paperLine,
-                  },
-                ]}
-              >
-                <View
-                  style={[
-                    styles.stepBadge,
-                    {
-                      backgroundColor: colors.tapeApplication + "18",
-                      borderColor: colors.tapeApplication + "40",
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.stepBadgeText,
-                      { color: colors.tapeApplication },
-                    ]}
-                  >
-                    APPLICATION
-                  </Text>
-                </View>
-                <Text
-                  style={[styles.blankStepHint, { color: colors.inkSecondary }]}
-                >
-                  
+                  Write down your thoughts, prayers, or reflections...
                 </Text>
               </View>
             </View>
@@ -1135,27 +952,6 @@ export function NotebookBookView({
         totalPages={totalPages}
         onSelectPage={(pageIdx) => turnToPage(pageIdx)}
         onStartNew={onStartNew}
-        onOpenPrint={() => {
-          if (!isPremium) {
-            setIsPaywallOpen(true);
-          } else {
-            setIsPrintModalOpen(true);
-          }
-        }}
-      />
-
-      {/* Selah Grace Paywall Modal */}
-      <PaywallModal
-        visible={isPaywallOpen}
-        onClose={() => setIsPaywallOpen(false)}
-        triggerFeature="Hardbound Journal Print & PDF Book Export"
-      />
-
-      {/* Print Hardbound Journal Export Modal */}
-      <PrintJournalModal
-        visible={isPrintModalOpen}
-        onClose={() => setIsPrintModalOpen(false)}
-        entries={chronologicalEntries}
       />
     </View>
   );
@@ -1333,7 +1129,7 @@ const styles = StyleSheet.create({
   entryScrollContent: {
     padding: SPACING.base,
     paddingRight: SPACING.lg + 4,
-    paddingBottom: SPACING.lg,
+    paddingBottom: 100,
   },
   pageFolioHeader: {
     flexDirection: "row",

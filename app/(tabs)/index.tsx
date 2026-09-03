@@ -24,18 +24,11 @@ export default function HomeScreen() {
           setSharingId(null);
           setCustomShareDevotional({
             id: 'verse-of-the-day',
-            rhemaVerseId: 0,
-            rhemaReference: verse.reference,
-            rhemaText: verse.text,
+            notes: `"${verse.text}" — ${verse.reference}`,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
             isDraft: false,
-            isVerseOfTheDay: true,
-            reflection: '',
-            motivation: '',
-            application: '',
-            moodTags: [],
-            applicationTasks: [],
+            isBookmarked: false,
           });
         }}
       />

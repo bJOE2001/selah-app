@@ -3,17 +3,6 @@ import { getUserDatabase } from '../bible-data/db';
 import * as queries from './queries';
 import { DevotionalDraft, DevotionalSummary } from './types';
 
-export function useMoodTags() {
-  return useQuery({
-    queryKey: ['devotional', 'mood-tags'],
-    queryFn: async () => {
-      const db = await getUserDatabase();
-      return queries.getMoodTags(db);
-    },
-    staleTime: 1000 * 60 * 60, // 1 hour
-  });
-}
-
 export function useRecentDevotionals(limit: number = 50) {
   return useQuery({
     queryKey: ['devotionals', 'recent', limit],
@@ -36,16 +25,6 @@ export function useDevotional(id: string | null) {
   });
 }
 
-export function useIncompleteTasks(limit: number = 20) {
-  return useQuery({
-    queryKey: ['tasks', 'incomplete', limit],
-    queryFn: async () => {
-      const db = await getUserDatabase();
-      return queries.getIncompleteTasks(db, limit);
-    },
-  });
-}
-
 export function useSaveDevotional() {
   const queryClient = useQueryClient();
 
@@ -56,23 +35,7 @@ export function useSaveDevotional() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['devotionals'] });
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
       queryClient.invalidateQueries({ queryKey: ['devotional'] });
-    },
-  });
-}
-
-export function useToggleTask() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (taskId: string) => {
-      const db = await getUserDatabase();
-      return queries.toggleTaskCompletion(db, taskId);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['devotionals'] });
     },
   });
 }
@@ -92,7 +55,6 @@ export function useDeleteDevotional() {
         (old) => (old ? old.filter((item) => item.id !== deletedId) : [])
       );
       await queryClient.invalidateQueries({ queryKey: ['devotionals'] });
-      await queryClient.invalidateQueries({ queryKey: ['tasks'] });
       await queryClient.invalidateQueries({ queryKey: ['devotional'] });
     },
   });
@@ -112,4 +74,3 @@ export function useToggleBookmarkDevotional() {
     },
   });
 }
-

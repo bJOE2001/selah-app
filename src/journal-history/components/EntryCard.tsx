@@ -34,6 +34,10 @@ export function EntryCard({ entry, onPress, onShare, onDelete }: EntryCardProps)
     onPress();
   };
 
+  const lines = entry.notesPreview.split('\n');
+  const title = lines[0] || 'Empty Entry';
+  const preview = lines.slice(1).join(' ').trim() || title;
+
   return (
     <Pressable
       onPress={handlePress}
@@ -90,7 +94,7 @@ export function EntryCard({ entry, onPress, onShare, onDelete }: EntryCardProps)
               }}
               style={styles.actionIconButton}
               hitSlop={8}
-              accessibilityLabel="Share Devotional"
+              accessibilityLabel="Share Journal"
             >
               <Ionicons name="share-social-outline" size={17} color={colors.inkSecondary} />
             </Pressable>
@@ -106,7 +110,7 @@ export function EntryCard({ entry, onPress, onShare, onDelete }: EntryCardProps)
               }}
               style={styles.actionIconButton}
               hitSlop={8}
-              accessibilityLabel="Delete Devotional"
+              accessibilityLabel="Delete Journal"
             >
               <Ionicons name="trash-outline" size={16} color={colors.tapeRhema} />
             </Pressable>
@@ -114,23 +118,13 @@ export function EntryCard({ entry, onPress, onShare, onDelete }: EntryCardProps)
         </View>
       </View>
 
-      {/* Rhema Reference Badge */}
-      <View style={styles.rhemaBadge}>
-        <Ionicons name="sparkles" size={13} color={colors.tapeRhema} />
-        <Text style={[styles.referenceText, { color: colors.tapeRhema }]}>{entry.rhemaReference}</Text>
-      </View>
-
-      {/* Rhema verse snippet */}
-      <Text style={[styles.verseSnippet, { color: colors.inkPrimary }]} numberOfLines={2}>
-        “{entry.rhemaText}”
+      <Text style={[styles.titleText, { color: colors.inkPrimary }]} numberOfLines={1}>
+        {title}
       </Text>
 
-      {/* Reflection snippet */}
-      {entry.reflectionPreview ? (
-        <Text style={[styles.reflectionSnippet, { color: colors.inkSecondary }]} numberOfLines={2}>
-          {entry.reflectionPreview}
-        </Text>
-      ) : null}
+      <Text style={[styles.previewText, { color: colors.inkSecondary }]} numberOfLines={2}>
+        {preview}
+      </Text>
     </Pressable>
   );
 }
@@ -182,24 +176,13 @@ const styles = StyleSheet.create({
   actionIconButton: {
     padding: 4,
   },
-  rhemaBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
+  titleText: {
+    fontFamily: FONTS.sectionHeader,
+    fontSize: 15,
+    fontWeight: '700',
     marginBottom: 4,
   },
-  referenceText: {
-    fontFamily: FONTS.sectionHeader,
-    fontSize: 14.5,
-    fontWeight: '700',
-  },
-  verseSnippet: {
-    fontFamily: FONTS.bodyItalic,
-    fontSize: 13.5,
-    lineHeight: 19,
-    marginBottom: 5,
-  },
-  reflectionSnippet: {
+  previewText: {
     fontFamily: FONTS.body,
     fontSize: 13.5,
     lineHeight: 19,

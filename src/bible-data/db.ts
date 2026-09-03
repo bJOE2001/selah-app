@@ -9,7 +9,7 @@ let bibleDbInstance: SQLite.SQLiteDatabase | null = null;
 let initPromise: Promise<SQLite.SQLiteDatabase> | null = null;
 let bibleInitPromise: Promise<SQLite.SQLiteDatabase> | null = null;
 
-const USER_DB_NAME = 'devotion.db';
+const USER_DB_NAME = 'devotion_v2.db';
 const BIBLE_DB_NAME = 'KJV.db';
 
 /**
@@ -172,52 +172,37 @@ export function getDatabase(): SQLite.SQLiteDatabase {
 }
 
 async function initDevotionalTables(db: SQLite.SQLiteDatabase) {
+  // Wipe old schema if it exists (for fresh slate during development)
+  try {
+    const tableInfo = await db.getAllAsync<{ name: string }>(`PRAGMA table_info(devotionals);`);
+    const hasNotesColumn = tableInfo.some((col) => col.name === 'notes');
+    
+    // If the table exists but is missing the new 'notes' column, wipe it!
+    if (tableInfo.length > 0 && !hasNotesColumn) {
+      await db.execAsync(`
+        DROP TABLE IF EXISTS application_tasks;
+        DROP TABLE IF EXISTS devotional_mood_tags;
+        DROP TABLE IF EXISTS mood_tags;
+        DROP TABLE IF EXISTS devotionals;
+      `);
+    }
+  } catch (e) {
+    console.error('Failed to wipe old schema:', e);
+  }
+
   // Execute core tables and indices
   await db.execAsync(`
-    CREATE TABLE IF NOT EXISTS mood_tags (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      value TEXT NOT NULL UNIQUE,
-      emoji TEXT NOT NULL,
-      color TEXT NOT NULL
-    );
-
     CREATE TABLE IF NOT EXISTS devotionals (
       id TEXT PRIMARY KEY,
-      rhema_verse_id INTEGER NOT NULL,
-      rhema_text TEXT NOT NULL,
-      rhema_reference TEXT NOT NULL,
-      reflection TEXT NOT NULL DEFAULT '',
-      motivation TEXT NOT NULL DEFAULT '',
-      application TEXT NOT NULL DEFAULT '',
+      notes TEXT NOT NULL DEFAULT '',
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL,
       is_draft INTEGER NOT NULL DEFAULT 1,
       is_bookmarked INTEGER NOT NULL DEFAULT 0
     );
 
-    CREATE TABLE IF NOT EXISTS devotional_mood_tags (
-      devotional_id TEXT NOT NULL,
-      mood_tag_id INTEGER NOT NULL,
-      PRIMARY KEY (devotional_id, mood_tag_id),
-      FOREIGN KEY (devotional_id) REFERENCES devotionals(id) ON DELETE CASCADE,
-      FOREIGN KEY (mood_tag_id) REFERENCES mood_tags(id)
-    );
-
-    CREATE TABLE IF NOT EXISTS application_tasks (
-      id TEXT PRIMARY KEY,
-      devotional_id TEXT NOT NULL,
-      text TEXT NOT NULL,
-      is_completed INTEGER NOT NULL DEFAULT 0,
-      sort_order INTEGER NOT NULL DEFAULT 0,
-      completed_at TEXT,
-      created_at TEXT NOT NULL,
-      FOREIGN KEY (devotional_id) REFERENCES devotionals(id) ON DELETE CASCADE
-    );
-
     CREATE INDEX IF NOT EXISTS idx_devotionals_created ON devotionals(created_at);
     CREATE INDEX IF NOT EXISTS idx_devotionals_draft ON devotionals(is_draft);
-    CREATE INDEX IF NOT EXISTS idx_tasks_devotional ON application_tasks(devotional_id);
-    CREATE INDEX IF NOT EXISTS idx_tasks_completed ON application_tasks(is_completed);
 
     CREATE TABLE IF NOT EXISTS verse_highlights (
       id TEXT PRIMARY KEY,
@@ -259,35 +244,4 @@ async function initDevotionalTables(db: SQLite.SQLiteDatabase) {
     );
     CREATE INDEX IF NOT EXISTS idx_cached_verses_lookup ON cached_verses(translation_id, book_id, chapter);
   `);
-
-  // Safe Column Migrations: check columns first to avoid failing ALTER TABLE commands
-  try {
-    const tableInfo = await db.getAllAsync<{ name: string }>(`PRAGMA table_info(devotionals);`);
-    const columnNames = new Set(tableInfo.map((col) => col.name));
-    if (!columnNames.has('application')) {
-      await db.runAsync(`ALTER TABLE devotionals ADD COLUMN application TEXT NOT NULL DEFAULT '';`);
-    }
-    if (!columnNames.has('is_bookmarked')) {
-      await db.runAsync(`ALTER TABLE devotionals ADD COLUMN is_bookmarked INTEGER NOT NULL DEFAULT 0;`);
-    }
-  } catch (colErr) {
-    console.warn('Devotionals column check note:', colErr);
-  }
-
-  // Seed standard mood tags if empty
-  try {
-    await db.runAsync(`
-      INSERT OR IGNORE INTO mood_tags (id, value, emoji, color) VALUES
-        (1, 'peace', '☮️', '#81C784'),
-        (2, 'joy', '😊', '#FFD54F'),
-        (3, 'conviction', '⚡', '#FF8A65'),
-        (4, 'surrender', '🤲', '#90CAF9'),
-        (5, 'gratitude', '🙏', '#CE93D8'),
-        (6, 'hope', '🌅', '#4FC3F7'),
-        (7, 'repentance', '💔', '#EF9A9A'),
-        (8, 'awe', '✨', '#FFF176'),
-        (9, 'comfort', '🫂', '#A5D6A7'),
-        (10, 'boldness', '🦁', '#FFAB91');
-    `);
-  } catch (_) {}
 }

@@ -19,6 +19,7 @@ export interface RuledInputProps extends Omit<TextInputProps, 'style'> {
   placeholder?: string;
   minLines?: number;
   lineHeight?: number;
+  fontSize?: number;
   containerStyle?: ViewStyle;
 }
 
@@ -28,6 +29,7 @@ export function RuledInput({
   placeholder = 'Write your thoughts here...',
   minLines = 4,
   lineHeight = LINE_HEIGHTS.ruledLine,
+  fontSize = 13.5,
   containerStyle,
   ...props
 }: RuledInputProps) {
@@ -72,10 +74,12 @@ export function RuledInput({
 
       {/* Foreground TextInput */}
       <TextInput
+        {...props}
         style={[
           styles.textInput,
           {
             lineHeight,
+            fontSize,
             minHeight: totalLines * lineHeight,
             color: colors.inkPrimary,
             ...(Platform.OS === 'web' ? { outlineStyle: 'none' as any } : {}),
@@ -89,7 +93,6 @@ export function RuledInput({
         textAlignVertical="top"
         scrollEnabled={false}
         onContentSizeChange={handleContentSizeChange}
-        {...props}
       />
     </View>
   );

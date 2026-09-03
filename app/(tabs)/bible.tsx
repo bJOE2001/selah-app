@@ -19,7 +19,6 @@ import { useDraftStore } from '../../src/devotional-core/store';
 import { useRecentDevotionals } from '../../src/devotional-core/hooks';
 import {
   useIsPremium,
-  FREE_JOURNAL_PAGE_LIMIT,
   PaywallModal,
 } from '../../src/entitlements';
 import { useReadingStore } from '../../src/bible-data/readingStore';
@@ -77,22 +76,7 @@ export default function BibleTabScreen() {
   const isDownloadingCurrent = downloadState?.isDownloading;
   const downloadProgress = downloadState?.progress || 0;
 
-  const { setRhema } = useDraftStore();
 
-  const handleSelectRhema = (verse: Verse, reference: string) => {
-    if (!isPremium && (recentEntries || []).length >= FREE_JOURNAL_PAGE_LIMIT) {
-      setIsPaywallOpen(true);
-      return;
-    }
-
-    const fullReference =
-      selectedTranslation.code !== 'KJV'
-        ? `${reference} (${selectedTranslation.code})`
-        : reference;
-
-    setRhema(verse.id, verse.text, fullReference);
-    router.push('/devotional/new');
-  };
 
   const handleBack = () => {
     try {
@@ -303,7 +287,6 @@ export default function BibleTabScreen() {
           book={selectedBook}
           chapter={selectedChapter}
           verses={verses || []}
-          onSelectRhema={handleSelectRhema}
           onChapterChange={(ch) => {
             setSelectedChapter(ch);
             setLastRead(selectedBook.id, selectedBook.name, ch);

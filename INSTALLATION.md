@@ -174,7 +174,7 @@ selah-app/
 │   ├── design-system/          # Aesthetic design tokens, themes & UI primitives
 │   ├── devotional-core/        # Devotional models, CRUD layer & Zustand state
 │   ├── journal-history/        # Timeline, search, calendar & filtering
-│   ├── notebook-editor/        # R.R.M.A devotional journaling step-flow editor
+│   ├── notebook-editor/        # Devotional journaling editor
 │   ├── privacy-lock/           # Biometrics & PIN authentication layer
 │   ├── settings/               # User settings and preferences
 │   ├── share-card/             # Aesthetic exportable image cards (ViewShot)

@@ -7,14 +7,7 @@ import * as Haptics from 'expo-haptics';
 import { useRecentDevotionals, useDevotional } from '../../src/devotional-core/hooks';
 import { EntryTimeline, NotebookBookView } from '../../src/journal-history';
 import { ShareCardModal } from '../../src/share-card';
-import { useTheme, FONTS, SPACING, RADIUS, SHADOWS } from '../../src/design-system';
-import {
-  useIsPremium,
-  FREE_JOURNAL_PAGE_LIMIT,
-  PaywallModal,
-} from '../../src/entitlements';
-import { PrintJournalModal } from '../../src/journal-export';
-
+import { useTheme, FONTS, RADIUS, SHADOWS, SPACING } from '../../src/design-system';
 export default function JournalTabScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -24,33 +17,8 @@ export default function JournalTabScreen() {
   const [sharingId, setSharingId] = useState<string | null>(null);
   const { data: sharingDevotional } = useDevotional(sharingId);
 
-  const isPremium = useIsPremium();
-  const [isPaywallOpen, setIsPaywallOpen] = useState(false);
-  const [paywallFeature, setPaywallFeature] = useState('Unlimited Devotional Pages');
-  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
-
-  const totalEntriesCount = (entries || []).length;
-  const isPageLimitReached = !isPremium && totalEntriesCount >= FREE_JOURNAL_PAGE_LIMIT;
-
   const handleStartNew = () => {
-    if (isPageLimitReached) {
-      setPaywallFeature('Unlimited Devotional Pages (30/30 Limit Reached)');
-      setIsPaywallOpen(true);
-      return;
-    }
     router.push('/devotional/new');
-  };
-
-  const handleOpenPrint = () => {
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    } catch {}
-    if (!isPremium) {
-      setPaywallFeature('Hardbound Journal Print & PDF Book Export');
-      setIsPaywallOpen(true);
-      return;
-    }
-    setIsPrintModalOpen(true);
   };
 
   const handleModeChange = (mode: 'notebook' | 'timeline') => {
@@ -137,18 +105,7 @@ export default function JournalTabScreen() {
         </View>
 
         <View style={styles.topRightActions}>
-          <Pressable
-            onPress={handleOpenPrint}
-            style={({ pressed }) => [
-              styles.settingsIconButton,
-              { backgroundColor: isDark ? '#1C1916' : '#F3ECE1' },
-              pressed && { opacity: 0.8 },
-            ]}
-            hitSlop={8}
-            accessibilityLabel="Print Hardbound Journal"
-          >
-            <Ionicons name="print-outline" size={16} color={colors.inkPrimary} />
-          </Pressable>
+          {/* Removed Print Button */}
 
           <Pressable
             onPress={() => {
@@ -168,44 +125,7 @@ export default function JournalTabScreen() {
         </View>
       </View>
 
-      {/* Volume Capacity Banner for Free Users */}
-      {!isPremium && (
-        <Pressable
-          onPress={() => isPageLimitReached && setIsPaywallOpen(true)}
-          style={[
-            styles.volumeCapacityBar,
-            {
-              backgroundColor: isPageLimitReached
-                ? (isDark ? '#2D2314' : '#F5E6CC')
-                : (isDark ? '#1C1914' : '#F7F2EB'),
-              borderColor: isPageLimitReached ? '#C59B27' : colors.paperLine,
-            },
-          ]}
-        >
-          <View style={styles.volumeCapacityLeft}>
-            <Ionicons
-              name={isPageLimitReached ? 'lock-closed' : 'book-outline'}
-              size={13}
-              color={isPageLimitReached ? '#C59B27' : colors.inkSecondary}
-            />
-            <Text
-              style={[
-                styles.volumeCapacityText,
-                { color: isPageLimitReached ? '#C59B27' : colors.inkSecondary },
-              ]}
-            >
-              {isPageLimitReached
-                ? `Volume 1 Completed (${FREE_JOURNAL_PAGE_LIMIT}/${FREE_JOURNAL_PAGE_LIMIT} Pages) • Tap to Upgrade`
-                : `Volume 1 • ${totalEntriesCount} / ${FREE_JOURNAL_PAGE_LIMIT} Pages Written`}
-            </Text>
-          </View>
-          {isPageLimitReached && (
-            <View style={[styles.unlockPill, { backgroundColor: '#8B3A2B' }]}>
-              <Text style={styles.unlockPillText}>UNLOCK UNLIMITED</Text>
-            </View>
-          )}
-        </Pressable>
-      )}
+      {/* Removed Volume Capacity Banner */}
 
       {/* Main Journal View */}
       <View style={styles.mainViewArea}>
@@ -233,19 +153,6 @@ export default function JournalTabScreen() {
         onClose={() => setSharingId(null)}
       />
 
-      {/* Selah Grace Paywall Modal */}
-      <PaywallModal
-        visible={isPaywallOpen}
-        onClose={() => setIsPaywallOpen(false)}
-        triggerFeature={paywallFeature}
-      />
-
-      {/* Print Hardbound Journal Export Modal */}
-      <PrintJournalModal
-        visible={isPrintModalOpen}
-        onClose={() => setIsPrintModalOpen(false)}
-        entries={entries || []}
-      />
     </View>
   );
 }

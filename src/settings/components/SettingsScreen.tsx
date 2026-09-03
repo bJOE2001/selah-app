@@ -1194,93 +1194,32 @@ export function SettingsScreen() {
               </View>
             </View>
 
-            {/* The R.R.M.A. Method Comprehensive Card */}
-            <View style={[styles.rrmaContainer, { backgroundColor: isDark ? '#221E1A' : '#FBF7F0', borderColor: colors.paperLine }]}>
-              <View style={styles.rrmaHeader}>
-                <View style={[styles.rrmaBadge, { backgroundColor: colors.brandGreenLight }]}>
+            {/* Spiritual Journaling Guide */}
+            <View style={[styles.guideContainer, { backgroundColor: isDark ? '#221E1A' : '#FBF7F0', borderColor: colors.paperLine }]}>
+              <View style={styles.guideHeader}>
+                <View style={[styles.guideBadge, { backgroundColor: colors.brandGreenLight }]}>
                   <Ionicons name="sparkles" size={12} color={colors.brandGreen} />
-                  <Text style={[styles.rrmaBadgeText, { color: colors.brandGreen }]}>DEVOTIONAL FRAMEWORK</Text>
+                  <Text style={[styles.guideBadgeText, { color: colors.brandGreen }]}>DEVOTIONAL FRAMEWORK</Text>
                 </View>
-                <Text style={[styles.rrmaMainTitle, { color: colors.inkPrimary }]}>The R.R.M.A. Method</Text>
-                <Text style={[styles.rrmaIntroText, { color: colors.inkSecondary }]}>
-                  A guided 4-step practice to help you meditate on God's Word, connect it to your heart, and live it out daily.
+                <Text style={[styles.guideMainTitle, { color: colors.inkPrimary }]}>Spiritual Journaling</Text>
+                <Text style={[styles.guideIntroText, { color: colors.inkSecondary }]}>
+                  A space to record your thoughts, prayers, and reflections as you meditate on God's Word.
                 </Text>
               </View>
 
-              <View style={[styles.rrmaDivider, { backgroundColor: colors.paperLine }]} />
+              <View style={[styles.guideDivider, { backgroundColor: colors.paperLine }]} />
 
-              {/* Step 1: Rhema */}
-              <View style={styles.rrmaStepItem}>
-                <View style={[styles.rrmaStepBadge, { backgroundColor: colors.tapeRhema + '22', borderColor: colors.tapeRhema }]}>
-                  <Text style={[styles.rrmaStepLetter, { color: colors.tapeRhema }]}>R</Text>
+              <View style={[styles.guideStepItem, { marginBottom: 0 }]}>
+                <View style={[styles.guideStepBadge, { backgroundColor: colors.tapeReflection + '22', borderColor: colors.tapeReflection }]}>
+                  <Text style={[styles.guideStepLetter, { color: colors.tapeReflection }]}>✍️</Text>
                 </View>
-                <View style={styles.rrmaStepContent}>
-                  <View style={styles.rrmaStepTitleRow}>
-                    <Text style={[styles.rrmaStepName, { color: colors.tapeRhema }]}>RHEMA</Text>
-                    <Text style={[styles.rrmaStepTag, { color: colors.inkSecondary }]}>God's Spoken Word</Text>
+                <View style={styles.guideStepContent}>
+                  <View style={styles.guideStepTitleRow}>
+                    <Text style={[styles.guideStepName, { color: colors.tapeReflection }]}>REFLECT & WRITE</Text>
+                    <Text style={[styles.guideStepTag, { color: colors.inkSecondary }]}>Freeform Thoughts</Text>
                   </View>
-                  <Text style={[styles.rrmaStepDesc, { color: colors.inkSecondary }]}>
-                    The specific verse or passage that catches your attention and speaks directly to your spirit today.
-                  </Text>
-                  <Text style={[styles.rrmaStepPrompt, { color: colors.inkPrimary }]}>
-                    ✦ "What Scripture did the Holy Spirit highlight for you?"
-                  </Text>
-                </View>
-              </View>
-
-              {/* Step 2: Reflect */}
-              <View style={styles.rrmaStepItem}>
-                <View style={[styles.rrmaStepBadge, { backgroundColor: colors.tapeReflection + '22', borderColor: colors.tapeReflection }]}>
-                  <Text style={[styles.rrmaStepLetter, { color: colors.tapeReflection }]}>R</Text>
-                </View>
-                <View style={styles.rrmaStepContent}>
-                  <View style={styles.rrmaStepTitleRow}>
-                    <Text style={[styles.rrmaStepName, { color: colors.tapeReflection }]}>REFLECT</Text>
-                    <Text style={[styles.rrmaStepTag, { color: colors.inkSecondary }]}>Divine Meaning</Text>
-                  </View>
-                  <Text style={[styles.rrmaStepDesc, { color: colors.inkSecondary }]}>
-                    Slow down and meditate on the truth. Seek to understand what God is teaching about His character and will.
-                  </Text>
-                  <Text style={[styles.rrmaStepPrompt, { color: colors.inkPrimary }]}>
-                    ✦ "What is God revealing to you through this passage?"
-                  </Text>
-                </View>
-              </View>
-
-              {/* Step 3: Motivate */}
-              <View style={styles.rrmaStepItem}>
-                <View style={[styles.rrmaStepBadge, { backgroundColor: colors.tapeMotivation + '22', borderColor: colors.tapeMotivation }]}>
-                  <Text style={[styles.rrmaStepLetter, { color: colors.tapeMotivation }]}>M</Text>
-                </View>
-                <View style={styles.rrmaStepContent}>
-                  <View style={styles.rrmaStepTitleRow}>
-                    <Text style={[styles.rrmaStepName, { color: colors.tapeMotivation }]}>MOTIVATE</Text>
-                    <Text style={[styles.rrmaStepTag, { color: colors.inkSecondary }]}>Heart & Conviction</Text>
-                  </View>
-                  <Text style={[styles.rrmaStepDesc, { color: colors.inkSecondary }]}>
-                    Let the truth touch your emotions and convictions. Experience renewed hope, peace, or godly repentance.
-                  </Text>
-                  <Text style={[styles.rrmaStepPrompt, { color: colors.inkPrimary }]}>
-                    ✦ "Why does this verse inspire, challenge, or comfort your heart?"
-                  </Text>
-                </View>
-              </View>
-
-              {/* Step 4: Apply */}
-              <View style={[styles.rrmaStepItem, { marginBottom: 0 }]}>
-                <View style={[styles.rrmaStepBadge, { backgroundColor: colors.tapeApplication + '22', borderColor: colors.tapeApplication }]}>
-                  <Text style={[styles.rrmaStepLetter, { color: colors.tapeApplication }]}>A</Text>
-                </View>
-                <View style={styles.rrmaStepContent}>
-                  <View style={styles.rrmaStepTitleRow}>
-                    <Text style={[styles.rrmaStepName, { color: colors.tapeApplication }]}>APPLY</Text>
-                    <Text style={[styles.rrmaStepTag, { color: colors.inkSecondary }]}>Action & Prayer</Text>
-                  </View>
-                  <Text style={[styles.rrmaStepDesc, { color: colors.inkSecondary }]}>
-                    Turn revelation into obedience. Write down tangible action steps, prayer commitments, or life changes.
-                  </Text>
-                  <Text style={[styles.rrmaStepPrompt, { color: colors.inkPrimary }]}>
-                    ✦ "How will you live out and practice this truth today?"
+                  <Text style={[styles.guideStepDesc, { color: colors.inkSecondary }]}>
+                    Slow down and meditate on the truth. Seek to understand what God is teaching about His character and will, and freely write down your thoughts, prayers, and convictions.
                   </Text>
                 </View>
               </View>
@@ -1934,18 +1873,18 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
   },
-  /* ── R.R.M.A. Method Card ── */
-  rrmaContainer: {
+  /* ── Spiritual Journaling Guide ── */
+  guideContainer: {
     marginTop: SPACING.md,
     padding: SPACING.md,
     borderRadius: 16,
     borderWidth: 1,
     gap: SPACING.sm,
   },
-  rrmaHeader: {
+  guideHeader: {
     gap: 4,
   },
-  rrmaBadge: {
+  guideBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
@@ -1954,33 +1893,33 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.pill,
     alignSelf: 'flex-start',
   },
-  rrmaBadgeText: {
+  guideBadgeText: {
     fontFamily: FONTS.bodyBold,
     fontSize: 9.5,
     fontWeight: '800',
     letterSpacing: 0.6,
   },
-  rrmaMainTitle: {
+  guideMainTitle: {
     fontFamily: FONTS.sectionHeader,
     fontSize: 16,
     fontWeight: '700',
     marginTop: 2,
   },
-  rrmaIntroText: {
+  guideIntroText: {
     fontFamily: FONTS.body,
     fontSize: 11.5,
     lineHeight: 17,
   },
-  rrmaDivider: {
+  guideDivider: {
     height: 1,
     marginVertical: 4,
   },
-  rrmaStepItem: {
+  guideStepItem: {
     flexDirection: 'row',
     gap: 12,
     marginBottom: SPACING.sm + 2,
   },
-  rrmaStepBadge: {
+  guideStepBadge: {
     width: 28,
     height: 28,
     borderRadius: 14,
@@ -1989,37 +1928,37 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: 2,
   },
-  rrmaStepLetter: {
+  guideStepLetter: {
     fontFamily: FONTS.bodyBold,
     fontSize: 13,
     fontWeight: '800',
   },
-  rrmaStepContent: {
+  guideStepContent: {
     flex: 1,
     gap: 3,
   },
-  rrmaStepTitleRow: {
+  guideStepTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 8,
   },
-  rrmaStepName: {
+  guideStepName: {
     fontFamily: FONTS.bodyBold,
     fontSize: 12,
     fontWeight: '800',
     letterSpacing: 0.5,
   },
-  rrmaStepTag: {
+  guideStepTag: {
     fontFamily: FONTS.bodyItalic,
     fontSize: 10.5,
   },
-  rrmaStepDesc: {
+  guideStepDesc: {
     fontFamily: FONTS.body,
     fontSize: 11,
     lineHeight: 16,
   },
-  rrmaStepPrompt: {
+  guideStepPrompt: {
     fontFamily: FONTS.bodyItalic,
     fontSize: 10.5,
     lineHeight: 15,

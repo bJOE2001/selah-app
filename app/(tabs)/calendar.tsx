@@ -13,7 +13,6 @@ import { FONTS } from '../../src/design-system/tokens/typography';
 import { SPACING, RADIUS, SHADOWS } from '../../src/design-system/tokens/spacing';
 import {
   useIsPremium,
-  FREE_JOURNAL_PAGE_LIMIT,
   PaywallModal,
 } from '../../src/entitlements';
 
@@ -30,14 +29,10 @@ export default function CalendarTabScreen() {
 
   const isPremium = useIsPremium();
   const totalEntriesCount = (entries || []).length;
-  const isPageLimitReached = !isPremium && totalEntriesCount >= FREE_JOURNAL_PAGE_LIMIT;
+  const isPageLimitReached = false;
 
   const handleStartNew = () => {
     try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
-    if (isPageLimitReached) {
-      setIsPaywallOpen(true);
-      return;
-    }
     router.push('/devotional/new');
   };
 

@@ -51,7 +51,7 @@ export function ShareCardModal({
       if (Platform.OS === 'web') {
         promptModal.info(
           'Aesthetic Card Ready',
-          `"${devotional.rhemaText}" — ${devotional.rhemaReference}\n\n(Note: Native image snapshot is optimized on Android and iOS devices).`
+          `"${devotional.notes?.substring(0, 50)}..."\n\n(Note: Native image snapshot is optimized on Android and iOS devices).`
         );
         setIsExporting(false);
         return;
@@ -83,9 +83,7 @@ export function ShareCardModal({
   };
 
   const isVOTD = devotional.isVerseOfTheDay || devotional.id === 'verse-of-the-day';
-  const hasReflection = Boolean(
-    devotional.reflection || devotional.motivation || devotional.application
-  );
+  const hasReflection = Boolean(devotional.notes && !isVOTD);
 
   return (
     <Modal

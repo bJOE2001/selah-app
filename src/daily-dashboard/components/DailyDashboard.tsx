@@ -15,11 +15,7 @@ import { ContinueReadingCard } from './ContinueReadingCard';
 import { useTheme } from '../../design-system';
 import { FONTS } from '../../design-system/tokens/typography';
 import { SPACING, RADIUS } from '../../design-system/tokens/spacing';
-import {
-  useIsPremium,
-  FREE_JOURNAL_PAGE_LIMIT,
-  PaywallModal,
-} from '../../entitlements';
+
 
 export interface DailyDashboardProps {
   onShareEntry?: (id: string) => void;
@@ -32,9 +28,6 @@ export function DailyDashboard({ onShareEntry }: DailyDashboardProps) {
   const { colors, isDark } = useTheme();
   const { data: entries } = useRecentDevotionals(20);
   const { reset } = useDraftStore();
-  const [isPaywallOpen, setIsPaywallOpen] = useState(false);
-
-  const isPremium = useIsPremium();
   const { lastBookId, lastBookName, lastChapter, lastReadAt } = useReadingStore();
 
   const now = new Date();
@@ -146,10 +139,6 @@ export function DailyDashboard({ onShareEntry }: DailyDashboardProps) {
         {/* 3. Bento Action Hub: Begin Devotion & Holy Scripture */}
         <QuickEntry
           onStartDevotion={() => {
-            if (!isPremium && (entries || []).length >= FREE_JOURNAL_PAGE_LIMIT) {
-              setIsPaywallOpen(true);
-              return;
-            }
             reset();
             router.push('/devotional/new');
           }}
@@ -205,12 +194,7 @@ export function DailyDashboard({ onShareEntry }: DailyDashboardProps) {
         ) : null}
       </ScrollView>
 
-      {/* Selah Grace Paywall Modal */}
-      <PaywallModal
-        visible={isPaywallOpen}
-        onClose={() => setIsPaywallOpen(false)}
-        triggerFeature="Unlimited Devotional Pages (30/30 Limit Reached)"
-      />
+
     </View>
   );
 }

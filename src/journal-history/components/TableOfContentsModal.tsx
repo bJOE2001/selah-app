@@ -22,7 +22,6 @@ export interface TableOfContentsModalProps {
   totalPages: number;
   onSelectPage: (pageIndex: number) => void;
   onStartNew: () => void;
-  onOpenPrint?: () => void;
 }
 
 export function TableOfContentsModal({
@@ -33,7 +32,6 @@ export function TableOfContentsModal({
   totalPages,
   onSelectPage,
   onStartNew,
-  onOpenPrint,
 }: TableOfContentsModalProps) {
   const { colors, isDark } = useTheme();
   const [pageInput, setPageInput] = useState('');
@@ -190,7 +188,7 @@ export function TableOfContentsModal({
                       Latest Entry (Page {entries.length})
                     </Text>
                     <Text style={[styles.shortcutSub, { color: colors.inkSecondary }]}>
-                      {entries[entries.length - 1]?.rhemaReference || 'Most recent reflection'}
+                      {entries[entries.length - 1]?.notesPreview?.substring(0, 30) || 'Most recent entry'}
                     </Text>
                   </View>
                 </Pressable>
@@ -216,7 +214,7 @@ export function TableOfContentsModal({
                       First Entry (Page 1)
                     </Text>
                     <Text style={[styles.shortcutSub, { color: colors.inkSecondary }]}>
-                      {entries[0]?.rhemaReference || 'Where journey started'}
+                      {entries[0]?.notesPreview?.substring(0, 30) || 'Where journey started'}
                     </Text>
                   </View>
                 </Pressable>
@@ -246,36 +244,7 @@ export function TableOfContentsModal({
                 </View>
               </Pressable>
 
-              {/* 5. Print Hardbound Journal */}
-              {onOpenPrint ? (
-                <Pressable
-                  onPress={() => {
-                    onClose();
-                    setTimeout(() => {
-                      onOpenPrint();
-                    }, 200);
-                  }}
-                  style={[
-                    styles.shortcutCard,
-                    {
-                      backgroundColor: isDark ? '#23201D' : '#FAF6F0',
-                      borderColor: colors.brandGreen + '50',
-                    },
-                  ]}
-                >
-                  <View style={[styles.shortcutIconCircle, { backgroundColor: colors.brandGreen }]}>
-                    <Ionicons name="print" size={14} color="#FFFFFF" />
-                  </View>
-                  <View style={styles.shortcutTextCol}>
-                    <Text style={[styles.shortcutTitle, { color: colors.inkPrimary }]}>
-                      Print Hardbound Journal
-                    </Text>
-                    <Text style={[styles.shortcutSub, { color: colors.brandGreen }]}>
-                      Export Print-Ready PDF Book
-                    </Text>
-                  </View>
-                </Pressable>
-              ) : null}
+              {/* Removed Print Hardbound Journal Button */}
             </View>
           </View>
 

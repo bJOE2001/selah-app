@@ -42,8 +42,6 @@ export const DEFAULT_ENTITLEMENT: EntitlementInfo = {
   willRenew: false,
 };
 
-/** Maximum number of free journal pages before Grace upgrade is required */
-export const FREE_JOURNAL_PAGE_LIMIT = 30;
 
 /**
  * Feature flags gated behind premium.
