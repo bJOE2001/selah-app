@@ -34,9 +34,12 @@ export function EntryCard({ entry, onPress, onShare, onDelete }: EntryCardProps)
     onPress();
   };
 
-  const lines = entry.notesPreview.split('\n');
-  const title = lines[0] || 'Empty Entry';
-  const preview = lines.slice(1).join(' ').trim() || title;
+  const fullText = (entry.notes || entry.notesPreview || '').trim();
+  const rawLines = fullText.split('\n').map((l) => l.trim()).filter(Boolean);
+  const hasMultipleLines = rawLines.length > 1;
+
+  const title = rawLines[0] || 'Empty Entry';
+  const preview = hasMultipleLines ? rawLines.slice(1).join(' ').trim() : '';
 
   return (
     <Pressable
@@ -118,13 +121,24 @@ export function EntryCard({ entry, onPress, onShare, onDelete }: EntryCardProps)
         </View>
       </View>
 
-      <Text style={[styles.titleText, { color: colors.inkPrimary }]} numberOfLines={1}>
+      <Text
+        style={[
+          styles.titleText,
+          {
+            color: colors.inkPrimary,
+            marginBottom: preview ? 4 : 0,
+          },
+        ]}
+        numberOfLines={preview ? 1 : 3}
+      >
         {title}
       </Text>
 
-      <Text style={[styles.previewText, { color: colors.inkSecondary }]} numberOfLines={2}>
-        {preview}
-      </Text>
+      {preview ? (
+        <Text style={[styles.previewText, { color: colors.inkSecondary }]} numberOfLines={2}>
+          {preview}
+        </Text>
+      ) : null}
     </Pressable>
   );
 }
@@ -180,6 +194,7 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.sectionHeader,
     fontSize: 15,
     fontWeight: '700',
+    lineHeight: 21,
     marginBottom: 4,
   },
   previewText: {

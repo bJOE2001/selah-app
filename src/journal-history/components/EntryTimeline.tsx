@@ -68,9 +68,8 @@ export function EntryTimeline({
     }
     if (!searchQuery.trim()) return true;
     const q = searchQuery.toLowerCase();
-    return (
-      (e.notesPreview && e.notesPreview.toLowerCase().includes(q))
-    );
+    const noteContent = (e.notes || e.notesPreview || '').toLowerCase();
+    return noteContent.includes(q);
   });
 
   const now = new Date();

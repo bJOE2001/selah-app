@@ -391,7 +391,7 @@ const styles = StyleSheet.create({
     padding: SPACING.md,
   },
   backdropPressable: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   modalCard: {
     width: '100%',

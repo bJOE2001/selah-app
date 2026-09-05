@@ -49,6 +49,13 @@
           "color": "#377333"
         }
       ],
+      [
+        "expo-navigation-bar",
+        {
+          "style": "auto",
+          "enforceContrast": false
+        }
+      ],
       "expo-asset",
       "expo-font",
       "expo-image",

@@ -1,11 +1,16 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
-import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { FONTS } from '../tokens/typography';
 import { SPACING, RADIUS } from '../tokens/spacing';
 import { useTheme } from '../theme/useTheme';
+
+export interface ModernTabBarProps {
+  state: any;
+  descriptors: any;
+  navigation: any;
+}
 
 interface TabConfig {
   name: string;
@@ -41,7 +46,7 @@ const TAB_CONFIGS: Record<string, TabConfig> = {
   },
 };
 
-export function ModernTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
+export function ModernTabBar({ state, descriptors, navigation }: ModernTabBarProps) {
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
 
@@ -82,7 +87,7 @@ export function ModernTabBar({ state, descriptors, navigation }: BottomTabBarPro
             },
           ]}
         >
-          {state.routes.map((route, index) => {
+          {state.routes.map((route: any, index: number) => {
             const { options } = descriptors[route.key];
             const isFocused = state.index === index;
             const config = TAB_CONFIGS[route.name] || {

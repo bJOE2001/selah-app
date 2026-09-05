@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Image, Animated, Easing } from 'react-native';
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useTheme } from '../theme/useTheme';
 import { FONTS } from '../tokens/typography';
@@ -43,10 +43,9 @@ export function AppOpeningScreen() {
   }, [fadeAnim, pulseAnim]);
 
   return (
-    <SafeAreaProvider style={{ flex: 1, backgroundColor: colors.paperBg }}>
+    <View style={{ flex: 1, backgroundColor: colors.paperBg }}>
       <StatusBar
         style={isDark ? 'light' : 'dark'}
-        backgroundColor={colors.paperBg}
       />
       <View style={[styles.container, { backgroundColor: colors.paperBg }]}>
         <Animated.View
@@ -127,7 +126,7 @@ export function AppOpeningScreen() {
           </View>
         </View>
       </View>
-    </SafeAreaProvider>
+    </View>
   );
 }
 
