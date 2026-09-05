@@ -15,10 +15,10 @@ import {
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
-import { usePrivacyAuthStore } from '../../privacy-lock/store';
-import { useBiometricAuth } from '../../privacy-lock/hooks';
+import Constants from 'expo-constants';
 import { useTranslationStore } from '../../bible-data/translationStore';
 import { useDownloadStore } from '../../bible-data/downloadStore';
 import { TranslationPickerModal } from '../../bible-reader/components/TranslationPickerModal';
@@ -146,10 +146,6 @@ export function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const { colors, isDark, themeMode, setThemeMode } = useTheme();
 
-  // Privacy lock
-  const { isLockEnabled, setLockEnabled, lock } = usePrivacyAuthStore();
-  const { authenticate } = useBiometricAuth();
-
   // Translations & Downloads
   const { selectedTranslation, setTranslation } = useTranslationStore();
   const {
@@ -187,8 +183,6 @@ export function SettingsScreen() {
   // Entitlements & Subscription
   const isPremium = useIsPremium();
   const currentTier = useCurrentTier();
-  const devOverride = useEntitlementStore((s) => s.devOverride);
-  const setDevOverride = useEntitlementStore((s) => s.setDevOverride);
   const [isPaywallOpen, setIsPaywallOpen] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
 
@@ -264,31 +258,6 @@ export function SettingsScreen() {
   useEffect(() => {
     initDownloads();
   }, [initDownloads]);
-
-  // Handle Lock toggle
-  const handleToggleLock = async (value: boolean) => {
-    if (value) {
-      const success = await authenticate();
-      if (success) {
-        setLockEnabled(true);
-        toast.success(
-          'Privacy Lock Enabled',
-          'Your devotional journal is now protected with biometrics.'
-        );
-      } else {
-        toast.error(
-          'Authentication Required',
-          'Could not verify biometrics to enable app lock.'
-        );
-      }
-    } else {
-      const success = await authenticate();
-      if (success) {
-        setLockEnabled(false);
-        toast.info('Privacy Lock Disabled', 'App lock has been turned off.');
-      }
-    }
-  };
 
   // Handle Export Journal
   const handleExportJournal = async () => {
@@ -384,8 +353,19 @@ export function SettingsScreen() {
     <View style={[styles.container, { backgroundColor: colors.paperBg }]}>
       {/* Pinned Top App Bar */}
       <View style={[styles.topAppBar, { paddingTop: Math.max(insets.top, 16) + 4, backgroundColor: colors.paperBg }]}>
-        <Pressable onPress={() => router.back()} style={styles.backBtn} hitSlop={8}>
-          <Ionicons name="chevron-back" size={22} color={colors.brandGreen} />
+        <Pressable
+          onPress={() => {
+            try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+            router.back();
+          }}
+          style={({ pressed }) => [
+            styles.backBtn,
+            { backgroundColor: colors.cardBg, borderColor: colors.paperLine },
+            pressed && { opacity: 0.8 },
+          ]}
+          hitSlop={8}
+        >
+          <Ionicons name="chevron-back" size={15} color={colors.brandGreen} />
           <Text style={[styles.backBtnText, { color: colors.brandGreen }]}>Back</Text>
         </Pressable>
 
@@ -396,7 +376,7 @@ export function SettingsScreen() {
           <Text style={[styles.headerTitle, { color: colors.inkPrimary }]}>SETTINGS</Text>
         </View>
 
-        <View style={{ width: 60 }} />
+        <View style={{ width: 68 }} />
       </View>
 
       <ScrollView
@@ -469,7 +449,7 @@ export function SettingsScreen() {
                   <Text style={[styles.gracePlanTitle, { color: colors.inkPrimary }]}>
                     {isPremium
                       ? currentTier === 'patron_lifetime'
-                        ? 'Founding Patron (Lifetime)'
+                        ? 'Lifetime Pass'
                         : 'Selah Grace Active'
                       : 'Free Plan (Guest)'}
                   </Text>
@@ -481,8 +461,8 @@ export function SettingsScreen() {
                 </View>
                 <Text style={[styles.gracePlanSubtitle, { color: colors.inkSecondary }]}>
                   {isPremium
-                    ? 'Cloud Vault, Luxury Leather Covers & Watermark-Free HD Cards unlocked.'
-                    : 'Offline KJV Bible & local notes. Upgrade for Cloud Vault & Luxury Covers.'}
+                    ? 'Automatic Cloud Backup & Luxury Journal Covers unlocked.'
+                    : 'Offline KJV Bible & local notes. Upgrade for Cloud Backup & Luxury Covers.'}
                 </Text>
               </View>
             </View>
@@ -525,30 +505,6 @@ export function SettingsScreen() {
               </View>
               <Ionicons name="chevron-forward" size={16} color={colors.inkMuted} />
             </Pressable>
-
-            {/* Dev Mode Override Toggle (__DEV__ only) */}
-            {__DEV__ && (
-              <>
-                <View style={[styles.divider, { backgroundColor: colors.paperLine }]} />
-                <View style={styles.rowItem}>
-                  <View style={styles.rowLeft}>
-                    <View style={[styles.iconBox, { backgroundColor: '#FFF3E0' }]}>
-                      <Ionicons name="code-slash" size={17} color="#E65100" />
-                    </View>
-                    <View style={styles.rowTextCol}>
-                      <Text style={[styles.rowTitle, { color: '#E65100' }]}>[DEV] Mock Premium Access</Text>
-                      <Text style={[styles.rowSubtitle, { color: colors.inkSecondary }]}>
-                        Toggle simulated Grace entitlement for testing
-                      </Text>
-                    </View>
-                  </View>
-                  <JournalToggle
-                    value={devOverride}
-                    onValueChange={(val) => setDevOverride(val)}
-                  />
-                </View>
-              </>
-            )}
           </View>
         </View>
 
@@ -735,59 +691,7 @@ export function SettingsScreen() {
           </View>
         </View>
 
-        {/* ═══════════ SECTION 2: PRIVACY & SECURITY ═══════════ */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Ionicons name="shield-checkmark" size={16} color={colors.brandGreen} />
-            <Text style={[styles.sectionTitle, { color: colors.inkMuted }]}>PRIVACY & SECURITY</Text>
-          </View>
-
-          <View style={[styles.card, { backgroundColor: colors.cardBg, borderColor: colors.paperLine }]}>
-            <View style={styles.rowItem}>
-              <View style={styles.rowLeft}>
-                <View style={[styles.iconBox, { backgroundColor: colors.brandGreenLight }]}>
-                  <Ionicons name="lock-closed" size={17} color={colors.brandGreen} />
-                </View>
-                <View style={styles.rowTextCol}>
-                  <Text style={[styles.rowTitle, { color: colors.inkPrimary }]}>App Lock</Text>
-                  <Text style={[styles.rowSubtitle, { color: colors.inkSecondary }]}>
-                    Require biometrics / passcode on launch
-                  </Text>
-                </View>
-              </View>
-              <JournalToggle
-                value={isLockEnabled}
-                onValueChange={handleToggleLock}
-              />
-            </View>
-
-            {isLockEnabled ? (
-              <>
-                <View style={[styles.divider, { backgroundColor: colors.paperLine }]} />
-                <Pressable
-                  onPress={() => {
-                    lock();
-                    toast.info('Journal Locked', 'App will require authentication.');
-                  }}
-                  style={styles.rowItem}
-                >
-                  <View style={styles.rowLeft}>
-                    <View style={[styles.iconBox, { backgroundColor: isDark ? '#33201D' : '#FFF0ED' }]}>
-                      <Ionicons name="key" size={17} color={colors.tapeRhema} />
-                    </View>
-                    <View style={styles.rowTextCol}>
-                      <Text style={[styles.rowTitle, { color: colors.inkPrimary }]}>Lock Now</Text>
-                      <Text style={[styles.rowSubtitle, { color: colors.inkSecondary }]}>Lock application immediately</Text>
-                    </View>
-                  </View>
-                  <Ionicons name="chevron-forward" size={16} color={colors.inkMuted} />
-                </Pressable>
-              </>
-            ) : null}
-          </View>
-        </View>
-
-        {/* ═══════════ SECTION 3: BIBLE & READING ═══════════ */}
+        {/* ═══════════ SECTION 2: BIBLE & READING ═══════════ */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Ionicons name="book" size={16} color={colors.brandGreen} />
@@ -1075,7 +979,7 @@ export function SettingsScreen() {
                 <View style={styles.rowTextCol}>
                   <Text style={[styles.rowTitle, { color: colors.inkPrimary }]}>Export Journal Backup</Text>
                   <Text style={[styles.rowSubtitle, { color: colors.inkSecondary }]}>
-                    Save all reflections as JSON file
+                    Save all devotions as JSON file
                   </Text>
                 </View>
               </View>
@@ -1232,7 +1136,7 @@ export function SettingsScreen() {
               onPress={() => {
                 promptModal.info(
                   'Privacy Policy',
-                  'Selah is built on a Zero-Knowledge & Local-First philosophy:\n\n1. All scripture readings and local notes remain on your device by default.\n2. When using Cloud Vault, your reflections are encrypted with AES-256 before leaving your device.\n3. We never sell, track, or harvest personal devotional data.\n\nFor questions, contact support@selah.app'
+                  'Selah is built on a Zero-Knowledge & Local-First philosophy:\n\n1. All scripture readings and local notes remain on your device by default.\n2. When using Cloud Vault, your devotions are encrypted with AES-256 before leaving your device.\n3. We never sell, track, or harvest personal devotional data.\n\nFor questions, contact support@selah.app'
                 );
               }}
               style={styles.rowItem}
@@ -1279,7 +1183,7 @@ export function SettingsScreen() {
             {/* Version & Soli Deo Gloria Footer */}
             <View style={{ alignItems: 'center', paddingTop: 14, paddingBottom: 4 }}>
               <Text style={{ fontFamily: FONTS.body, fontSize: 11, color: colors.inkMuted }}>
-                Selah: Daily Bible & Devotions • Version 1.0.1 (Build 2)
+                {`Selah: Daily Bible & Devotions • Version ${Constants.expoConfig?.version || '1.0.0'} (Build ${Constants.expoConfig?.android?.versionCode || 1})`}
               </Text>
               <Text style={{ fontFamily: FONTS.scriptureItalic, fontSize: 11, color: colors.inkSecondary, marginTop: 3 }}>
                 Soli Deo Gloria ✦ To God Alone Be the Glory
@@ -1365,12 +1269,16 @@ const styles = StyleSheet.create({
   backBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
-    width: 60,
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: RADIUS.pill,
+    borderWidth: 1,
+    ...SHADOWS.subtle,
   },
   backBtnText: {
     fontFamily: FONTS.bodyBold,
-    fontSize: 14,
+    fontSize: 12.5,
     fontWeight: '700',
   },
   headerTitleGroup: {

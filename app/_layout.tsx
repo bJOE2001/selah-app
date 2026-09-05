@@ -29,7 +29,7 @@ import * as SystemUI from "expo-system-ui";
 import { Appearance, Image, LogBox, Platform, Text, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
-// Ignore benign Expo Go warnings (SDK 53+ notifications, Android Edge-to-Edge system bar warnings, and React 19 useLinking unmounted state update)
+// Ignore benign Expo Go warnings (SDK 53+ notifications, Android Edge-to-Edge system bar warnings, HMR sync, RevenueCat Preview mode, and React 19 useLinking unmounted state update)
 LogBox.ignoreLogs([
   "expo-notifications: Android Push notifications",
   "`expo-notifications` functionality is not fully supported in Expo Go",
@@ -38,6 +38,10 @@ LogBox.ignoreLogs([
   "`setBorderColorAsync` is not supported with edge-to-edge enabled",
   "is not supported with edge-to-edge enabled",
   "Can't perform a React state update on a component that hasn't mounted yet",
+  "Expo CLI and the android client are out of sync",
+  "Reload to reconnect",
+  "[RevenueCat] [getCustomerInfo] This method is available but has no effect in Preview API mode",
+  "Preview API mode",
 ]);
 
 if (__DEV__) {
@@ -60,8 +64,6 @@ import {
     AppOpeningScreen,
     useTheme,
 } from "../src/design-system";
-import { LockScreen } from "../src/privacy-lock/components/LockScreen";
-import { usePrivacyAuthStore } from "../src/privacy-lock/store";
 import { configureNotificationHandler, syncAllReminders } from "../src/notifications";
 import { useSettingsStore } from "../src/settings/store";
 import { initRevenueCat } from "../src/entitlements";
@@ -98,8 +100,7 @@ export default function RootLayout() {
     Caveat_700Bold,
   });
 
-  const { isUnlocked, isLockEnabled } = usePrivacyAuthStore();
-  const { isDark, colors, themeMode } = useTheme();
+  const { isDark, colors } = useTheme();
 
   useEffect(() => {
     // Display the animated AppOpeningScreen on launch
@@ -113,9 +114,9 @@ export default function RootLayout() {
   useEffect(() => {
     async function prepare() {
       try {
-        if (typeof Appearance?.setColorScheme === "function" && themeMode !== "system") {
+        if (typeof Appearance?.setColorScheme === "function") {
           try {
-            Appearance.setColorScheme(isDark ? "dark" : "light");
+            Appearance.setColorScheme("unspecified");
           } catch {}
         }
         if (Platform.OS === "android") {
@@ -140,11 +141,6 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
-    if (typeof Appearance?.setColorScheme === "function" && themeMode !== "system") {
-      try {
-        Appearance.setColorScheme(isDark ? "dark" : "light");
-      } catch {}
-    }
     if (Platform.OS === "android") {
       const syncNavBar = async () => {
         try {
@@ -158,7 +154,7 @@ export default function RootLayout() {
     } else if (Platform.OS === "web" && typeof document !== "undefined") {
       document.body.style.backgroundColor = colors.paperBg;
     }
-  }, [colors.paperBg, isDark, themeMode]);
+  }, [colors.paperBg, isDark]);
 
   const {
     morningReminderEnabled,
@@ -206,8 +202,6 @@ export default function RootLayout() {
 
         {(!fontsLoaded && !fontError) || !dbReady || !isOpeningComplete ? (
           <AppOpeningScreen />
-        ) : isLockEnabled && !isUnlocked ? (
-          <LockScreen />
         ) : (
           <Stack
           screenOptions={{

@@ -2,18 +2,18 @@
   "expo": {
     "name": "Selah",
     "slug": "selah-app",
-    "version": "1.0.1",
+    "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/app-icon.jpg",
     "scheme": "selah",
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.selah.app"
+      "bundleIdentifier": "com.selah.devotional"
     },
     "android": {
-      "package": "com.selah.app",
-      "versionCode": 2,
+      "package": "com.selah.devotional",
+      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#377333",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -71,10 +71,14 @@
     },
     "extra": {
       "router": {},
+      "expo-navigation-bar": {
+        "enforceContrast": false,
+        "style": "auto"
+      },
       "eas": {
-        "projectId": "9243b46e-1e22-48a2-aa40-4c45c1646a96"
+        "projectId": "badb48f8-f3d2-43e4-9357-8cd374e9da4e"
       }
     },
-    "owner": "dsadada"
+    "owner": "belly01"
   }
 }

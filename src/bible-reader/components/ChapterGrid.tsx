@@ -6,7 +6,7 @@ import { Book } from '../../bible-data/types';
 import { useReadingStore } from '../../bible-data/readingStore';
 import { useTheme } from '../../design-system';
 import { FONTS } from '../../design-system/tokens/typography';
-import { SPACING } from '../../design-system/tokens/spacing';
+import { SPACING, RADIUS, SHADOWS } from '../../design-system/tokens/spacing';
 
 export interface ChapterGridProps {
   book: Book;
@@ -78,10 +78,13 @@ export function ChapterGrid({ book, onSelectChapter }: ChapterGridProps) {
               style={({ pressed }) => [
                 styles.chapterTile,
                 {
-                  backgroundColor: isDark ? '#1C1916' : '#F3ECE1',
+                  backgroundColor: colors.cardBg,
+                  borderColor: isLastRead ? colors.brandGreen : colors.paperLine,
+                  borderWidth: 1,
                 },
                 isLastRead && {
                   backgroundColor: colors.brandGreen,
+                  ...SHADOWS.subtle,
                 },
                 pressed && {
                   opacity: 0.8,
@@ -119,8 +122,8 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   bookTitleHeading: {
-    fontFamily: FONTS.sectionHeader,
-    fontSize: 26,
+    fontFamily: FONTS.scriptureBold,
+    fontSize: 28,
     fontWeight: '700',
     letterSpacing: -0.2,
   },
@@ -141,6 +144,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
+    ...SHADOWS.subtle,
   },
   chapterNumber: {
     fontFamily: FONTS.sectionHeader,

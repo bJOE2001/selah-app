@@ -12,23 +12,23 @@ import { useRecentDevotionals } from '../../devotional-core/hooks';
 import { useDraftStore } from '../../devotional-core/store';
 import { useReadingStore } from '../../bible-data/readingStore';
 import { ContinueReadingCard } from './ContinueReadingCard';
+import { MilestoneCelebrationCard } from './MilestoneCelebrationCard';
+import { useIsPremium, PaywallModal } from '../../entitlements';
 import { useTheme } from '../../design-system';
 import { FONTS } from '../../design-system/tokens/typography';
-import { SPACING, RADIUS } from '../../design-system/tokens/spacing';
+import { SPACING, RADIUS, SHADOWS } from '../../design-system/tokens/spacing';
 
 
-export interface DailyDashboardProps {
-  onShareEntry?: (id: string) => void;
-  onShareQuote?: (verse: { text: string; reference: string }) => void;
-}
-
-export function DailyDashboard({ onShareEntry }: DailyDashboardProps) {
+export function DailyDashboard() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
+  const isPremium = useIsPremium();
   const { data: entries } = useRecentDevotionals(20);
   const { reset } = useDraftStore();
   const { lastBookId, lastBookName, lastChapter, lastReadAt } = useReadingStore();
+  const [isPaywallOpen, setIsPaywallOpen] = useState(false);
+  const [paywallFeature, setPaywallFeature] = useState('Automatic Cloud Backup');
 
   const now = new Date();
   const formattedDate = now.toLocaleDateString('en-US', {
@@ -160,7 +160,19 @@ export function DailyDashboard({ onShareEntry }: DailyDashboardProps) {
           />
         ) : null}
 
-        {/* 5. Recent Devotions Section (Latest 3) */}
+        {/* 5. Spiritual Milestone Celebration (Free users only) */}
+        {!isPremium && (entries || []).length > 0 ? (
+          <MilestoneCelebrationCard
+            totalEntries={(entries || []).length}
+            streakDays={currentWeekDays.length}
+            onUpgrade={() => {
+              setPaywallFeature('Milestone: Automatic Cloud Backup');
+              setIsPaywallOpen(true);
+            }}
+          />
+        ) : null}
+
+        {/* 6. Recent Devotions Section (Latest 3) */}
         {(entries || []).length > 0 ? (
           <View style={styles.recentSection}>
             <View style={styles.sectionHeaderRow}>
@@ -182,19 +194,70 @@ export function DailyDashboard({ onShareEntry }: DailyDashboardProps) {
               </Pressable>
             </View>
 
+            {/* Storage Awareness Status Pill */}
+            <Pressable
+              onPress={() => {
+                if (!isPremium) {
+                  try {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  } catch {}
+                  setPaywallFeature('Automatic Cloud Backup');
+                  setIsPaywallOpen(true);
+                }
+              }}
+              disabled={isPremium}
+              style={({ pressed }) => [
+                styles.storageStatusPill,
+                {
+                  backgroundColor: isPremium
+                    ? (isDark ? 'rgba(82, 167, 82, 0.12)' : '#EAF4EC')
+                    : (isDark ? 'rgba(230, 188, 92, 0.12)' : '#FAF4EA'),
+                  borderColor: isPremium
+                    ? (isDark ? 'rgba(82, 167, 82, 0.28)' : '#D0E5D3')
+                    : (isDark ? 'rgba(230, 188, 92, 0.28)' : '#EFE2CC'),
+                },
+                pressed && !isPremium && { opacity: 0.75 },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={isPremium ? "Cloud Backup Active" : "Stored locally on this device. Tap to back up."}
+            >
+              <Ionicons
+                name={isPremium ? 'cloud-done-outline' : 'phone-portrait-outline'}
+                size={12}
+                color={isPremium ? colors.brandGreen : colors.brandGold}
+              />
+              <Text
+                style={[
+                  styles.storageStatusText,
+                  { color: isPremium ? colors.brandGreen : colors.inkSecondary },
+                ]}
+              >
+                {isPremium
+                  ? 'Cloud Backup Active · Synced & Protected'
+                  : `Stored on this device only (${(entries || []).length === 1 ? '1 devotion' : `${(entries || []).length} devotions`}) · Tap to back up`}
+              </Text>
+              {!isPremium ? (
+                <Ionicons name="arrow-forward" size={10} color={colors.inkMuted} />
+              ) : null}
+            </Pressable>
+
             {(entries || []).slice(0, 3).map((entry) => (
               <EntryCard
                 key={entry.id}
                 entry={entry}
                 onPress={() => router.push(`/devotional/${entry.id}` as any)}
-                onShare={onShareEntry ? () => onShareEntry(entry.id) : undefined}
               />
             ))}
           </View>
         ) : null}
       </ScrollView>
 
-
+      {/* Selah Grace Paywall Modal */}
+      <PaywallModal
+        visible={isPaywallOpen}
+        onClose={() => setIsPaywallOpen(false)}
+        triggerFeature={paywallFeature}
+      />
     </View>
   );
 }
@@ -214,21 +277,21 @@ const styles = StyleSheet.create({
   brandTitleGroup: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 7,
+    gap: 8,
   },
   brandIconCircle: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 0.8,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   brandTitle: {
-    fontFamily: FONTS.bodyBold,
-    fontSize: 12,
-    fontWeight: '800',
-    letterSpacing: 0.8,
+    fontFamily: FONTS.sectionHeader,
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: 1.4,
   },
   topRightActions: {
     flexDirection: 'row',
@@ -236,27 +299,29 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   settingsIconButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    ...SHADOWS.subtle,
   },
   topDateBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 9,
-    paddingVertical: 4,
+    gap: 6,
+    paddingHorizontal: 11,
+    paddingVertical: 5,
     borderRadius: RADIUS.pill,
     borderWidth: 1,
+    ...SHADOWS.subtle,
   },
   topDateText: {
     fontFamily: FONTS.bodyBold,
-    fontSize: 10,
+    fontSize: 10.5,
     fontWeight: '700',
-    textTransform: 'uppercase',
+    letterSpacing: 0.3,
   },
   container: {
     flex: 1,
@@ -293,5 +358,22 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.bodyBold,
     fontSize: 11.5,
     fontWeight: '700',
+  },
+  storageStatusPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: RADIUS.pill,
+    borderWidth: 1,
+    gap: 6,
+    marginBottom: SPACING.sm,
+  },
+  storageStatusText: {
+    fontFamily: FONTS.bodyBold,
+    fontWeight: '600',
+    fontSize: 11,
+    letterSpacing: 0.1,
   },
 });

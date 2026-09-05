@@ -17,7 +17,6 @@ import { RuledInput } from "../../design-system/primitives/RuledInput";
 import { RADIUS, SHADOWS, SPACING } from "../../design-system/tokens/spacing";
 import { FONTS } from "../../design-system/tokens/typography";
 import {
-  useDeleteDevotional,
   useSaveDevotional,
 } from "../../devotional-core/hooks";
 import { useDraftStore } from "../../devotional-core/store";
@@ -40,39 +39,11 @@ export function NotebookEditor({ onSaveSuccess }: NotebookEditorProps) {
   } = useDraftStore();
 
   const saveMutation = useSaveDevotional();
-  const deleteMutation = useDeleteDevotional();
-
-  const handleDelete = () => {
-    if (!editingDevotionalId) return;
-    promptModal.confirm({
-      title: "Delete Journal Entry?",
-      message:
-        "Are you sure you want to delete this journal entry? This action cannot be undone.",
-      confirmText: "Delete Entry",
-      cancelText: "Keep Writing",
-      isDestructive: true,
-      onConfirm: async () => {
-        try {
-          await deleteMutation.mutateAsync(editingDevotionalId);
-          reset();
-          toast.success(
-            "Journal Deleted",
-            "Your journal entry has been deleted.",
-          );
-          router.replace("/(tabs)/journal");
-        } catch (err) {
-          console.error("Failed to delete journal:", err);
-          toast.error(
-            "Delete Error",
-            "Could not delete this entry. Please try again.",
-          );
-        }
-      },
-    });
-  };
 
   const handleSave = async () => {
-
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    } catch {}
 
     if (!notes.trim()) {
       promptModal.info(
@@ -92,7 +63,7 @@ export function NotebookEditor({ onSaveSuccess }: NotebookEditorProps) {
       reset();
       toast.success(
         editingDevotionalId ? "Journal Updated" : "Journal Saved",
-        "Your reflection has been recorded in your journal.",
+        "Your devotion has been recorded in your journal.",
       );
 
       if (onSaveSuccess) {
@@ -138,6 +109,7 @@ export function NotebookEditor({ onSaveSuccess }: NotebookEditorProps) {
         >
           <Pressable
             onPress={() => {
+              try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
               if (!notes.trim()) {
                 reset();
                 router.back();
@@ -157,51 +129,44 @@ export function NotebookEditor({ onSaveSuccess }: NotebookEditorProps) {
                 },
               });
             }}
-            style={styles.toolbarButton}
+            style={({ pressed }) => [
+              styles.cancelPillButton,
+              {
+                backgroundColor: colors.cardBg,
+                borderColor: colors.paperLine,
+              },
+              pressed && { opacity: 0.8 },
+            ]}
             hitSlop={8}
           >
-            <Ionicons name="arrow-back" size={20} color={colors.inkSecondary} />
+            <Ionicons name="arrow-back" size={15} color={colors.inkSecondary} />
             <Text
-              style={[styles.toolbarButtonText, { color: colors.inkSecondary }]}
+              style={[styles.cancelButtonText, { color: colors.inkSecondary }]}
             >
-              Cancel
+              Back
             </Text>
           </Pressable>
 
-          <View style={styles.topRightActions}>
-            {editingDevotionalId ? (
-              <Pressable
-                onPress={handleDelete}
-                style={[
-                  styles.deleteButton,
-                  {
-                    backgroundColor: isDark ? "#2A1816" : "#FDF2F0",
-                    borderColor: colors.tapeRhema + "40",
-                  },
-                ]}
-                hitSlop={8}
-                accessibilityLabel="Delete Journal"
-              >
-                <Ionicons
-                  name="trash-outline"
-                  size={16}
-                  color={colors.tapeRhema}
-                />
-              </Pressable>
-            ) : null}
+          <View style={styles.centerTitleGroup}>
+            <Text style={[styles.centerTitleText, { color: colors.inkMuted }]}>
+              {editingDevotionalId ? 'EDIT ENTRY' : 'DEVOTIONAL'}
+            </Text>
+          </View>
 
+          <View style={styles.topRightActions}>
             <Pressable
               onPress={handleSave}
-              style={[
+              style={({ pressed }) => [
                 styles.saveButton,
                 { backgroundColor: colors.brandGreen },
                 saveMutation.isPending && styles.saveButtonDisabled,
+                pressed && { opacity: 0.88 },
               ]}
               disabled={saveMutation.isPending}
             >
-              <Ionicons name="bookmark-outline" size={18} color="#FFFFFF" />
+              <Ionicons name="bookmark-outline" size={15} color="#FFFFFF" />
               <Text style={styles.saveButtonText}>
-                {saveMutation.isPending ? "Saving..." : "Save Journal"}
+                {saveMutation.isPending ? "Saving..." : "Save"}
               </Text>
             </Pressable>
           </View>
@@ -277,35 +242,46 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     zIndex: 2,
   },
-  toolbarButton: {
+  cancelPillButton: {
     flexDirection: "row",
     alignItems: "center",
-    gap: SPACING.xs,
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: RADIUS.pill,
+    borderWidth: 1,
+    ...SHADOWS.subtle,
   },
-  toolbarButtonText: {
-    fontFamily: FONTS.body,
-    fontSize: 14,
+  cancelButtonText: {
+    fontFamily: FONTS.bodyBold,
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  centerTitleGroup: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    alignItems: "center",
+    pointerEvents: "none",
+  },
+  centerTitleText: {
+    fontFamily: FONTS.bodyBold,
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 1,
   },
   topRightActions: {
     flexDirection: "row",
     alignItems: "center",
     gap: SPACING.sm,
   },
-  deleteButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
   saveButton: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: SPACING.sm,
-    paddingHorizontal: SPACING.base,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
     borderRadius: RADIUS.pill,
-    gap: SPACING.xs,
+    gap: 5,
     ...SHADOWS.subtle,
   },
   saveButtonDisabled: {
@@ -313,7 +289,7 @@ const styles = StyleSheet.create({
   },
   saveButtonText: {
     fontFamily: FONTS.bodyBold,
-    fontSize: 13,
+    fontSize: 12.5,
     color: "#FFFFFF",
     fontWeight: "700",
   },

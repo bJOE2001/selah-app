@@ -53,23 +53,29 @@ export function WeeklyStreakTracker({
             style={[
               styles.summaryBadgeContainer,
               {
-                backgroundColor: isDark ? 'rgba(82, 167, 82, 0.16)' : '#EBF6ED',
-                borderColor: isDark ? 'rgba(82, 167, 82, 0.32)' : '#D0EBD5',
+                backgroundColor: streakDays > 0
+                  ? (isDark ? 'rgba(255, 112, 67, 0.16)' : '#FFF3E0')
+                  : (isDark ? 'rgba(82, 167, 82, 0.16)' : '#EBF6ED'),
+                borderColor: streakDays > 0
+                  ? (isDark ? 'rgba(255, 112, 67, 0.35)' : '#FFE0B2')
+                  : (isDark ? 'rgba(82, 167, 82, 0.32)' : '#D0EBD5'),
               },
             ]}
           >
             <Ionicons
               name={streakDays > 0 ? 'flame' : 'leaf-outline'}
-              size={11}
-              color={streakDays > 0 ? '#E68A00' : colors.brandGreen}
+              size={12}
+              color={streakDays > 0 ? colors.flameOrange : colors.brandGreen}
             />
             <Text
               style={[
                 styles.summaryBadgeText,
-                { color: streakDays > 0 ? (isDark ? '#FBBF24' : '#C27000') : colors.brandGreen },
+                { color: streakDays > 0 ? colors.flameOrange : colors.brandGreen },
               ]}
             >
-              {streakDays > 0 ? `${streakDays} Days Consistent` : 'Start your streak'}
+              {streakDays > 0
+                ? `${streakDays} ${streakDays === 1 ? 'Day' : 'Days'} Consistent`
+                : 'Start your streak'}
             </Text>
           </View>
         </View>

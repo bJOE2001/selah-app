@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Appearance } from 'react-native';
 
 // Legacy type kept for backward compatibility during migration
 export type ScriptureFontSize = 'S' | 'M' | 'L' | 'XL';
@@ -76,7 +77,14 @@ export const useSettingsStore = create<SettingsState>()(
       journalCoverMaterial: 'linen',
       journalCoverEmblem: 'mascot',
 
-      setThemeMode: (themeMode) => set({ themeMode }),
+      setThemeMode: (themeMode) => {
+        if (typeof Appearance?.setColorScheme === 'function') {
+          try {
+            Appearance.setColorScheme('unspecified');
+          } catch {}
+        }
+        set({ themeMode });
+      },
       setFontSize: (fontSize) =>
         set({ fontSize: Math.round(Math.max(FONT_SIZE_MIN, Math.min(FONT_SIZE_MAX, fontSize))) }),
       setRedLetter: (redLetter) => set({ redLetter }),

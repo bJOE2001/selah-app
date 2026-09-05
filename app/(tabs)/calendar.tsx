@@ -5,9 +5,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Calendar } from 'react-native-calendars';
-import { useRecentDevotionals, useDevotional } from '../../src/devotional-core/hooks';
+import { useRecentDevotionals } from '../../src/devotional-core/hooks';
 import { EntryCard } from '../../src/journal-history/components/EntryCard';
-import { ShareCardModal } from '../../src/share-card';
 import { useTheme } from '../../src/design-system';
 import { FONTS } from '../../src/design-system/tokens/typography';
 import { SPACING, RADIUS, SHADOWS } from '../../src/design-system/tokens/spacing';
@@ -23,9 +22,7 @@ export default function CalendarTabScreen() {
   const { data: entries } = useRecentDevotionals(150);
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [activeFilter, setActiveFilter] = useState<'all' | 'bookmarked'>('all');
-  const [sharingId, setSharingId] = useState<string | null>(null);
   const [isPaywallOpen, setIsPaywallOpen] = useState(false);
-  const { data: sharingDevotional } = useDevotional(sharingId);
 
   const isPremium = useIsPremium();
   const totalEntriesCount = (entries || []).length;
@@ -293,7 +290,6 @@ export default function CalendarTabScreen() {
                     key={entry.id}
                     entry={entry}
                     onPress={() => router.push(`/devotional/${entry.id}` as any)}
-                    onShare={() => setSharingId(entry.id)}
                   />
                 ))}
               </View>
@@ -344,7 +340,7 @@ export default function CalendarTabScreen() {
           <View style={styles.allEntriesSection}>
             <View style={styles.allEntriesHeaderRow}>
               <Text style={[styles.allEntriesTitle, { color: colors.inkPrimary }]}>
-                Recent Devotionals
+                Recent Devotions
               </Text>
 
               {/* Filter Tabs */}
@@ -408,19 +404,11 @@ export default function CalendarTabScreen() {
                 key={entry.id}
                 entry={entry}
                 onPress={() => router.push(`/devotional/${entry.id}` as any)}
-                onShare={() => setSharingId(entry.id)}
               />
             ))}
           </View>
         ) : null}
       </ScrollView>
-
-      {/* Share Card Modal */}
-      <ShareCardModal
-        visible={!!sharingId}
-        devotional={sharingDevotional || null}
-        onClose={() => setSharingId(null)}
-      />
 
       {/* Selah Grace Paywall Modal */}
       <PaywallModal

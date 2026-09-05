@@ -129,7 +129,7 @@ export default function BibleTabScreen() {
               }}
               style={({ pressed }) => [
                 styles.versionBadge,
-                { backgroundColor: isDark ? '#1C1916' : '#F3ECE1' },
+                { backgroundColor: colors.cardBg, borderColor: colors.paperLine },
                 pressed && { opacity: 0.8 },
               ]}
               hitSlop={6}
@@ -145,7 +145,7 @@ export default function BibleTabScreen() {
               }}
               style={({ pressed }) => [
                 styles.settingsIconButton,
-                { backgroundColor: isDark ? '#1C1916' : '#F3ECE1' },
+                { backgroundColor: colors.cardBg, borderColor: colors.paperLine },
                 pressed && { opacity: 0.8 },
               ]}
               hitSlop={8}
@@ -187,7 +187,7 @@ export default function BibleTabScreen() {
               }}
               style={({ pressed }) => [
                 styles.chapterVersionBadge,
-                { backgroundColor: isDark ? '#1C1916' : '#F3ECE1' },
+                { backgroundColor: colors.cardBg, borderColor: colors.paperLine },
                 pressed && { opacity: 0.8 },
               ]}
               hitSlop={6}
@@ -349,8 +349,10 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    ...SHADOWS.subtle,
   },
   versionBadge: {
     flexDirection: 'row',
@@ -359,6 +361,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: RADIUS.pill,
+    borderWidth: 1,
+    ...SHADOWS.subtle,
   },
   versionText: {
     fontFamily: FONTS.bodyBold,
@@ -401,6 +405,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: RADIUS.pill,
+    borderWidth: 1,
+    ...SHADOWS.subtle,
   },
   chapterVersionText: {
     fontFamily: FONTS.bodyBold,

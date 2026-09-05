@@ -10,11 +10,9 @@ import { SPACING, RADIUS, SHADOWS } from '../../design-system/tokens/spacing';
 export interface EntryCardProps {
   entry: DevotionalSummary;
   onPress: () => void;
-  onShare?: () => void;
-  onDelete?: () => void;
 }
 
-export function EntryCard({ entry, onPress, onShare, onDelete }: EntryCardProps) {
+export function EntryCard({ entry, onPress }: EntryCardProps) {
   const { colors, isDark } = useTheme();
   const dateObj = new Date(entry.createdAt);
   const formattedDate = dateObj.toLocaleDateString('en-US', {
@@ -38,8 +36,10 @@ export function EntryCard({ entry, onPress, onShare, onDelete }: EntryCardProps)
   const rawLines = fullText.split('\n').map((l) => l.trim()).filter(Boolean);
   const hasMultipleLines = rawLines.length > 1;
 
-  const title = rawLines[0] || 'Empty Entry';
-  const preview = hasMultipleLines ? rawLines.slice(1).join(' ').trim() : '';
+  const title = (rawLines[0] || 'Empty Entry').replace(/\s+/g, ' ');
+  const preview = hasMultipleLines
+    ? rawLines.slice(1).join(' ').replace(/\s+/g, ' ').trim()
+    : '';
 
   return (
     <Pressable
@@ -54,6 +54,18 @@ export function EntryCard({ entry, onPress, onShare, onDelete }: EntryCardProps)
       ]}
       accessibilityRole="button"
     >
+      {/* Subtle Full-Height Left Binding Accent Spine */}
+      <View
+        style={[
+          styles.leftBindingStripe,
+          {
+            backgroundColor: entry.isBookmarked
+              ? colors.tapeRhema
+              : colors.brandGreen,
+          },
+        ]}
+      />
+
       {/* Top Header: Date & Bookmark Badge & Actions */}
       <View style={styles.header}>
         <View style={styles.dateBlock}>
@@ -82,41 +94,6 @@ export function EntryCard({ entry, onPress, onShare, onDelete }: EntryCardProps)
               <Ionicons name="bookmark" size={10} color={colors.tapeRhema} />
               <Text style={[styles.bookmarkedBadgeText, { color: colors.tapeRhema }]}>Bookmarked</Text>
             </View>
-          ) : null}
-        </View>
-
-        <View style={styles.rightActions}>
-          {onShare ? (
-            <Pressable
-              onPress={(e) => {
-                e.stopPropagation();
-                try {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                } catch {}
-                onShare();
-              }}
-              style={styles.actionIconButton}
-              hitSlop={8}
-              accessibilityLabel="Share Journal"
-            >
-              <Ionicons name="share-social-outline" size={17} color={colors.inkSecondary} />
-            </Pressable>
-          ) : null}
-          {onDelete ? (
-            <Pressable
-              onPress={(e) => {
-                e.stopPropagation();
-                try {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                } catch {}
-                onDelete();
-              }}
-              style={styles.actionIconButton}
-              hitSlop={8}
-              accessibilityLabel="Delete Journal"
-            >
-              <Ionicons name="trash-outline" size={16} color={colors.tapeRhema} />
-            </Pressable>
           ) : null}
         </View>
       </View>
@@ -148,8 +125,20 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
     padding: SPACING.base,
+    paddingLeft: SPACING.base + 5,
     marginBottom: SPACING.md - 2,
+    position: 'relative',
+    overflow: 'hidden',
     ...SHADOWS.card,
+  },
+  leftBindingStripe: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 4,
+    borderTopLeftRadius: 20,
+    borderBottomLeftRadius: 20,
   },
   cardPressed: {
     transform: [{ scale: 0.985 }],
@@ -182,25 +171,19 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.body,
     fontSize: 12.5,
   },
-  rightActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-  },
-  actionIconButton: {
-    padding: 4,
-  },
   titleText: {
     fontFamily: FONTS.sectionHeader,
-    fontSize: 15,
+    fontSize: 15.5,
     fontWeight: '700',
-    lineHeight: 21,
+    lineHeight: 22,
+    letterSpacing: 0.1,
     marginBottom: 4,
   },
   previewText: {
     fontFamily: FONTS.body,
-    fontSize: 13.5,
-    lineHeight: 19,
+    fontSize: 13,
+    lineHeight: 19.5,
+    opacity: 0.9,
   },
   bookmarkedBadge: {
     flexDirection: 'row',

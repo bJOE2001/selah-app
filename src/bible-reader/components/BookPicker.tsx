@@ -14,7 +14,7 @@ import { Book } from '../../bible-data/types';
 import { useBooks } from '../../bible-data/hooks';
 import { useTheme } from '../../design-system';
 import { FONTS } from '../../design-system/tokens/typography';
-import { SPACING } from '../../design-system/tokens/spacing';
+import { SPACING, RADIUS, SHADOWS } from '../../design-system/tokens/spacing';
 
 export interface BookPickerProps {
   onSelectBook: (book: Book) => void;
@@ -88,6 +88,7 @@ export function BookPicker({ onSelectBook }: BookPickerProps) {
           styles.searchBarContainer,
           {
             backgroundColor: isDark ? '#1C1916' : '#F3ECE1',
+            borderColor: colors.paperLine,
           },
         ]}
       >
@@ -106,68 +107,98 @@ export function BookPicker({ onSelectBook }: BookPickerProps) {
         ) : null}
       </View>
 
-      {/* Minimal Testament Segment Tabs */}
+      {/* Modern Pill Testament Segment Tabs */}
       {searchQuery.trim().length === 0 ? (
-        <View style={[styles.testamentSegmentRow, { borderBottomColor: colors.paperLine }]}>
-          <Pressable
-            onPress={() => handleTestamentChange(1)}
+        <View style={styles.segmentWrapper}>
+          <View
             style={[
-              styles.testamentTab,
-              selectedTestament === 1 && [
-                styles.testamentTabActive,
-                { borderBottomColor: colors.brandGreen },
-              ],
+              styles.testamentSegmentContainer,
+              {
+                backgroundColor: isDark ? '#1C1916' : '#F0EAE1',
+                borderColor: colors.paperLine,
+              },
             ]}
           >
-            <Text
+            <Pressable
+              onPress={() => handleTestamentChange(1)}
               style={[
-                styles.testamentTabText,
-                { color: colors.inkMuted },
-                selectedTestament === 1 && { color: colors.brandGreen, fontWeight: '700' },
+                styles.testamentPill,
+                selectedTestament === 1 && [
+                  styles.testamentPillActive,
+                  { backgroundColor: colors.cardBg, borderColor: colors.paperLine },
+                ],
               ]}
             >
-              Old Testament
-            </Text>
-            <Text
-              style={[
-                styles.testamentCountText,
-                { color: colors.inkMuted },
-                selectedTestament === 1 && { color: colors.brandGreen },
-              ]}
-            >
-              39
-            </Text>
-          </Pressable>
+              <Text
+                style={[
+                  styles.testamentPillText,
+                  { color: selectedTestament === 1 ? colors.inkPrimary : colors.inkMuted },
+                  selectedTestament === 1 && { fontWeight: '700' },
+                ]}
+              >
+                Old Testament
+              </Text>
+              <View
+                style={[
+                  styles.testamentCountBadge,
+                  {
+                    backgroundColor: selectedTestament === 1
+                      ? (isDark ? 'rgba(82, 167, 82, 0.22)' : colors.brandGreenLight)
+                      : 'transparent',
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.testamentCountText,
+                    { color: selectedTestament === 1 ? colors.brandGreen : colors.inkMuted },
+                  ]}
+                >
+                  39
+                </Text>
+              </View>
+            </Pressable>
 
-          <Pressable
-            onPress={() => handleTestamentChange(2)}
-            style={[
-              styles.testamentTab,
-              selectedTestament === 2 && [
-                styles.testamentTabActive,
-                { borderBottomColor: colors.brandGreen },
-              ],
-            ]}
-          >
-            <Text
+            <Pressable
+              onPress={() => handleTestamentChange(2)}
               style={[
-                styles.testamentTabText,
-                { color: colors.inkMuted },
-                selectedTestament === 2 && { color: colors.brandGreen, fontWeight: '700' },
+                styles.testamentPill,
+                selectedTestament === 2 && [
+                  styles.testamentPillActive,
+                  { backgroundColor: colors.cardBg, borderColor: colors.paperLine },
+                ],
               ]}
             >
-              New Testament
-            </Text>
-            <Text
-              style={[
-                styles.testamentCountText,
-                { color: colors.inkMuted },
-                selectedTestament === 2 && { color: colors.brandGreen },
-              ]}
-            >
-              27
-            </Text>
-          </Pressable>
+              <Text
+                style={[
+                  styles.testamentPillText,
+                  { color: selectedTestament === 2 ? colors.inkPrimary : colors.inkMuted },
+                  selectedTestament === 2 && { fontWeight: '700' },
+                ]}
+              >
+                New Testament
+              </Text>
+              <View
+                style={[
+                  styles.testamentCountBadge,
+                  {
+                    backgroundColor: selectedTestament === 2
+                      ? (isDark ? 'rgba(82, 167, 82, 0.22)' : colors.brandGreenLight)
+                      : 'transparent',
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.testamentCountText,
+                    { color: selectedTestament === 2 ? colors.brandGreen : colors.inkMuted },
+                  ]}
+                >
+                  27
+                </Text>
+              </View>
+            </Pressable>
+          </View>
         </View>
       ) : null}
 
@@ -239,8 +270,9 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
     paddingHorizontal: SPACING.md,
     paddingVertical: 10,
-    borderRadius: 14,
+    borderRadius: RADIUS.pill,
     gap: 10,
+    borderWidth: 1,
   },
   searchInput: {
     flex: 1,
@@ -248,32 +280,44 @@ const styles = StyleSheet.create({
     fontSize: 14,
     padding: 0,
   },
-  testamentSegmentRow: {
-    flexDirection: 'row',
+  segmentWrapper: {
     marginHorizontal: SPACING.base,
-    borderBottomWidth: 1,
-    marginBottom: SPACING.xs,
+    marginBottom: SPACING.sm,
   },
-  testamentTab: {
+  testamentSegmentContainer: {
+    flexDirection: 'row',
+    borderRadius: RADIUS.pill,
+    padding: 3,
+    borderWidth: 1,
+  },
+  testamentPill: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: 7,
+    paddingHorizontal: SPACING.sm,
+    borderRadius: RADIUS.pill,
     gap: 6,
-    paddingVertical: 12,
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
   },
-  testamentTabActive: {},
-  testamentTabText: {
+  testamentPillActive: {
+    borderWidth: 1,
+    ...SHADOWS.subtle,
+  },
+  testamentPillText: {
     fontFamily: FONTS.sectionHeader,
-    fontSize: 14,
+    fontSize: 13,
     letterSpacing: 0.2,
   },
+  testamentCountBadge: {
+    paddingHorizontal: 7,
+    paddingVertical: 1.5,
+    borderRadius: RADIUS.pill,
+  },
   testamentCountText: {
-    fontFamily: FONTS.body,
-    fontSize: 12,
-    opacity: 0.8,
+    fontFamily: FONTS.bodyBold,
+    fontSize: 11,
+    fontWeight: '700',
   },
   listContent: {
     paddingHorizontal: SPACING.base,

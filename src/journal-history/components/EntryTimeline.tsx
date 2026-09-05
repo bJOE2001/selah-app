@@ -12,17 +12,15 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { DevotionalSummary } from '../../devotional-core/types';
-import { useDeleteDevotional } from '../../devotional-core/hooks';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { EntryCard } from './EntryCard';
-import { useTheme, promptModal, toast } from '../../design-system';
+import { useTheme } from '../../design-system';
 import { FONTS } from '../../design-system/tokens/typography';
 import { SPACING, RADIUS, SHADOWS } from '../../design-system/tokens/spacing';
 
 export interface EntryTimelineProps {
   entries: DevotionalSummary[];
   onSelectEntry: (id: string) => void;
-  onShareEntry: (id: string) => void;
   onStartNew: () => void;
   hideTopBar?: boolean;
 }
@@ -30,7 +28,6 @@ export interface EntryTimelineProps {
 export function EntryTimeline({
   entries,
   onSelectEntry,
-  onShareEntry,
   onStartNew,
   hideTopBar = true,
 }: EntryTimelineProps) {
@@ -39,26 +36,6 @@ export function EntryTimeline({
   const { colors, isDark } = useTheme();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterMode, setFilterMode] = useState<'all' | 'bookmarked'>('all');
-  const deleteMutation = useDeleteDevotional();
-
-  const handleDeleteEntry = (entry: DevotionalSummary) => {
-    promptModal.confirm({
-      title: 'Delete Journal Entry?',
-      message: `Are you sure you want to delete "${entry.notesPreview?.substring(0, 30)}..."? This entry will be permanently removed from your journal.`,
-      confirmText: 'Delete Entry',
-      cancelText: 'Keep Entry',
-      isDestructive: true,
-      onConfirm: async () => {
-        try {
-          await deleteMutation.mutateAsync(entry.id);
-          toast.success('Entry Deleted', 'The journal entry has been deleted.');
-        } catch (err) {
-          console.error('Failed to delete entry:', err);
-          toast.error('Error', 'Could not delete this entry. Please try again.');
-        }
-      },
-    });
-  };
 
   const bookmarkedCount = entries.filter((e) => e.isBookmarked).length;
 
@@ -114,7 +91,7 @@ export function EntryTimeline({
             </Text>
 
             <Text style={[styles.heroSubtitle, { color: colors.inkSecondary }]}>
-              Your reflections & prayers in His presence.
+              Your devotions & prayers in His presence.
             </Text>
 
             {/* Stats Row */}
@@ -184,14 +161,15 @@ export function EntryTimeline({
           style={[
             styles.searchBar,
             {
-              backgroundColor: isDark ? '#1C1916' : '#F3ECE1',
+              backgroundColor: colors.cardBg,
+              borderColor: colors.paperLine,
             },
           ]}
         >
           <Ionicons name="search" size={15} color={colors.inkMuted} />
           <TextInput
             style={[styles.searchInput, { color: colors.inkPrimary }]}
-            placeholder="Search entries, verses, reflections..."
+            placeholder="Search entries, verses, devotions..."
             placeholderTextColor={colors.inkPlaceholder}
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -273,7 +251,7 @@ export function EntryTimeline({
       {filteredEntries.length > 0 ? (
         <View style={styles.sectionHeader}>
           <Text style={[styles.sectionTitle, { color: colors.inkPrimary }]}>
-            {filterMode === 'bookmarked' ? 'Bookmarked Entries' : 'Recent Reflections'}
+            {filterMode === 'bookmarked' ? 'Bookmarked Entries' : 'Recent Devotions'}
           </Text>
           <View
             style={[
@@ -356,8 +334,6 @@ export function EntryTimeline({
           <EntryCard
             entry={item}
             onPress={() => onSelectEntry(item.id)}
-            onShare={() => onShareEntry(item.id)}
-            onDelete={() => handleDeleteEntry(item)}
           />
         )}
         ListEmptyComponent={
@@ -382,7 +358,7 @@ export function EntryTimeline({
               <Text style={[styles.emptySubtitle, { color: colors.inkSecondary }]}>
                 {searchQuery
                   ? 'No entries match your search query.'
-                  : 'Start your spiritual journey by writing your first devotional reflection.'}
+                  : 'Start your spiritual journey by writing your first devotion.'}
               </Text>
 
               <Pressable
@@ -575,9 +551,10 @@ const styles = StyleSheet.create({
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 14,
+    borderRadius: RADIUS.pill,
+    borderWidth: 1,
     paddingHorizontal: SPACING.md,
-    paddingVertical: 10,
+    paddingVertical: 9,
     gap: 8,
   },
   searchInput: {

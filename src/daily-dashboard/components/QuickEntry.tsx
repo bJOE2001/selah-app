@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../../design-system';
 import { FONTS } from '../../design-system/tokens/typography';
-import { SPACING, SHADOWS } from '../../design-system/tokens/spacing';
+import { SPACING, RADIUS, SHADOWS } from '../../design-system/tokens/spacing';
 
 export interface QuickEntryProps {
   onStartDevotion: () => void;
@@ -36,10 +36,9 @@ export function QuickEntry({ onStartDevotion, onOpenBible }: QuickEntryProps) {
         <Pressable
           style={({ pressed }) => [
             styles.actionCard,
-            styles.primaryCard,
             {
-              backgroundColor: isDark ? '#3D1C15' : colors.tapeRhema,
-              borderColor: isDark ? 'rgba(224, 122, 95, 0.4)' : 'rgba(255, 255, 255, 0.28)',
+              backgroundColor: colors.cardBg,
+              borderColor: colors.paperLine,
             },
             pressed && styles.cardPressed,
           ]}
@@ -48,35 +47,53 @@ export function QuickEntry({ onStartDevotion, onOpenBible }: QuickEntryProps) {
           accessibilityRole="button"
           accessibilityLabel="Begin Devotion"
         >
-          {/* Ambient Decorative Aura & Watermark Elements */}
-          <View style={[styles.auraCircleOuter, styles.primaryAuraOuter]} />
-          <View style={[styles.auraCircleInner, styles.primaryAuraInner]} />
-          <View style={styles.watermarkSparkle}>
-            <Ionicons name="sparkles" size={42} color="rgba(255, 255, 255, 0.08)" />
+          {/* Top Row: Icon Box + Arrow Disc */}
+          <View style={styles.cardTopRow}>
+            <View
+              style={[
+                styles.iconBox,
+                {
+                  backgroundColor: isDark
+                    ? 'rgba(212, 175, 55, 0.16)'
+                    : '#FEF3C7',
+                  borderColor: isDark
+                    ? 'rgba(212, 175, 55, 0.32)'
+                    : '#FDE68A',
+                },
+              ]}
+            >
+              <Ionicons
+                name="create-outline"
+                size={18}
+                color={isDark ? '#E5C158' : '#B45309'}
+              />
+            </View>
+
+            <View
+              style={[
+                styles.arrowDisc,
+                {
+                  backgroundColor: isDark ? '#1C1916' : '#F3ECE1',
+                  borderColor: colors.paperLine,
+                },
+              ]}
+            >
+              <Ionicons name="arrow-forward" size={12} color={colors.inkSecondary} />
+            </View>
           </View>
 
-          {/* Top Header Pill Row */}
-          <View style={styles.cardHeaderRow}>
-            <View style={styles.primaryBadge}>
-              <Ionicons name="sparkles" size={10} color="#FFD573" />
-              <Text style={styles.primaryBadgeText}>DEVOTION</Text>
-            </View>
-
-            <View style={styles.primaryArrowDisc}>
-              <Ionicons name="arrow-forward" size={12} color="#FFFFFF" />
-            </View>
-          </View>
-
-          {/* Main Card Content */}
-          <View style={styles.contentBody}>
-            <View style={styles.primaryIconBox}>
-              <Ionicons name="create-outline" size={17} color="#FFFFFF" />
-            </View>
-
-            <Text style={styles.primaryTitle} numberOfLines={1}>
+          {/* Text Content */}
+          <View style={styles.textContent}>
+            <Text
+              style={[styles.cardTitle, { color: colors.inkPrimary }]}
+              numberOfLines={1}
+            >
               Begin Devotion
             </Text>
-            <Text style={styles.primarySubtitle} numberOfLines={2}>
+            <Text
+              style={[styles.cardSubtitle, { color: colors.inkSecondary }]}
+              numberOfLines={2}
+            >
               Quiet time & prayer
             </Text>
           </View>
@@ -86,7 +103,6 @@ export function QuickEntry({ onStartDevotion, onOpenBible }: QuickEntryProps) {
         <Pressable
           style={({ pressed }) => [
             styles.actionCard,
-            styles.secondaryCard,
             {
               backgroundColor: colors.cardBg,
               borderColor: colors.paperLine,
@@ -98,57 +114,34 @@ export function QuickEntry({ onStartDevotion, onOpenBible }: QuickEntryProps) {
           accessibilityRole="button"
           accessibilityLabel="Holy Scripture"
         >
-          {/* Ambient Decorative Aura & Watermark Elements */}
-          <View
-            style={[
-              styles.auraCircleOuter,
-              {
-                backgroundColor: isDark
-                  ? 'rgba(82, 167, 82, 0.08)'
-                  : 'rgba(58, 125, 58, 0.05)',
-              },
-            ]}
-          />
-          <View
-            style={[
-              styles.auraCircleInner,
-              {
-                backgroundColor: isDark
-                  ? 'rgba(82, 167, 82, 0.06)'
-                  : 'rgba(58, 125, 58, 0.06)',
-              },
-            ]}
-          />
-          <View style={styles.watermarkBook}>
-            <Ionicons
-              name="book-outline"
-              size={40}
-              color={isDark ? 'rgba(82, 167, 82, 0.06)' : 'rgba(58, 125, 58, 0.06)'}
-            />
-          </View>
-
-          {/* Top Header Pill Row */}
-          <View style={styles.cardHeaderRow}>
+          {/* Top Row: Icon Box + Arrow Disc */}
+          <View style={styles.cardTopRow}>
             <View
               style={[
-                styles.secondaryBadge,
+                styles.iconBox,
                 {
-                  backgroundColor: isDark ? 'rgba(82, 167, 82, 0.18)' : '#EAF4EC',
-                  borderColor: isDark ? 'rgba(82, 167, 82, 0.32)' : '#D4E8D7',
+                  backgroundColor: isDark
+                    ? 'rgba(82, 167, 82, 0.16)'
+                    : colors.brandGreenLight,
+                  borderColor: isDark
+                    ? 'rgba(82, 167, 82, 0.32)'
+                    : '#D0E6D4',
                 },
               ]}
             >
-              <Ionicons name="book-outline" size={10} color={colors.brandGreen} />
-              <Text style={[styles.secondaryBadgeText, { color: colors.brandGreen }]}>
-                66 BOOKS
-              </Text>
+              <Ionicons
+                name="book-outline"
+                size={18}
+                color={colors.brandGreen}
+              />
             </View>
 
             <View
               style={[
-                styles.secondaryArrowDisc,
+                styles.arrowDisc,
                 {
-                  backgroundColor: isDark ? '#2A2520' : '#F5EFE6',
+                  backgroundColor: isDark ? '#1C1916' : '#F3ECE1',
+                  borderColor: colors.paperLine,
                 },
               ]}
             >
@@ -156,28 +149,16 @@ export function QuickEntry({ onStartDevotion, onOpenBible }: QuickEntryProps) {
             </View>
           </View>
 
-          {/* Main Card Content */}
-          <View style={styles.contentBody}>
-            <View
-              style={[
-                styles.secondaryIconBox,
-                {
-                  backgroundColor: isDark ? 'rgba(82, 167, 82, 0.18)' : colors.brandGreenLight,
-                  borderColor: isDark ? 'rgba(82, 167, 82, 0.35)' : '#D0E6D4',
-                },
-              ]}
-            >
-              <Ionicons name="book" size={17} color={colors.brandGreen} />
-            </View>
-
+          {/* Text Content */}
+          <View style={styles.textContent}>
             <Text
-              style={[styles.secondaryTitle, { color: colors.inkPrimary }]}
+              style={[styles.cardTitle, { color: colors.inkPrimary }]}
               numberOfLines={1}
             >
               Holy Scripture
             </Text>
             <Text
-              style={[styles.secondarySubtitle, { color: colors.inkSecondary }]}
+              style={[styles.cardSubtitle, { color: colors.inkSecondary }]}
               numberOfLines={2}
             >
               Read & search offline
@@ -203,172 +184,49 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     borderWidth: 1,
     padding: 14,
-    minHeight: 142,
+    minHeight: 132,
     justifyContent: 'space-between',
-    position: 'relative',
-    overflow: 'hidden',
-    ...SHADOWS.subtle,
-  },
-  primaryCard: {
-    shadowColor: '#C46246',
-    shadowOpacity: 0.18,
-    shadowOffset: { width: 0, height: 3 },
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  secondaryCard: {
     ...SHADOWS.card,
   },
   cardPressed: {
-    transform: [{ scale: 0.965 }],
-    opacity: 0.94,
+    transform: [{ scale: 0.97 }],
+    opacity: 0.92,
   },
-
-  // Ambient Layering
-  auraCircleOuter: {
-    position: 'absolute',
-    top: -24,
-    right: -24,
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    pointerEvents: 'none',
-  },
-  auraCircleInner: {
-    position: 'absolute',
-    top: 6,
-    right: 6,
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    pointerEvents: 'none',
-  },
-  primaryAuraOuter: {
-    backgroundColor: 'rgba(255, 255, 255, 0.10)',
-  },
-  primaryAuraInner: {
-    backgroundColor: 'rgba(255, 213, 115, 0.12)',
-  },
-  watermarkSparkle: {
-    position: 'absolute',
-    bottom: -6,
-    right: -4,
-    pointerEvents: 'none',
-  },
-  watermarkBook: {
-    position: 'absolute',
-    bottom: -6,
-    right: -4,
-    pointerEvents: 'none',
-  },
-
-  // Header Row
-  cardHeaderRow: {
+  cardTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    zIndex: 2,
   },
-  primaryBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.18)',
-    borderColor: 'rgba(255, 255, 255, 0.28)',
-    borderWidth: 1,
-    borderRadius: 999,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  primaryBadgeText: {
-    fontFamily: FONTS.body,
-    fontSize: 9,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    letterSpacing: 0.8,
-  },
-  primaryArrowDisc: {
-    width: 24,
-    height: 24,
+  iconBox: {
+    width: 38,
+    height: 38,
     borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.22)',
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-
-  secondaryBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
+  arrowDisc: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     borderWidth: 1,
-    borderRadius: 999,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  secondaryBadgeText: {
-    fontFamily: FONTS.body,
-    fontSize: 9,
-    fontWeight: '800',
-    letterSpacing: 0.8,
-  },
-  secondaryArrowDisc: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
+    ...SHADOWS.subtle,
   },
-
-  // Main Content
-  contentBody: {
-    zIndex: 2,
+  textContent: {
     marginTop: 10,
   },
-  primaryIconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.22)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.32)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
-  secondaryIconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
-
-  primaryTitle: {
+  cardTitle: {
     fontFamily: FONTS.sectionHeader,
-    fontSize: 15,
-    color: '#FFFFFF',
+    fontSize: 15.5,
     fontWeight: '700',
     letterSpacing: 0.1,
-    marginBottom: 2,
+    marginBottom: 3,
   },
-  primarySubtitle: {
+  cardSubtitle: {
     fontFamily: FONTS.body,
-    fontSize: 11,
-    color: 'rgba(255, 255, 255, 0.88)',
-    lineHeight: 15,
-  },
-  secondaryTitle: {
-    fontFamily: FONTS.sectionHeader,
-    fontSize: 15,
-    fontWeight: '700',
-    letterSpacing: 0.1,
-    marginBottom: 2,
-  },
-  secondarySubtitle: {
-    fontFamily: FONTS.body,
-    fontSize: 11,
-    lineHeight: 15,
+    fontSize: 11.5,
+    lineHeight: 16,
   },
 });

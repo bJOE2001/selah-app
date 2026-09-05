@@ -181,7 +181,10 @@ export function VerseList({
             onPress={toggleSpeech}
             style={[
               styles.playBtn,
-              { backgroundColor: isSpeaking ? colors.brandGreen : (isDark ? '#1C1916' : '#F3ECE1') }
+              {
+                backgroundColor: isSpeaking ? colors.brandGreen : colors.cardBg,
+                borderColor: isSpeaking ? colors.brandGreen : colors.paperLine,
+              },
             ]}
           >
             <Ionicons
@@ -195,7 +198,10 @@ export function VerseList({
           <View
             style={[
               styles.fontSizeControls,
-              { backgroundColor: isDark ? '#1C1916' : '#F3ECE1' },
+              {
+                backgroundColor: colors.cardBg,
+                borderColor: colors.paperLine,
+              },
             ]}
           >
           <Pressable
@@ -253,12 +259,16 @@ export function VerseList({
               style={[
                 styles.verseRow,
                 highlightStyle && {
-                  backgroundColor: highlightStyle.bg,
+                  backgroundColor: isDark ? highlightStyle.darkBg : highlightStyle.bg,
                   borderRadius: 6,
+                  borderWidth: isDark ? 1 : 0,
+                  borderColor: isDark ? highlightStyle.darkBorder : 'transparent',
                 },
                 isSelected && {
-                  backgroundColor: isDark ? 'rgba(82, 167, 82, 0.22)' : 'rgba(58, 125, 58, 0.12)',
+                  backgroundColor: isDark ? 'rgba(82, 167, 82, 0.28)' : 'rgba(58, 125, 58, 0.14)',
                   borderRadius: 6,
+                  borderWidth: 1,
+                  borderColor: isDark ? 'rgba(82, 167, 82, 0.5)' : 'rgba(58, 125, 58, 0.3)',
                 },
               ]}
             >
@@ -276,7 +286,9 @@ export function VerseList({
                   style={[
                     styles.verseNumberInline,
                     {
-                      color: colors.inkMuted,
+                      color: highlightStyle
+                        ? (isDark ? highlightStyle.dot : colors.inkPrimary)
+                        : colors.inkMuted,
                       fontSize: Math.max(10, fontSize - 5),
                     },
                   ]}
@@ -435,8 +447,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   chapterTitle: {
-    fontFamily: FONTS.sectionHeader,
-    fontSize: 24,
+    fontFamily: FONTS.scriptureBold,
+    fontSize: 26,
     fontWeight: '700',
     letterSpacing: -0.2,
   },
@@ -449,15 +461,19 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    ...SHADOWS.subtle,
   },
   fontSizeControls: {
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: RADIUS.pill,
+    borderWidth: 1,
     paddingHorizontal: 4,
     paddingVertical: 2,
+    ...SHADOWS.subtle,
   },
   fontBtn: {
     paddingHorizontal: 8,
@@ -524,11 +540,10 @@ const styles = StyleSheet.create({
     zIndex: 50,
   },
   floatingCard: {
-    borderRadius: 18,
+    borderRadius: RADIUS.xxl,
     borderWidth: 1,
-    padding: 12,
-    ...SHADOWS.card,
-    elevation: 8,
+    padding: 14,
+    ...SHADOWS.floating,
   },
   cardTopRow: {
     flexDirection: 'row',

@@ -18,7 +18,6 @@ import { promptModal, toast, useTheme } from "../../design-system";
 import { RADIUS, SHADOWS, SPACING } from "../../design-system/tokens/spacing";
 import { FONTS } from "../../design-system/tokens/typography";
 import {
-  useDeleteDevotional,
   useToggleBookmarkDevotional,
 } from "../../devotional-core/hooks";
 import { DevotionalSummary } from "../../devotional-core/types";
@@ -40,14 +39,12 @@ const SCREEN_WIDTH = Dimensions.get("window").width;
 export interface NotebookBookViewProps {
   entries: DevotionalSummary[];
   onSelectEntry: (id: string) => void;
-  onShareEntry: (id: string) => void;
   onStartNew: () => void;
 }
 
 export function NotebookBookView({
   entries,
   onSelectEntry,
-  onShareEntry,
   onStartNew,
 }: NotebookBookViewProps) {
   const insets = useSafeAreaInsets();
@@ -58,7 +55,6 @@ export function NotebookBookView({
   const [isBookmarkIndexOpen, setIsBookmarkIndexOpen] = useState(false);
   const [isNavigatorOpen, setIsNavigatorOpen] = useState(false);
   const toggleBookmarkMutation = useToggleBookmarkDevotional();
-  const deleteMutation = useDeleteDevotional();
   const isPremium = useIsPremium();
 
   const {
@@ -186,28 +182,6 @@ export function NotebookBookView({
     } else {
       toast.info("Bookmark Removed", "Unfolded the page corner.");
     }
-  };
-
-  const handleDeletePage = (entry: DevotionalSummary, pageNumber: number) => {
-    promptModal.confirm({
-      title: "Delete Journal Page?",
-      message: `Are you sure you want to delete Page ${pageNumber}? \n\nThis entry will be permanently removed from your journal.`,
-      confirmText: "Delete Page",
-      cancelText: "Keep Page",
-      isDestructive: true,
-      onConfirm: async () => {
-        try {
-          const targetIndex = Math.max(0, pageNumber - 1);
-          turnToPage(targetIndex);
-
-          await deleteMutation.mutateAsync(entry.id);
-          toast.success("Page Deleted", "The devotional entry has been removed.");
-        } catch (err) {
-          console.error("Failed to delete entry:", err);
-          toast.error("Error", "Could not delete this entry. Please try again.");
-        }
-      },
-    });
   };
 
   const renderCoverPage = () => {
@@ -523,49 +497,6 @@ export function NotebookBookView({
                 >
                   {dateStr}
                 </Text>
-              </View>
-
-              <View style={styles.folioActionsRow}>
-                <Pressable
-                  onPress={() => {
-                    try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
-                    onShareEntry(entry.id);
-                  }}
-                  style={({ pressed }) => [
-                    styles.miniHeaderBtn,
-                    {
-                      backgroundColor: isDark ? '#1C1916' : '#F3ECE1',
-                    },
-                    pressed && { opacity: 0.75 },
-                  ]}
-                  hitSlop={6}
-                  accessibilityLabel="Share Entry"
-                >
-                  <Ionicons
-                    name="share-social-outline"
-                    size={14}
-                    color={colors.inkSecondary}
-                  />
-                </Pressable>
-
-                <Pressable
-                  onPress={() => handleDeletePage(entry, pageItem.index)}
-                  style={({ pressed }) => [
-                    styles.miniHeaderBtn,
-                    {
-                      backgroundColor: isDark ? '#1C1916' : '#F3ECE1',
-                    },
-                    pressed && { opacity: 0.75 },
-                  ]}
-                  hitSlop={6}
-                  accessibilityLabel="Delete Page"
-                >
-                  <Ionicons
-                    name="trash-outline"
-                    size={14}
-                    color={colors.tapeRhema}
-                  />
-                </Pressable>
               </View>
             </View>
 

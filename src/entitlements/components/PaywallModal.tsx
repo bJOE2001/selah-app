@@ -55,7 +55,7 @@ const FALLBACK_TIERS: TierDisplayOption[] = [
   {
     tier: 'patron_lifetime',
     badge: 'LIFETIME OWNERSHIP',
-    title: 'Founding Patron',
+    title: 'Lifetime Pass',
     priceDisplay: '$49.99',
     subtext: 'One-time payment, forever yours',
   },
@@ -63,19 +63,14 @@ const FALLBACK_TIERS: TierDisplayOption[] = [
 
 const PREMIUM_PERKS = [
   {
-    icon: 'shield-checkmark',
-    title: 'Encrypted Cloud Vault & Sync',
-    desc: 'Zero-knowledge encrypted cloud backup. Real-time multi-device restore.',
+    icon: 'cloud-done-outline',
+    title: 'Automatic Cloud Backup',
+    desc: 'Never lose a single entry. Your journal is safely backed up and synced across all your devices.',
   },
   {
-    icon: 'book',
+    icon: 'book-outline',
     title: 'Luxury Leather & Vintage Covers',
-    desc: 'Bespoke hand-bound aesthetics, foil embossing & parchment bindings.',
-  },
-  {
-    icon: 'image',
-    title: 'Watermark-Free HD Share Cards',
-    desc: 'Ultra-high-resolution scripture cards ready for social media & ministry.',
+    desc: 'Unlock all handcrafted leather, gold foil embossing, and vintage journal designs.',
   },
 ];
 
@@ -233,7 +228,7 @@ export function PaywallModal({ visible, onClose, triggerFeature }: PaywallModalP
               Selah Grace
             </Text>
             <Text style={[styles.heroSubtitle, { color: colors.inkSecondary }]}>
-              Deepen your spiritual walk with luxury notebook craftsmanship, Scripture reflections, and secure cloud backups.
+              Deepen your spiritual walk with luxury notebook craftsmanship, daily devotions, and automatic cloud backups.
             </Text>
             {triggerFeature && (
               <View style={[styles.triggerBadge, { backgroundColor: isDark ? 'rgba(197, 155, 39, 0.15)' : 'rgba(197, 155, 39, 0.12)' }]}>
@@ -337,6 +332,34 @@ export function PaywallModal({ visible, onClose, triggerFeature }: PaywallModalP
                 </View>
               </View>
             ))}
+          </View>
+
+          {/* Ad-Free Sanctuary Mission Note */}
+          <View
+            style={[
+              styles.missionCard,
+              {
+                backgroundColor: isDark ? 'rgba(139, 58, 43, 0.12)' : '#FDF6F0',
+                borderColor: isDark ? 'rgba(139, 58, 43, 0.3)' : '#F5DCD0',
+              },
+            ]}
+          >
+            <View style={styles.missionHeader}>
+              <View
+                style={[
+                  styles.missionIconCircle,
+                  { backgroundColor: isDark ? 'rgba(139, 58, 43, 0.25)' : '#F8E7DF' },
+                ]}
+              >
+                <Ionicons name="heart" size={13} color="#8B3A2B" />
+              </View>
+              <Text style={[styles.missionTitle, { color: colors.inkPrimary }]}>
+                An Independent, Ad-Free Sanctuary
+              </Text>
+            </View>
+            <Text style={[styles.missionBody, { color: colors.inkSecondary }]}>
+              Selah is crafted independently with no advertisements, trackers, or commercial noise. Your membership directly sustains this sacred, distraction-free space for quiet communion with God.
+            </Text>
           </View>
 
           {/* Testimonial / Quiet Time Note */}
@@ -554,6 +577,35 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.body,
     fontSize: 12,
     lineHeight: 16,
+  },
+  missionCard: {
+    padding: SPACING.md,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    marginBottom: SPACING.md,
+  },
+  missionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+    gap: 8,
+  },
+  missionIconCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  missionTitle: {
+    fontFamily: FONTS.sectionHeader,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  missionBody: {
+    fontFamily: FONTS.body,
+    fontSize: 12,
+    lineHeight: 18,
   },
   scriptureFooter: {
     alignItems: 'center',

@@ -4,9 +4,8 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { useRecentDevotionals, useDevotional } from '../../src/devotional-core/hooks';
+import { useRecentDevotionals } from '../../src/devotional-core/hooks';
 import { EntryTimeline, NotebookBookView } from '../../src/journal-history';
-import { ShareCardModal } from '../../src/share-card';
 import { useTheme, FONTS, RADIUS, SHADOWS, SPACING } from '../../src/design-system';
 export default function JournalTabScreen() {
   const router = useRouter();
@@ -14,8 +13,6 @@ export default function JournalTabScreen() {
   const { colors, isDark } = useTheme();
   const { data: entries } = useRecentDevotionals(100);
   const [viewMode, setViewMode] = useState<'notebook' | 'timeline'>('notebook');
-  const [sharingId, setSharingId] = useState<string | null>(null);
-  const { data: sharingDevotional } = useDevotional(sharingId);
 
   const handleStartNew = () => {
     router.push('/devotional/new');
@@ -48,7 +45,10 @@ export default function JournalTabScreen() {
         <View
           style={[
             styles.modeToggleGroup,
-            { backgroundColor: isDark ? '#1C1916' : '#F3ECE1' },
+            {
+              backgroundColor: isDark ? '#1C1916' : '#F0EAE1',
+              borderColor: colors.paperLine,
+            },
           ]}
         >
           <Pressable
@@ -57,7 +57,7 @@ export default function JournalTabScreen() {
               styles.modePill,
               viewMode === 'notebook' && [
                 styles.modePillActive,
-                { backgroundColor: colors.cardBg },
+                { backgroundColor: colors.cardBg, borderColor: colors.paperLine },
               ],
             ]}
           >
@@ -69,8 +69,8 @@ export default function JournalTabScreen() {
             <Text
               style={[
                 styles.modePillText,
-                { color: viewMode === 'notebook' ? colors.brandGreen : colors.inkSecondary },
-                viewMode === 'notebook' && { fontWeight: '800' },
+                { color: viewMode === 'notebook' ? colors.inkPrimary : colors.inkSecondary },
+                viewMode === 'notebook' && { fontWeight: '700' },
               ]}
             >
               Book
@@ -83,7 +83,7 @@ export default function JournalTabScreen() {
               styles.modePill,
               viewMode === 'timeline' && [
                 styles.modePillActive,
-                { backgroundColor: colors.cardBg },
+                { backgroundColor: colors.cardBg, borderColor: colors.paperLine },
               ],
             ]}
           >
@@ -95,8 +95,8 @@ export default function JournalTabScreen() {
             <Text
               style={[
                 styles.modePillText,
-                { color: viewMode === 'timeline' ? colors.brandGreen : colors.inkSecondary },
-                viewMode === 'timeline' && { fontWeight: '800' },
+                { color: viewMode === 'timeline' ? colors.inkPrimary : colors.inkSecondary },
+                viewMode === 'timeline' && { fontWeight: '700' },
               ]}
             >
               Timeline
@@ -105,8 +105,6 @@ export default function JournalTabScreen() {
         </View>
 
         <View style={styles.topRightActions}>
-          {/* Removed Print Button */}
-
           <Pressable
             onPress={() => {
               try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
@@ -114,7 +112,7 @@ export default function JournalTabScreen() {
             }}
             style={({ pressed }) => [
               styles.settingsIconButton,
-              { backgroundColor: isDark ? '#1C1916' : '#F3ECE1' },
+              { backgroundColor: colors.cardBg, borderColor: colors.paperLine },
               pressed && { opacity: 0.8 },
             ]}
             hitSlop={8}
@@ -133,26 +131,16 @@ export default function JournalTabScreen() {
           <NotebookBookView
             entries={entries || []}
             onSelectEntry={(id) => router.push(`/devotional/${id}` as any)}
-            onShareEntry={(id) => setSharingId(id)}
             onStartNew={handleStartNew}
           />
         ) : (
           <EntryTimeline
             entries={entries || []}
             onSelectEntry={(id) => router.push(`/devotional/${id}` as any)}
-            onShareEntry={(id) => setSharingId(id)}
             onStartNew={handleStartNew}
           />
         )}
       </View>
-
-      {/* Scripture Share Modal */}
-      <ShareCardModal
-        visible={!!sharingId}
-        devotional={sharingDevotional || null}
-        onClose={() => setSharingId(null)}
-      />
-
     </View>
   );
 }
@@ -192,6 +180,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 3,
     borderRadius: RADIUS.pill,
+    borderWidth: 1,
     gap: 2,
   },
   modePill: {
@@ -203,6 +192,7 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.pill,
   },
   modePillActive: {
+    borderWidth: 1,
     ...SHADOWS.subtle,
   },
   modePillText: {
@@ -216,11 +206,13 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   settingsIconButton: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    ...SHADOWS.subtle,
   },
   mainViewArea: {
     flex: 1,
