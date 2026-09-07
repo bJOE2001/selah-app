@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, Pressable } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, ScrollView, StyleSheet, Pressable, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,6 +10,8 @@ import { QuickEntry } from './QuickEntry';
 import { EntryCard } from '../../journal-history/components/EntryCard';
 import { useRecentDevotionals } from '../../devotional-core/hooks';
 import { useDraftStore } from '../../devotional-core/store';
+import { useSettingsStore } from '../../settings/store';
+import { RhemaGuideModal } from '../../devotional-guide';
 import { useReadingStore } from '../../bible-data/readingStore';
 import { ContinueReadingCard } from './ContinueReadingCard';
 import { MilestoneCelebrationCard } from './MilestoneCelebrationCard';
@@ -26,9 +28,21 @@ export function DailyDashboard() {
   const isPremium = useIsPremium();
   const { data: entries } = useRecentDevotionals(20);
   const { reset } = useDraftStore();
+  const { hasSeenRhemaGuide, setHasSeenRhemaGuide } = useSettingsStore();
   const { lastBookId, lastBookName, lastChapter, lastReadAt } = useReadingStore();
   const [isPaywallOpen, setIsPaywallOpen] = useState(false);
   const [paywallFeature, setPaywallFeature] = useState('Automatic Cloud Backup');
+  const [isRhemaGuideOpen, setIsRhemaGuideOpen] = useState(false);
+
+  // Auto-show Rhema Method Walkthrough on First Launch / Devotion
+  useEffect(() => {
+    if (!hasSeenRhemaGuide) {
+      const timer = setTimeout(() => {
+        setIsRhemaGuideOpen(true);
+      }, 750);
+      return () => clearTimeout(timer);
+    }
+  }, [hasSeenRhemaGuide]);
 
   const now = new Date();
   const formattedDate = now.toLocaleDateString('en-US', {
@@ -128,7 +142,62 @@ export function DailyDashboard() {
         showsVerticalScrollIndicator={false}
       >
         {/* 1. Hero Greeting Header with Mascot Halo & Chat Bubble */}
-        <DashboardHeader />
+        <DashboardHeader onOpenGuide={() => setIsRhemaGuideOpen(true)} />
+
+        {/* 1.5 Rhema Devotional Method Guide Card */}
+        <Pressable
+          onPress={() => {
+            try {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            } catch {}
+            setIsRhemaGuideOpen(true);
+          }}
+          style={({ pressed }) => [
+            styles.rhemaGuideBanner,
+            {
+              backgroundColor: isDark ? '#1C2920' : '#F2F8F4',
+              borderColor: isDark ? '#2E4735' : '#D2E7D7',
+            },
+            pressed && { opacity: 0.88, transform: [{ scale: 0.99 }] },
+          ]}
+          accessibilityRole="button"
+          accessibilityLabel="How to write a devotional: Learn the 4-step Rhema Method with Selah"
+        >
+          <View style={styles.rhemaGuideContent}>
+            <View
+              style={[
+                styles.rhemaGuideIconCircle,
+                {
+                  backgroundColor: isDark ? 'rgba(74, 124, 89, 0.3)' : '#E0EFE4',
+                  borderColor: isDark ? 'rgba(74, 124, 89, 0.5)' : '#C4E2CB',
+                },
+              ]}
+            >
+              <Image
+                source={require('../../../assets/images/mascot/selah-mascot-welcome.png')}
+                style={{ width: 34, height: 34 }}
+                resizeMode="contain"
+              />
+            </View>
+            <View style={styles.rhemaGuideTextCol}>
+              <View style={styles.rhemaGuideBadgeRow}>
+                <View style={[styles.rhemaGuideBadge, { backgroundColor: isDark ? 'rgba(196, 98, 70, 0.25)' : '#FCECE7' }]}>
+                  <Text style={[styles.rhemaGuideBadgeText, { color: colors.tapeRhema }]}>RHEMA METHOD</Text>
+                </View>
+                <Text style={[styles.rhemaGuideStepsTag, { color: colors.inkMuted }]}>4 Steps</Text>
+              </View>
+              <Text style={[styles.rhemaGuideHeadline, { color: colors.inkPrimary }]}>
+                How to Write a Devotional
+              </Text>
+              <Text style={[styles.rhemaGuideSubtext, { color: colors.inkSecondary }]}>
+                Learn Rhema, Reflection, Motivation & Application with Selah
+              </Text>
+            </View>
+            <View style={[styles.rhemaGuideArrowCircle, { backgroundColor: isDark ? '#25352A' : '#E5F1E8' }]}>
+              <Ionicons name="chevron-forward" size={14} color={colors.brandGreen} />
+            </View>
+          </View>
+        </Pressable>
 
         {/* 2. Weekly Devotion Tracker */}
         <WeeklyStreakTracker
@@ -258,6 +327,24 @@ export function DailyDashboard() {
         onClose={() => setIsPaywallOpen(false)}
         triggerFeature={paywallFeature}
       />
+
+      {/* Rhema Devotional Method Guide Walkthrough Modal */}
+      <RhemaGuideModal
+        visible={isRhemaGuideOpen}
+        onClose={() => {
+          setIsRhemaGuideOpen(false);
+          if (!hasSeenRhemaGuide) {
+            setHasSeenRhemaGuide(true);
+          }
+        }}
+        onOpenBible={() => {
+          setIsRhemaGuideOpen(false);
+          if (!hasSeenRhemaGuide) {
+            setHasSeenRhemaGuide(true);
+          }
+          router.push('/(tabs)/bible');
+        }}
+      />
     </View>
   );
 }
@@ -375,5 +462,70 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 11,
     letterSpacing: 0.1,
+  },
+  rhemaGuideBanner: {
+    marginHorizontal: SPACING.base,
+    marginTop: SPACING.xs,
+    marginBottom: SPACING.sm,
+    padding: SPACING.sm + 2,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    ...SHADOWS.subtle,
+  },
+  rhemaGuideContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm + 2,
+  },
+  rhemaGuideIconCircle: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rhemaGuideTextCol: {
+    flex: 1,
+  },
+  rhemaGuideBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 2,
+  },
+  rhemaGuideBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 1.5,
+    borderRadius: RADIUS.pill,
+  },
+  rhemaGuideBadgeText: {
+    fontFamily: FONTS.bodyBold,
+    fontSize: 9,
+    fontWeight: '700',
+    letterSpacing: 0.4,
+  },
+  rhemaGuideStepsTag: {
+    fontFamily: FONTS.body,
+    fontSize: 9.5,
+    fontWeight: '600',
+  },
+  rhemaGuideHeadline: {
+    fontFamily: FONTS.sectionHeader,
+    fontSize: 13.5,
+    fontWeight: '700',
+    marginBottom: 1,
+  },
+  rhemaGuideSubtext: {
+    fontFamily: FONTS.body,
+    fontSize: 11,
+    lineHeight: 14.5,
+  },
+  rhemaGuideArrowCircle: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

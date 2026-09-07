@@ -120,7 +120,7 @@ export const ShareCardCanvas = forwardRef<View, ShareCardCanvasProps>(
                   SELAH
                 </Text>
                 <Text style={[styles.appTaglineSub, { color: palette.textSecondary }]}>
-                  Daily Bible & Devotions
+                  Bible & Devotional
                 </Text>
               </View>
             </View>

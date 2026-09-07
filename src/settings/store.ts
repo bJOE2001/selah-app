@@ -36,6 +36,9 @@ export interface SettingsState {
   journalCoverMaterial: string;
   journalCoverEmblem: string;
 
+  // Guides & Onboarding
+  hasSeenRhemaGuide: boolean;
+
   // Actions
   setThemeMode: (mode: ThemeMode) => void;
   setFontSize: (size: number) => void;
@@ -43,6 +46,7 @@ export interface SettingsState {
   setMorningReminder: (enabled: boolean, time?: string) => void;
   setEveningReminder: (enabled: boolean, time?: string) => void;
   setPaperLined: (enabled: boolean) => void;
+  setHasSeenRhemaGuide: (seen: boolean) => void;
   setJournalCover: (
     title: string,
     subtitle?: string,
@@ -76,6 +80,7 @@ export const useSettingsStore = create<SettingsState>()(
       journalCoverVerseRef: 'Psalm 119:105',
       journalCoverMaterial: 'linen',
       journalCoverEmblem: 'mascot',
+      hasSeenRhemaGuide: false,
 
       setThemeMode: (themeMode) => {
         if (typeof Appearance?.setColorScheme === 'function') {
@@ -99,6 +104,7 @@ export const useSettingsStore = create<SettingsState>()(
           eveningReminderTime: time || state.eveningReminderTime,
         })),
       setPaperLined: (paperLined) => set({ paperLined }),
+      setHasSeenRhemaGuide: (hasSeenRhemaGuide) => set({ hasSeenRhemaGuide }),
       setJournalCover: (title, subtitle, verseRef, material, emblem) =>
         set((state) => ({
           journalCoverTitle: title.trim() || state.journalCoverTitle,

@@ -16,14 +16,20 @@ import { SPACING, RADIUS, SHADOWS } from '../../design-system/tokens/spacing';
 export interface DashboardHeaderProps {
   streakDays?: number;
   totalEntries?: number;
+  onOpenGuide?: () => void;
 }
 
 const SELAH_WHISPERS = [
   'The Lord is your Shepherd, you lack nothing! 🐑',
+  'In quietness and confidence shall be your strength. 🌿',
   'His mercies are fresh and new this very morning. ☀️',
+  'Rhema: Listen for the verse that speaks straight to your soul today. 🌿',
   'Be still and know that He is with you right now. 🕊️',
+  'Reflection: Meditate on who God is in your current season. 🤍',
   'Cast all your worries upon Him, for He cares for you. 🌿',
+  'Motivation: Why did your heart need this Word today? Be honest with Him. ✨',
   'Thy word is a lamp unto my feet and a light unto my path. 📖',
+  'Application: Take one small, faithful step of obedience today. 🌱',
   'You are fearfully and wonderfully made by God! ✨',
   'Grace and peace be multiplied to you today. 🤍',
   'Proud of you for taking time to be with the Lord! 🌱',
@@ -33,7 +39,7 @@ const SELAH_WHISPERS = [
   'Peace I leave with you; my peace I give you. 🌿',
 ];
 
-export function DashboardHeader({}: DashboardHeaderProps) {
+export function DashboardHeader({ onOpenGuide }: DashboardHeaderProps) {
   const { colors, isDark } = useTheme();
   const now = new Date();
   const currentHour = now.getHours();
@@ -245,7 +251,7 @@ export function DashboardHeader({}: DashboardHeaderProps) {
 
                   {/* Main Headline */}
                   <Text style={[styles.headline, { color: colors.inkPrimary }]}>
-                    Hear His Voice
+                    Quiet Time with God
                   </Text>
 
                   {/* Inspiring Scripture Whisper */}
@@ -253,10 +259,10 @@ export function DashboardHeader({}: DashboardHeaderProps) {
                     style={[styles.scriptureWhisper, { color: colors.inkSecondary }]}
                     numberOfLines={3}
                   >
-                    “My sheep hear My voice, and I know them, and they follow Me.”
+                    “Be still, and know that I am God.”
                   </Text>
-                  <Text style={[styles.scriptureRef, { color: colors.tapeRhema }]}>
-                    — John 10:27
+                  <Text style={[styles.scriptureRef, { color: colors.brandGreen }]}>
+                    — Psalm 46:10
                   </Text>
                 </View>
               )}
@@ -466,6 +472,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'flex-start',
     zIndex: 2,
+    marginTop: 2,
   },
   bubbleFooterHint: {
     fontFamily: FONTS.body,
