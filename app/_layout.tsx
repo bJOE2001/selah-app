@@ -42,6 +42,9 @@ LogBox.ignoreLogs([
   "Reload to reconnect",
   "[RevenueCat] [getCustomerInfo] This method is available but has no effect in Preview API mode",
   "Preview API mode",
+  "The native store is not available when running inside Expo Go",
+  "[RevenueCat] Init error",
+  "The native store is not available",
 ]);
 
 if (__DEV__) {

@@ -9,6 +9,7 @@
  */
 
 import { Platform } from 'react-native';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { useEntitlementStore } from './store';
 import {
   EntitlementInfo,
@@ -16,6 +17,8 @@ import {
   SubscriptionTier,
   EntitlementSource,
 } from './types';
+
+export const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
 
 // RevenueCat entitlement identifier (configured in RevenueCat dashboard)
 const ENTITLEMENT_ID = 'selah_grace';
@@ -93,6 +96,14 @@ function parseCustomerInfo(
  * is unavailable.
  */
 export async function initRevenueCat(): Promise<void> {
+  // Expo Go does not support native Google Play Store / StoreKit billing.
+  // In Expo Go sandbox, skip native configuration to prevent loud warning popups.
+  // In standalone / development builds, the real Google Play billing is used.
+  if (isExpoGo) {
+    console.log('[RevenueCat] Running in Expo Go sandbox — native store billing is disabled. RevenueCat activates automatically in development/standalone builds.');
+    return;
+  }
+
   const Purchases = getPurchasesModule();
   if (!Purchases) {
     console.log('[RevenueCat] Skipping init — module not available');
@@ -150,6 +161,8 @@ export interface PaywallPackage {
  * Returns empty array if not available.
  */
 export async function getOfferings(): Promise<PaywallPackage[]> {
+  if (isExpoGo) return [];
+
   const Purchases = getPurchasesModule();
   if (!Purchases) return [];
 
@@ -213,6 +226,11 @@ export async function getOfferings(): Promise<PaywallPackage[]> {
  * Returns true if purchase was successful, false otherwise.
  */
 export async function purchasePackage(paywallPackage: PaywallPackage): Promise<boolean> {
+  if (isExpoGo) {
+    console.warn('[RevenueCat] In-app purchases are not supported in Expo Go sandbox.');
+    return false;
+  }
+
   const Purchases = getPurchasesModule();
   if (!Purchases) return false;
 
