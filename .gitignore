@@ -40,6 +40,13 @@ yarn-error.*
 /ios
 /android
 
+# Android build artifacts
+*.aab
+*.apk
+
+# Scratch and temporary work
+scratch/
+
 #Agents
 /.agents
 /skills-lock.json

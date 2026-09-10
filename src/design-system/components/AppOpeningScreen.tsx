@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Image, Animated, Easing } from 'react-native';
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useTheme } from '../theme/useTheme';
 import { FONTS } from '../tokens/typography';
@@ -43,10 +43,9 @@ export function AppOpeningScreen() {
   }, [fadeAnim, pulseAnim]);
 
   return (
-    <SafeAreaProvider style={{ flex: 1, backgroundColor: colors.paperBg }}>
+    <View style={{ flex: 1, backgroundColor: colors.paperBg }}>
       <StatusBar
         style={isDark ? 'light' : 'dark'}
-        backgroundColor={colors.paperBg}
       />
       <View style={[styles.container, { backgroundColor: colors.paperBg }]}>
         <Animated.View
@@ -105,7 +104,7 @@ export function AppOpeningScreen() {
               ]}
             />
             <Text style={[styles.subtitle, { color: colors.inkSecondary }]}>
-              Daily Bible & Devotions
+              Bible & Devotional
             </Text>
           </View>
         </Animated.View>
@@ -127,7 +126,7 @@ export function AppOpeningScreen() {
           </View>
         </View>
       </View>
-    </SafeAreaProvider>
+    </View>
   );
 }
 
@@ -142,6 +141,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: SPACING.md,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
   },
   mascotOuterRing: {
     width: 144,
@@ -177,7 +178,11 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '800',
     letterSpacing: 3,
+    lineHeight: 32,
+    paddingVertical: 2,
+    paddingHorizontal: 8,
     textAlign: 'center',
+    includeFontPadding: false,
   },
   goldDivider: {
     width: 36,
@@ -187,19 +192,27 @@ const styles = StyleSheet.create({
   subtitle: {
     fontFamily: FONTS.scriptureItalic,
     fontSize: 14,
+    lineHeight: 22,
+    paddingVertical: 4,
+    paddingHorizontal: 12,
     textAlign: 'center',
-    letterSpacing: 0.4,
+    includeFontPadding: false,
   },
   footer: {
     position: 'absolute',
     alignItems: 'center',
     left: 0,
     right: 0,
+    paddingHorizontal: SPACING.lg,
   },
   loadingText: {
     fontFamily: FONTS.body,
     fontSize: 12,
-    letterSpacing: 0.4,
+    lineHeight: 18,
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+    textAlign: 'center',
+    includeFontPadding: false,
   },
   madeWithRow: {
     flexDirection: 'row',
@@ -207,10 +220,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 4,
     marginTop: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 2,
   },
   madeWithText: {
     fontFamily: FONTS.body,
     fontSize: 11,
-    letterSpacing: 0.3,
+    lineHeight: 16,
+    paddingVertical: 2,
+    paddingHorizontal: 4,
+    includeFontPadding: false,
   },
 });

@@ -188,7 +188,7 @@ export function TableOfContentsModal({
                       Latest Entry (Page {entries.length})
                     </Text>
                     <Text style={[styles.shortcutSub, { color: colors.inkSecondary }]}>
-                      {entries[entries.length - 1]?.rhemaReference || 'Most recent reflection'}
+                      {entries[entries.length - 1]?.notesPreview?.substring(0, 30) || 'Most recent entry'}
                     </Text>
                   </View>
                 </Pressable>
@@ -214,7 +214,7 @@ export function TableOfContentsModal({
                       First Entry (Page 1)
                     </Text>
                     <Text style={[styles.shortcutSub, { color: colors.inkSecondary }]}>
-                      {entries[0]?.rhemaReference || 'Where journey started'}
+                      {entries[0]?.notesPreview?.substring(0, 30) || 'Where journey started'}
                     </Text>
                   </View>
                 </Pressable>
@@ -243,6 +243,8 @@ export function TableOfContentsModal({
                   </Text>
                 </View>
               </Pressable>
+
+              {/* Removed Print Hardbound Journal Button */}
             </View>
           </View>
 
@@ -346,7 +348,7 @@ const styles = StyleSheet.create({
     zIndex: 9999,
   },
   backdrop: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   modalCard: {
     width: '100%',

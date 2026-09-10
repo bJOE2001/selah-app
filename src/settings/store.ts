@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Appearance } from 'react-native';
 
 // Legacy type kept for backward compatibility during migration
 export type ScriptureFontSize = 'S' | 'M' | 'L' | 'XL';
@@ -35,6 +36,9 @@ export interface SettingsState {
   journalCoverMaterial: string;
   journalCoverEmblem: string;
 
+  // Guides & Onboarding
+  hasSeenRhemaGuide: boolean;
+
   // Actions
   setThemeMode: (mode: ThemeMode) => void;
   setFontSize: (size: number) => void;
@@ -42,6 +46,7 @@ export interface SettingsState {
   setMorningReminder: (enabled: boolean, time?: string) => void;
   setEveningReminder: (enabled: boolean, time?: string) => void;
   setPaperLined: (enabled: boolean) => void;
+  setHasSeenRhemaGuide: (seen: boolean) => void;
   setJournalCover: (
     title: string,
     subtitle?: string,
@@ -75,8 +80,16 @@ export const useSettingsStore = create<SettingsState>()(
       journalCoverVerseRef: 'Psalm 119:105',
       journalCoverMaterial: 'linen',
       journalCoverEmblem: 'mascot',
+      hasSeenRhemaGuide: false,
 
-      setThemeMode: (themeMode) => set({ themeMode }),
+      setThemeMode: (themeMode) => {
+        if (typeof Appearance?.setColorScheme === 'function') {
+          try {
+            Appearance.setColorScheme('unspecified');
+          } catch {}
+        }
+        set({ themeMode });
+      },
       setFontSize: (fontSize) =>
         set({ fontSize: Math.round(Math.max(FONT_SIZE_MIN, Math.min(FONT_SIZE_MAX, fontSize))) }),
       setRedLetter: (redLetter) => set({ redLetter }),
@@ -91,6 +104,7 @@ export const useSettingsStore = create<SettingsState>()(
           eveningReminderTime: time || state.eveningReminderTime,
         })),
       setPaperLined: (paperLined) => set({ paperLined }),
+      setHasSeenRhemaGuide: (hasSeenRhemaGuide) => set({ hasSeenRhemaGuide }),
       setJournalCover: (title, subtitle, verseRef, material, emblem) =>
         set((state) => ({
           journalCoverTitle: title.trim() || state.journalCoverTitle,
@@ -105,7 +119,7 @@ export const useSettingsStore = create<SettingsState>()(
         })),
     }),
     {
-      name: 'shepema-settings-storage',
+      name: 'selah-settings-storage',
       storage: createJSONStorage(() => AsyncStorage),
       // Migrate old settings
       migrate: (persistedState: any, oldVersion: number) => {

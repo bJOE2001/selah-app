@@ -88,7 +88,7 @@ export const useEntitlementStore = create<EntitlementState>()(
       },
     }),
     {
-      name: 'shepema-entitlements-storage',
+      name: 'selah-entitlements-storage',
       storage: createJSONStorage(() => AsyncStorage),
       // Only persist the entitlement info and devOverride, not the functions
       partialize: (state) => ({

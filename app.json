@@ -1,22 +1,22 @@
 {
   "expo": {
-    "name": "Selah: Daily Bible & Devotions",
+    "name": "Selah",
     "slug": "selah-app",
-    "version": "1.0.1",
+    "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/app-icon.jpg",
     "scheme": "selah",
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.selah.app"
+      "bundleIdentifier": "com.selah.devotional"
     },
     "android": {
-      "package": "com.selah.app",
+      "package": "com.selah.devotional",
       "versionCode": 2,
       "adaptiveIcon": {
         "backgroundColor": "#377333",
-        "foregroundImage": "./assets/images/app-icon.jpg",
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
@@ -48,17 +48,37 @@
           "icon": "./assets/images/notification-icon.png",
           "color": "#377333"
         }
-      ]
+      ],
+      [
+        "expo-navigation-bar",
+        {
+          "style": "auto",
+          "enforceContrast": false
+        }
+      ],
+      "expo-asset",
+      "expo-font",
+      "expo-image",
+      "expo-secure-store",
+      "expo-sharing",
+      "expo-sqlite",
+      "expo-status-bar",
+      "expo-video",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true
     },
     "extra": {
       "router": {},
+      "expo-navigation-bar": {
+        "enforceContrast": false,
+        "style": "auto"
+      },
       "eas": {
-        "projectId": "9243b46e-1e22-48a2-aa40-4c45c1646a96"
+        "projectId": "badb48f8-f3d2-43e4-9357-8cd374e9da4e"
       }
     },
-    "owner": "dsadada"
+    "owner": "belly01"
   }
 }

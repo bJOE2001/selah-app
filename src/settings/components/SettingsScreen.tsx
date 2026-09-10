@@ -15,10 +15,10 @@ import {
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
-import { usePrivacyAuthStore } from '../../privacy-lock/store';
-import { useBiometricAuth } from '../../privacy-lock/hooks';
+import Constants from 'expo-constants';
 import { useTranslationStore } from '../../bible-data/translationStore';
 import { useDownloadStore } from '../../bible-data/downloadStore';
 import { TranslationPickerModal } from '../../bible-reader/components/TranslationPickerModal';
@@ -26,6 +26,7 @@ import { EditJournalCoverModal } from '../../journal-history';
 import { DevotionalTimePickerModal } from './DevotionalTimePickerModal';
 import { getUserDatabase } from '../../bible-data/db';
 import { useRecentDevotionals } from '../../devotional-core/hooks';
+import { RhemaGuideModal } from '../../devotional-guide';
 import { useSettingsStore, ThemeMode } from '../store';
 import { useTheme, promptModal, toast, JournalToggle, ThemeSegmentedControl } from '../../design-system';
 import { syncMorningReminder, syncEveningReminder } from '../../notifications';
@@ -146,10 +147,6 @@ export function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const { colors, isDark, themeMode, setThemeMode } = useTheme();
 
-  // Privacy lock
-  const { isLockEnabled, setLockEnabled, lock } = usePrivacyAuthStore();
-  const { authenticate } = useBiometricAuth();
-
   // Translations & Downloads
   const { selectedTranslation, setTranslation } = useTranslationStore();
   const {
@@ -183,12 +180,11 @@ export function SettingsScreen() {
   const { data: entries } = useRecentDevotionals(200);
   const [isExporting, setIsExporting] = useState(false);
   const [isClearingDownloads, setIsClearingDownloads] = useState(false);
+  const [isRhemaGuideOpen, setIsRhemaGuideOpen] = useState(false);
 
   // Entitlements & Subscription
   const isPremium = useIsPremium();
   const currentTier = useCurrentTier();
-  const devOverride = useEntitlementStore((s) => s.devOverride);
-  const setDevOverride = useEntitlementStore((s) => s.setDevOverride);
   const [isPaywallOpen, setIsPaywallOpen] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
 
@@ -264,31 +260,6 @@ export function SettingsScreen() {
   useEffect(() => {
     initDownloads();
   }, [initDownloads]);
-
-  // Handle Lock toggle
-  const handleToggleLock = async (value: boolean) => {
-    if (value) {
-      const success = await authenticate();
-      if (success) {
-        setLockEnabled(true);
-        toast.success(
-          'Privacy Lock Enabled',
-          'Your devotional journal is now protected with biometrics.'
-        );
-      } else {
-        toast.error(
-          'Authentication Required',
-          'Could not verify biometrics to enable app lock.'
-        );
-      }
-    } else {
-      const success = await authenticate();
-      if (success) {
-        setLockEnabled(false);
-        toast.info('Privacy Lock Disabled', 'App lock has been turned off.');
-      }
-    }
-  };
 
   // Handle Export Journal
   const handleExportJournal = async () => {
@@ -384,8 +355,19 @@ export function SettingsScreen() {
     <View style={[styles.container, { backgroundColor: colors.paperBg }]}>
       {/* Pinned Top App Bar */}
       <View style={[styles.topAppBar, { paddingTop: Math.max(insets.top, 16) + 4, backgroundColor: colors.paperBg }]}>
-        <Pressable onPress={() => router.back()} style={styles.backBtn} hitSlop={8}>
-          <Ionicons name="chevron-back" size={22} color={colors.brandGreen} />
+        <Pressable
+          onPress={() => {
+            try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+            router.back();
+          }}
+          style={({ pressed }) => [
+            styles.backBtn,
+            { backgroundColor: colors.cardBg, borderColor: colors.paperLine },
+            pressed && { opacity: 0.8 },
+          ]}
+          hitSlop={8}
+        >
+          <Ionicons name="chevron-back" size={15} color={colors.brandGreen} />
           <Text style={[styles.backBtnText, { color: colors.brandGreen }]}>Back</Text>
         </Pressable>
 
@@ -396,7 +378,7 @@ export function SettingsScreen() {
           <Text style={[styles.headerTitle, { color: colors.inkPrimary }]}>SETTINGS</Text>
         </View>
 
-        <View style={{ width: 60 }} />
+        <View style={{ width: 68 }} />
       </View>
 
       <ScrollView
@@ -469,7 +451,7 @@ export function SettingsScreen() {
                   <Text style={[styles.gracePlanTitle, { color: colors.inkPrimary }]}>
                     {isPremium
                       ? currentTier === 'patron_lifetime'
-                        ? 'Founding Patron (Lifetime)'
+                        ? 'Lifetime Pass'
                         : 'Selah Grace Active'
                       : 'Free Plan (Guest)'}
                   </Text>
@@ -481,8 +463,8 @@ export function SettingsScreen() {
                 </View>
                 <Text style={[styles.gracePlanSubtitle, { color: colors.inkSecondary }]}>
                   {isPremium
-                    ? 'Cloud Vault, Luxury Leather Covers & Watermark-Free HD Cards unlocked.'
-                    : 'Offline KJV Bible & local notes. Upgrade for Cloud Vault & Luxury Covers.'}
+                    ? 'Automatic Cloud Backup & Luxury Journal Covers unlocked.'
+                    : 'Offline KJV Bible & local notes. Upgrade for Cloud Backup & Luxury Covers.'}
                 </Text>
               </View>
             </View>
@@ -525,30 +507,6 @@ export function SettingsScreen() {
               </View>
               <Ionicons name="chevron-forward" size={16} color={colors.inkMuted} />
             </Pressable>
-
-            {/* Dev Mode Override Toggle (__DEV__ only) */}
-            {__DEV__ && (
-              <>
-                <View style={[styles.divider, { backgroundColor: colors.paperLine }]} />
-                <View style={styles.rowItem}>
-                  <View style={styles.rowLeft}>
-                    <View style={[styles.iconBox, { backgroundColor: '#FFF3E0' }]}>
-                      <Ionicons name="code-slash" size={17} color="#E65100" />
-                    </View>
-                    <View style={styles.rowTextCol}>
-                      <Text style={[styles.rowTitle, { color: '#E65100' }]}>[DEV] Mock Premium Access</Text>
-                      <Text style={[styles.rowSubtitle, { color: colors.inkSecondary }]}>
-                        Toggle simulated Grace entitlement for testing
-                      </Text>
-                    </View>
-                  </View>
-                  <JournalToggle
-                    value={devOverride}
-                    onValueChange={(val) => setDevOverride(val)}
-                  />
-                </View>
-              </>
-            )}
           </View>
         </View>
 
@@ -735,59 +693,7 @@ export function SettingsScreen() {
           </View>
         </View>
 
-        {/* ═══════════ SECTION 2: PRIVACY & SECURITY ═══════════ */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Ionicons name="shield-checkmark" size={16} color={colors.brandGreen} />
-            <Text style={[styles.sectionTitle, { color: colors.inkMuted }]}>PRIVACY & SECURITY</Text>
-          </View>
-
-          <View style={[styles.card, { backgroundColor: colors.cardBg, borderColor: colors.paperLine }]}>
-            <View style={styles.rowItem}>
-              <View style={styles.rowLeft}>
-                <View style={[styles.iconBox, { backgroundColor: colors.brandGreenLight }]}>
-                  <Ionicons name="lock-closed" size={17} color={colors.brandGreen} />
-                </View>
-                <View style={styles.rowTextCol}>
-                  <Text style={[styles.rowTitle, { color: colors.inkPrimary }]}>App Lock</Text>
-                  <Text style={[styles.rowSubtitle, { color: colors.inkSecondary }]}>
-                    Require biometrics / passcode on launch
-                  </Text>
-                </View>
-              </View>
-              <JournalToggle
-                value={isLockEnabled}
-                onValueChange={handleToggleLock}
-              />
-            </View>
-
-            {isLockEnabled ? (
-              <>
-                <View style={[styles.divider, { backgroundColor: colors.paperLine }]} />
-                <Pressable
-                  onPress={() => {
-                    lock();
-                    toast.info('Journal Locked', 'App will require authentication.');
-                  }}
-                  style={styles.rowItem}
-                >
-                  <View style={styles.rowLeft}>
-                    <View style={[styles.iconBox, { backgroundColor: isDark ? '#33201D' : '#FFF0ED' }]}>
-                      <Ionicons name="key" size={17} color={colors.tapeRhema} />
-                    </View>
-                    <View style={styles.rowTextCol}>
-                      <Text style={[styles.rowTitle, { color: colors.inkPrimary }]}>Lock Now</Text>
-                      <Text style={[styles.rowSubtitle, { color: colors.inkSecondary }]}>Lock application immediately</Text>
-                    </View>
-                  </View>
-                  <Ionicons name="chevron-forward" size={16} color={colors.inkMuted} />
-                </Pressable>
-              </>
-            ) : null}
-          </View>
-        </View>
-
-        {/* ═══════════ SECTION 3: BIBLE & READING ═══════════ */}
+        {/* ═══════════ SECTION 2: BIBLE & READING ═══════════ */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Ionicons name="book" size={16} color={colors.brandGreen} />
@@ -1075,7 +981,7 @@ export function SettingsScreen() {
                 <View style={styles.rowTextCol}>
                   <Text style={[styles.rowTitle, { color: colors.inkPrimary }]}>Export Journal Backup</Text>
                   <Text style={[styles.rowSubtitle, { color: colors.inkSecondary }]}>
-                    Save all reflections as JSON file
+                    Save all devotions as JSON file
                   </Text>
                 </View>
               </View>
@@ -1158,10 +1064,10 @@ export function SettingsScreen() {
               <View style={styles.aboutHeaderTextCol}>
                 <View style={[styles.aboutBuddyPill, { backgroundColor: colors.brandGreenLight, borderColor: colors.brandGreen + '35' }]}>
                   <Ionicons name="sparkles" size={10} color={colors.brandGreen} />
-                  <Text style={[styles.aboutBuddyPillText, { color: colors.brandGreen }]}>Daily Bible & Devotions</Text>
+                  <Text style={[styles.aboutBuddyPillText, { color: colors.brandGreen }]}>Bible & Devotional</Text>
                 </View>
                 <Text style={[styles.aboutAppName, { color: colors.inkPrimary }]}>Selah</Text>
-                <Text style={[styles.aboutVersion, { color: colors.inkSecondary }]}>Daily Bible & Devotions • v1.0.1</Text>
+                <Text style={[styles.aboutVersion, { color: colors.inkSecondary }]}>Bible & Devotional • v1.0.1</Text>
               </View>
             </View>
 
@@ -1194,97 +1100,123 @@ export function SettingsScreen() {
               </View>
             </View>
 
-            {/* The R.R.M.A. Method Comprehensive Card */}
-            <View style={[styles.rrmaContainer, { backgroundColor: isDark ? '#221E1A' : '#FBF7F0', borderColor: colors.paperLine }]}>
-              <View style={styles.rrmaHeader}>
-                <View style={[styles.rrmaBadge, { backgroundColor: colors.brandGreenLight }]}>
-                  <Ionicons name="sparkles" size={12} color={colors.brandGreen} />
-                  <Text style={[styles.rrmaBadgeText, { color: colors.brandGreen }]}>DEVOTIONAL FRAMEWORK</Text>
+            {/* Spiritual Journaling Guide / Rhema Method */}
+            <Pressable
+              onPress={() => {
+                try {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                } catch {}
+                setIsRhemaGuideOpen(true);
+              }}
+              style={({ pressed }) => [
+                styles.guideContainer,
+                { backgroundColor: isDark ? '#221E1A' : '#FBF7F0', borderColor: colors.paperLine },
+                pressed && { opacity: 0.92 },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Spiritual Journaling Guide: 4-Step Rhema Method"
+            >
+              <View style={styles.guideHeader}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <View style={[styles.guideBadge, { backgroundColor: colors.brandGreenLight }]}>
+                    <Ionicons name="sparkles" size={12} color={colors.brandGreen} />
+                    <Text style={[styles.guideBadgeText, { color: colors.brandGreen }]}>DEVOTIONAL FRAMEWORK</Text>
+                  </View>
+                  <View style={[styles.pillBadge, { backgroundColor: isDark ? '#2A3B30' : '#E2EFE5', borderColor: colors.brandGreen + '40' }]}>
+                    <Text style={[styles.pillBadgeText, { color: colors.brandGreen }]}>Interactive 🐑</Text>
+                  </View>
                 </View>
-                <Text style={[styles.rrmaMainTitle, { color: colors.inkPrimary }]}>The R.R.M.A. Method</Text>
-                <Text style={[styles.rrmaIntroText, { color: colors.inkSecondary }]}>
-                  A guided 4-step practice to help you meditate on God's Word, connect it to your heart, and live it out daily.
+
+                <Text style={[styles.guideMainTitle, { color: colors.inkPrimary }]}>
+                  The 4-Step Rhema Method
+                </Text>
+                <Text style={[styles.guideIntroText, { color: colors.inkSecondary }]}>
+                  A quiet-time path to pause, hear God’s voice, and walk out His Word every day. Tap to explore with Selah.
                 </Text>
               </View>
 
-              <View style={[styles.rrmaDivider, { backgroundColor: colors.paperLine }]} />
+              <View style={[styles.guideDivider, { backgroundColor: colors.paperLine }]} />
 
               {/* Step 1: Rhema */}
-              <View style={styles.rrmaStepItem}>
-                <View style={[styles.rrmaStepBadge, { backgroundColor: colors.tapeRhema + '22', borderColor: colors.tapeRhema }]}>
-                  <Text style={[styles.rrmaStepLetter, { color: colors.tapeRhema }]}>R</Text>
+              <View style={styles.guideStepItem}>
+                <View style={[styles.guideStepBadge, { backgroundColor: colors.tapeRhema + '22', borderColor: colors.tapeRhema }]}>
+                  <Text style={[styles.guideStepLetter, { color: colors.tapeRhema }]}>R</Text>
                 </View>
-                <View style={styles.rrmaStepContent}>
-                  <View style={styles.rrmaStepTitleRow}>
-                    <Text style={[styles.rrmaStepName, { color: colors.tapeRhema }]}>RHEMA</Text>
-                    <Text style={[styles.rrmaStepTag, { color: colors.inkSecondary }]}>God's Spoken Word</Text>
+                <View style={styles.guideStepContent}>
+                  <View style={styles.guideStepTitleRow}>
+                    <Text style={[styles.guideStepName, { color: colors.tapeRhema }]}>RHEMA</Text>
+                    <Text style={[styles.guideStepTag, { color: colors.inkSecondary }]}>The Spoken Word</Text>
                   </View>
-                  <Text style={[styles.rrmaStepDesc, { color: colors.inkSecondary }]}>
-                    The specific verse or passage that catches your attention and speaks directly to your spirit today.
-                  </Text>
-                  <Text style={[styles.rrmaStepPrompt, { color: colors.inkPrimary }]}>
-                    ✦ "What Scripture did the Holy Spirit highlight for you?"
+                  <Text style={[styles.guideStepDesc, { color: colors.inkSecondary }]}>
+                    What verse jumped out and spoke to your heart while reading?
                   </Text>
                 </View>
               </View>
 
-              {/* Step 2: Reflect */}
-              <View style={styles.rrmaStepItem}>
-                <View style={[styles.rrmaStepBadge, { backgroundColor: colors.tapeReflection + '22', borderColor: colors.tapeReflection }]}>
-                  <Text style={[styles.rrmaStepLetter, { color: colors.tapeReflection }]}>R</Text>
+              {/* Step 2: Reflection */}
+              <View style={styles.guideStepItem}>
+                <View style={[styles.guideStepBadge, { backgroundColor: colors.tapeReflection + '22', borderColor: colors.tapeReflection }]}>
+                  <Text style={[styles.guideStepLetter, { color: colors.tapeReflection }]}>R</Text>
                 </View>
-                <View style={styles.rrmaStepContent}>
-                  <View style={styles.rrmaStepTitleRow}>
-                    <Text style={[styles.rrmaStepName, { color: colors.tapeReflection }]}>REFLECT</Text>
-                    <Text style={[styles.rrmaStepTag, { color: colors.inkSecondary }]}>Divine Meaning</Text>
+                <View style={styles.guideStepContent}>
+                  <View style={styles.guideStepTitleRow}>
+                    <Text style={[styles.guideStepName, { color: colors.tapeReflection }]}>REFLECTION</Text>
+                    <Text style={[styles.guideStepTag, { color: colors.inkSecondary }]}>Meditate on Truth</Text>
                   </View>
-                  <Text style={[styles.rrmaStepDesc, { color: colors.inkSecondary }]}>
-                    Slow down and meditate on the truth. Seek to understand what God is teaching about His character and will.
-                  </Text>
-                  <Text style={[styles.rrmaStepPrompt, { color: colors.inkPrimary }]}>
-                    ✦ "What is God revealing to you through this passage?"
+                  <Text style={[styles.guideStepDesc, { color: colors.inkSecondary }]}>
+                    What does this passage reveal about God's character and your season?
                   </Text>
                 </View>
               </View>
 
-              {/* Step 3: Motivate */}
-              <View style={styles.rrmaStepItem}>
-                <View style={[styles.rrmaStepBadge, { backgroundColor: colors.tapeMotivation + '22', borderColor: colors.tapeMotivation }]}>
-                  <Text style={[styles.rrmaStepLetter, { color: colors.tapeMotivation }]}>M</Text>
+              {/* Step 3: Motivation */}
+              <View style={styles.guideStepItem}>
+                <View style={[styles.guideStepBadge, { backgroundColor: colors.tapeMotivation + '22', borderColor: colors.tapeMotivation }]}>
+                  <Text style={[styles.guideStepLetter, { color: colors.tapeMotivation }]}>M</Text>
                 </View>
-                <View style={styles.rrmaStepContent}>
-                  <View style={styles.rrmaStepTitleRow}>
-                    <Text style={[styles.rrmaStepName, { color: colors.tapeMotivation }]}>MOTIVATE</Text>
-                    <Text style={[styles.rrmaStepTag, { color: colors.inkSecondary }]}>Heart & Conviction</Text>
+                <View style={styles.guideStepContent}>
+                  <View style={styles.guideStepTitleRow}>
+                    <Text style={[styles.guideStepName, { color: colors.tapeMotivation }]}>MOTIVATION</Text>
+                    <Text style={[styles.guideStepTag, { color: colors.inkSecondary }]}>Spirit Conviction</Text>
                   </View>
-                  <Text style={[styles.rrmaStepDesc, { color: colors.inkSecondary }]}>
-                    Let the truth touch your emotions and convictions. Experience renewed hope, peace, or godly repentance.
-                  </Text>
-                  <Text style={[styles.rrmaStepPrompt, { color: colors.inkPrimary }]}>
-                    ✦ "Why does this verse inspire, challenge, or comfort your heart?"
+                  <Text style={[styles.guideStepDesc, { color: colors.inkSecondary }]}>
+                    Why did your soul need to hear this word from God today?
                   </Text>
                 </View>
               </View>
 
-              {/* Step 4: Apply */}
-              <View style={[styles.rrmaStepItem, { marginBottom: 0 }]}>
-                <View style={[styles.rrmaStepBadge, { backgroundColor: colors.tapeApplication + '22', borderColor: colors.tapeApplication }]}>
-                  <Text style={[styles.rrmaStepLetter, { color: colors.tapeApplication }]}>A</Text>
+              {/* Step 4: Application */}
+              <View style={styles.guideStepItem}>
+                <View style={[styles.guideStepBadge, { backgroundColor: colors.tapeApplication + '22', borderColor: colors.tapeApplication }]}>
+                  <Text style={[styles.guideStepLetter, { color: colors.tapeApplication }]}>A</Text>
                 </View>
-                <View style={styles.rrmaStepContent}>
-                  <View style={styles.rrmaStepTitleRow}>
-                    <Text style={[styles.rrmaStepName, { color: colors.tapeApplication }]}>APPLY</Text>
-                    <Text style={[styles.rrmaStepTag, { color: colors.inkSecondary }]}>Action & Prayer</Text>
+                <View style={styles.guideStepContent}>
+                  <View style={styles.guideStepTitleRow}>
+                    <Text style={[styles.guideStepName, { color: colors.tapeApplication }]}>APPLICATION</Text>
+                    <Text style={[styles.guideStepTag, { color: colors.inkSecondary }]}>Faith in Action</Text>
                   </View>
-                  <Text style={[styles.rrmaStepDesc, { color: colors.inkSecondary }]}>
-                    Turn revelation into obedience. Write down tangible action steps, prayer commitments, or life changes.
-                  </Text>
-                  <Text style={[styles.rrmaStepPrompt, { color: colors.inkPrimary }]}>
-                    ✦ "How will you live out and practice this truth today?"
+                  <Text style={[styles.guideStepDesc, { color: colors.inkSecondary }]}>
+                    How will you walk out this truth in prayer and deeds today?
                   </Text>
                 </View>
               </View>
-            </View>
+
+              {/* Open Guide Button */}
+              <View
+                style={[
+                  styles.openGuideBtn,
+                  {
+                    backgroundColor: isDark ? '#2D3E32' : colors.brandGreenLight,
+                    borderColor: colors.brandGreen + '40',
+                  },
+                ]}
+              >
+                <Text style={[styles.openGuideBtnText, { color: colors.brandGreen }]}>
+                  Open Interactive Walkthrough with Selah 🐑
+                </Text>
+                <Ionicons name="arrow-forward" size={13} color={colors.brandGreen} />
+              </View>
+            </Pressable>
 
             {/* Legal & Support Links */}
             <View style={[styles.divider, { backgroundColor: colors.paperLine }]} />
@@ -1293,7 +1225,7 @@ export function SettingsScreen() {
               onPress={() => {
                 promptModal.info(
                   'Privacy Policy',
-                  'Selah is built on a Zero-Knowledge & Local-First philosophy:\n\n1. All scripture readings and local notes remain on your device by default.\n2. When using Cloud Vault, your reflections are encrypted with AES-256 before leaving your device.\n3. We never sell, track, or harvest personal devotional data.\n\nFor questions, contact support@selah.app'
+                  'Selah is built on a Zero-Knowledge & Local-First philosophy:\n\n1. All scripture readings and local notes remain on your device by default.\n2. When using Cloud Vault, your devotions are encrypted with AES-256 before leaving your device.\n3. We never sell, track, or harvest personal devotional data.\n\nFor questions, contact support@selah.app'
                 );
               }}
               style={styles.rowItem}
@@ -1340,7 +1272,7 @@ export function SettingsScreen() {
             {/* Version & Soli Deo Gloria Footer */}
             <View style={{ alignItems: 'center', paddingTop: 14, paddingBottom: 4 }}>
               <Text style={{ fontFamily: FONTS.body, fontSize: 11, color: colors.inkMuted }}>
-                Selah: Daily Bible & Devotions • Version 1.0.1 (Build 2)
+                {`Selah: Bible & Devotional • Version ${Constants.expoConfig?.version || '1.0.0'} (Build ${Constants.expoConfig?.android?.versionCode || 1})`}
               </Text>
               <Text style={{ fontFamily: FONTS.scriptureItalic, fontSize: 11, color: colors.inkSecondary, marginTop: 3 }}>
                 Soli Deo Gloria ✦ To God Alone Be the Glory
@@ -1394,7 +1326,7 @@ export function SettingsScreen() {
         onSaveTime={handleSaveManualTime}
       />
 
-      {/* Shepema Grace Paywall Modal */}
+      {/* Selah Grace Paywall Modal */}
       <PaywallModal
         visible={isPaywallOpen}
         onClose={() => setIsPaywallOpen(false)}
@@ -1404,6 +1336,16 @@ export function SettingsScreen() {
       <CloudVaultAuthModal
         visible={isCloudAuthOpen}
         onClose={() => setIsCloudAuthOpen(false)}
+      />
+
+      {/* Rhema Devotional Method Guide Walkthrough Modal */}
+      <RhemaGuideModal
+        visible={isRhemaGuideOpen}
+        onClose={() => setIsRhemaGuideOpen(false)}
+        onOpenBible={() => {
+          setIsRhemaGuideOpen(false);
+          router.push('/(tabs)/bible');
+        }}
       />
     </View>
   );
@@ -1426,12 +1368,16 @@ const styles = StyleSheet.create({
   backBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
-    width: 60,
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: RADIUS.pill,
+    borderWidth: 1,
+    ...SHADOWS.subtle,
   },
   backBtnText: {
     fontFamily: FONTS.bodyBold,
-    fontSize: 14,
+    fontSize: 12.5,
     fontWeight: '700',
   },
   headerTitleGroup: {
@@ -1934,18 +1880,18 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
   },
-  /* ── R.R.M.A. Method Card ── */
-  rrmaContainer: {
+  /* ── Spiritual Journaling Guide ── */
+  guideContainer: {
     marginTop: SPACING.md,
     padding: SPACING.md,
     borderRadius: 16,
     borderWidth: 1,
     gap: SPACING.sm,
   },
-  rrmaHeader: {
+  guideHeader: {
     gap: 4,
   },
-  rrmaBadge: {
+  guideBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
@@ -1954,33 +1900,33 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.pill,
     alignSelf: 'flex-start',
   },
-  rrmaBadgeText: {
+  guideBadgeText: {
     fontFamily: FONTS.bodyBold,
     fontSize: 9.5,
     fontWeight: '800',
     letterSpacing: 0.6,
   },
-  rrmaMainTitle: {
+  guideMainTitle: {
     fontFamily: FONTS.sectionHeader,
     fontSize: 16,
     fontWeight: '700',
     marginTop: 2,
   },
-  rrmaIntroText: {
+  guideIntroText: {
     fontFamily: FONTS.body,
     fontSize: 11.5,
     lineHeight: 17,
   },
-  rrmaDivider: {
+  guideDivider: {
     height: 1,
     marginVertical: 4,
   },
-  rrmaStepItem: {
+  guideStepItem: {
     flexDirection: 'row',
     gap: 12,
     marginBottom: SPACING.sm + 2,
   },
-  rrmaStepBadge: {
+  guideStepBadge: {
     width: 28,
     height: 28,
     borderRadius: 14,
@@ -1989,40 +1935,56 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: 2,
   },
-  rrmaStepLetter: {
+  guideStepLetter: {
     fontFamily: FONTS.bodyBold,
     fontSize: 13,
     fontWeight: '800',
   },
-  rrmaStepContent: {
+  guideStepContent: {
     flex: 1,
     gap: 3,
   },
-  rrmaStepTitleRow: {
+  guideStepTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 8,
   },
-  rrmaStepName: {
+  guideStepName: {
     fontFamily: FONTS.bodyBold,
     fontSize: 12,
     fontWeight: '800',
     letterSpacing: 0.5,
   },
-  rrmaStepTag: {
+  guideStepTag: {
     fontFamily: FONTS.bodyItalic,
     fontSize: 10.5,
   },
-  rrmaStepDesc: {
+  guideStepDesc: {
     fontFamily: FONTS.body,
     fontSize: 11,
     lineHeight: 16,
   },
-  rrmaStepPrompt: {
+  guideStepPrompt: {
     fontFamily: FONTS.bodyItalic,
     fontSize: 10.5,
     lineHeight: 15,
     marginTop: 2,
+  },
+  openGuideBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 9,
+    paddingHorizontal: 12,
+    borderRadius: RADIUS.pill,
+    borderWidth: 1,
+    marginTop: 8,
+  },
+  openGuideBtnText: {
+    fontFamily: FONTS.bodyBold,
+    fontSize: 11.5,
+    fontWeight: '700',
   },
 });

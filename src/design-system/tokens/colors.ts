@@ -43,6 +43,15 @@ export const LIGHT_COLORS = {
   // Privacy / Lock Screen
   lockBg: '#FAF7F2',
   lockAccent: '#3A7D3A',
+
+  // Modern Glassmorphism & Translucency
+  glassBg: 'rgba(255, 255, 255, 0.92)',
+  glassBorder: 'rgba(232, 224, 212, 0.9)',
+  tabActivePill: 'rgba(58, 125, 58, 0.12)',
+  tabBarBg: '#FFFFFF',
+  bentoAccent: 'rgba(212, 168, 75, 0.08)',
+  flameOrange: '#E65100',
+  flameOrangeLight: '#FFF3E0',
 };
 
 export const DARK_COLORS: typeof LIGHT_COLORS = {
@@ -90,6 +99,15 @@ export const DARK_COLORS: typeof LIGHT_COLORS = {
   // Privacy / Lock Screen
   lockBg: '#151311',
   lockAccent: '#52A752',
+
+  // Modern Glassmorphism & Translucency
+  glassBg: 'rgba(33, 30, 27, 0.92)',
+  glassBorder: 'rgba(255, 255, 255, 0.08)',
+  tabActivePill: 'rgba(82, 167, 82, 0.18)',
+  tabBarBg: '#1E1B18',
+  bentoAccent: 'rgba(230, 188, 92, 0.12)',
+  flameOrange: '#FF7043',
+  flameOrangeLight: '#2C1B14',
 };
 
 export const COLORS = LIGHT_COLORS;

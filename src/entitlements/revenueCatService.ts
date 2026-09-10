@@ -23,8 +23,12 @@ const ENTITLEMENT_ID = 'selah_grace';
 // RevenueCat API keys — set these from your RevenueCat project dashboard
 // In production, these should come from environment variables / EAS secrets
 const REVENUECAT_API_KEYS = {
-  android: 'YOUR_REVENUECAT_GOOGLE_API_KEY',
-  ios: 'YOUR_REVENUECAT_APPLE_API_KEY',
+  android:
+    process.env.EXPO_PUBLIC_REVENUECAT_GOOGLE_API_KEY ||
+    'goog_fgvJABcRlgYQJiJAbqvtOAbNHRM',
+  ios:
+    process.env.EXPO_PUBLIC_REVENUECAT_APPLE_API_KEY ||
+    'YOUR_REVENUECAT_APPLE_API_KEY',
 };
 
 /** Cached reference to the Purchases module (lazy loaded) */
@@ -64,7 +68,7 @@ function parseCustomerInfo(
   source: EntitlementSource = 'revenueCat'
 ): EntitlementInfo {
   const activeEntitlements = customerInfo?.entitlements?.active;
-  const entitlement = activeEntitlements?.[ENTITLEMENT_ID] || activeEntitlements?.['rhema_grace'] || activeEntitlements?.['shepema_grace'];
+  const entitlement = activeEntitlements?.[ENTITLEMENT_ID];
   if (!entitlement) {
     return DEFAULT_ENTITLEMENT;
   }
@@ -184,7 +188,7 @@ export async function getOfferings(): Promise<PaywallPackage[]> {
           description = 'Best value — save 44%';
           break;
         case 'patron_lifetime':
-          title = 'Founding Patron';
+          title = 'Lifetime Pass';
           description = 'One-time payment, forever yours';
           break;
       }

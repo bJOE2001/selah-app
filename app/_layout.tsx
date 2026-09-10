@@ -24,11 +24,12 @@ import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useState } from "react";
 import "react-native-get-random-values";
 
-import * as NavigationBar from "expo-navigation-bar";
+import { NavigationBar, setStyle as setNavigationBarStyle } from "expo-navigation-bar";
+import * as SystemUI from "expo-system-ui";
 import { Appearance, Image, LogBox, Platform, Text, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
-// Ignore benign Expo Go warnings (SDK 53+ notifications & Android Edge-to-Edge system bar warnings)
+// Ignore benign Expo Go warnings (SDK 53+ notifications, Android Edge-to-Edge system bar warnings, HMR sync, RevenueCat Preview mode, and React 19 useLinking unmounted state update)
 LogBox.ignoreLogs([
   "expo-notifications: Android Push notifications",
   "`expo-notifications` functionality is not fully supported in Expo Go",
@@ -36,7 +37,25 @@ LogBox.ignoreLogs([
   "`setBackgroundColorAsync` is not supported with edge-to-edge enabled",
   "`setBorderColorAsync` is not supported with edge-to-edge enabled",
   "is not supported with edge-to-edge enabled",
+  "Can't perform a React state update on a component that hasn't mounted yet",
+  "Expo CLI and the android client are out of sync",
+  "Reload to reconnect",
+  "[RevenueCat] [getCustomerInfo] This method is available but has no effect in Preview API mode",
+  "Preview API mode",
 ]);
+
+if (__DEV__) {
+  const origConsoleError = console.error;
+  console.error = (...args: any[]) => {
+    if (
+      typeof args[0] === "string" &&
+      args[0].includes("Can't perform a React state update on a component that hasn't mounted yet")
+    ) {
+      return;
+    }
+    origConsoleError(...args);
+  };
+}
 
 import { initDatabase } from "../src/bible-data/db";
 import {
@@ -45,8 +64,6 @@ import {
     AppOpeningScreen,
     useTheme,
 } from "../src/design-system";
-import { LockScreen } from "../src/privacy-lock/components/LockScreen";
-import { usePrivacyAuthStore } from "../src/privacy-lock/store";
 import { configureNotificationHandler, syncAllReminders } from "../src/notifications";
 import { useSettingsStore } from "../src/settings/store";
 import { initRevenueCat } from "../src/entitlements";
@@ -83,8 +100,7 @@ export default function RootLayout() {
     Caveat_700Bold,
   });
 
-  const { isUnlocked, isLockEnabled } = usePrivacyAuthStore();
-  const { isDark, colors, themeMode } = useTheme();
+  const { isDark, colors } = useTheme();
 
   useEffect(() => {
     // Display the animated AppOpeningScreen on launch
@@ -99,11 +115,16 @@ export default function RootLayout() {
     async function prepare() {
       try {
         if (typeof Appearance?.setColorScheme === "function") {
-          Appearance.setColorScheme(themeMode === "system" ? null : (isDark ? "dark" : "light"));
+          try {
+            Appearance.setColorScheme("unspecified");
+          } catch {}
         }
         if (Platform.OS === "android") {
           try {
-            await NavigationBar.setButtonStyleAsync(isDark ? "light" : "dark");
+            await SystemUI.setBackgroundColorAsync(colors.paperBg);
+          } catch {}
+          try {
+            setNavigationBarStyle(isDark ? "light" : "dark");
           } catch {}
         } else if (Platform.OS === "web" && typeof document !== "undefined") {
           document.body.style.backgroundColor = colors.paperBg;
@@ -120,20 +141,20 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
-    if (typeof Appearance?.setColorScheme === "function") {
-      Appearance.setColorScheme(themeMode === "system" ? null : (isDark ? "dark" : "light"));
-    }
     if (Platform.OS === "android") {
       const syncNavBar = async () => {
         try {
-          await NavigationBar.setButtonStyleAsync(isDark ? "light" : "dark");
+          await SystemUI.setBackgroundColorAsync(colors.paperBg);
+        } catch {}
+        try {
+          setNavigationBarStyle(isDark ? "light" : "dark");
         } catch {}
       };
       syncNavBar();
     } else if (Platform.OS === "web" && typeof document !== "undefined") {
       document.body.style.backgroundColor = colors.paperBg;
     }
-  }, [colors.paperBg, isDark, themeMode]);
+  }, [colors.paperBg, isDark]);
 
   const {
     morningReminderEnabled,
@@ -169,34 +190,20 @@ export default function RootLayout() {
     }
   }, [fontsLoaded, fontError, dbReady]);
 
-  // Display the dedicated Shepema AppOpeningScreen on app startup
-  if ((!fontsLoaded && !fontError) || !dbReady || !isOpeningComplete) {
-    return <AppOpeningScreen />;
-  }
-
-  // If privacy lock is enabled and app is locked, render LockScreen
-  if (isLockEnabled && !isUnlocked) {
-    return (
-      <SafeAreaProvider style={{ flex: 1, backgroundColor: colors.paperBg }}>
-        <QueryClientProvider client={queryClient}>
-          <StatusBar
-            style={isDark ? "light" : "dark"}
-            backgroundColor={colors.paperBg}
-          />
-          <LockScreen />
-        </QueryClientProvider>
-      </SafeAreaProvider>
-    );
-  }
-
   return (
     <SafeAreaProvider style={{ flex: 1, backgroundColor: colors.paperBg }}>
       <QueryClientProvider client={queryClient}>
         <StatusBar
           style={isDark ? "light" : "dark"}
-          backgroundColor={colors.paperBg}
         />
-        <Stack
+        {Platform.OS === "android" ? (
+          <NavigationBar style={isDark ? "light" : "dark"} />
+        ) : null}
+
+        {(!fontsLoaded && !fontError) || !dbReady || !isOpeningComplete ? (
+          <AppOpeningScreen />
+        ) : (
+          <Stack
           screenOptions={{
             headerStyle: {
               backgroundColor: colors.paperBg,
@@ -239,6 +246,7 @@ export default function RootLayout() {
             }}
           />
         </Stack>
+        )}
 
         {/* Global Devotional Prompt Dialog & Toast Notifications */}
         <PromptModal />

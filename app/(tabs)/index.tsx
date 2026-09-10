@@ -1,53 +1,14 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { DailyDashboard } from '../../src/daily-dashboard';
-import { ShareCardModal } from '../../src/share-card';
-import { useDevotional } from '../../src/devotional-core/hooks';
 import { useTheme } from '../../src/design-system';
 
 export default function HomeScreen() {
   const { colors } = useTheme();
-  const [sharingId, setSharingId] = useState<string | null>(null);
-  const [customShareDevotional, setCustomShareDevotional] = useState<any | null>(null);
-  const { data: sharingDevotional } = useDevotional(sharingId);
-
-  const activeDevotional = customShareDevotional || sharingDevotional || null;
 
   return (
     <View style={[styles.container, { backgroundColor: colors.paperBg }]}>
-      <DailyDashboard
-        onShareEntry={(id) => {
-          setCustomShareDevotional(null);
-          setSharingId(id);
-        }}
-        onShareQuote={(verse) => {
-          setSharingId(null);
-          setCustomShareDevotional({
-            id: 'verse-of-the-day',
-            rhemaVerseId: 0,
-            rhemaReference: verse.reference,
-            rhemaText: verse.text,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            isDraft: false,
-            isVerseOfTheDay: true,
-            reflection: '',
-            motivation: '',
-            application: '',
-            moodTags: [],
-            applicationTasks: [],
-          });
-        }}
-      />
-
-      <ShareCardModal
-        visible={!!activeDevotional}
-        devotional={activeDevotional}
-        onClose={() => {
-          setSharingId(null);
-          setCustomShareDevotional(null);
-        }}
-      />
+      <DailyDashboard />
     </View>
   );
 }

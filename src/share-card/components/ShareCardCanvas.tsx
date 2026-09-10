@@ -76,8 +76,25 @@ export const ShareCardCanvas = forwardRef<View, ShareCardCanvasProps>(
 
     const isVOTD = devotional.isVerseOfTheDay || devotional.id === 'verse-of-the-day' || devotional.id === 'quote-share';
     const themeTag = devotional.themeName;
-    const rawReflection = devotional.reflection || devotional.motivation || devotional.application || '';
-    const reflectionText = (!isVOTD && includeReflection) ? rawReflection : '';
+    
+    // Parse notes into title/quote and body
+    const rawNotes = devotional.notes || '';
+    const noteLines = rawNotes.split('\n').map(l => l.trim()).filter(Boolean);
+    const firstLine = noteLines[0] || '';
+    
+    let parsedQuote = firstLine;
+    let parsedRef = '';
+    
+    // If it looks like a Bible quote (e.g. "Text" — Ref)
+    if (parsedQuote.includes(' — ')) {
+      const parts = parsedQuote.split(' — ');
+      parsedQuote = parts[0];
+      parsedRef = parts[1];
+    }
+    
+    const reflectionText = (!isVOTD && includeReflection && noteLines.length > 1) 
+      ? noteLines.slice(1).join('\n') 
+      : '';
 
     return (
       <View
@@ -103,7 +120,7 @@ export const ShareCardCanvas = forwardRef<View, ShareCardCanvasProps>(
                   SELAH
                 </Text>
                 <Text style={[styles.appTaglineSub, { color: palette.textSecondary }]}>
-                  Daily Bible & Devotions
+                  Bible & Devotional
                 </Text>
               </View>
             </View>
@@ -140,14 +157,16 @@ export const ShareCardCanvas = forwardRef<View, ShareCardCanvasProps>(
           <View style={[styles.quoteContainer, isVOTD && styles.quoteContainerVOTD]}>
             <Text style={[styles.quoteMark, { color: palette.accent }]}>“</Text>
             <Text style={[styles.verseText, { color: palette.textPrimary }]}>
-              {devotional.rhemaText}
+              {parsedQuote.replace(/^"|"$/g, '')}
             </Text>
-            <View style={styles.referenceRow}>
-              <View style={[styles.referenceLine, { backgroundColor: palette.accent + '30' }]} />
-              <Text style={[styles.referenceText, { color: palette.accent }]}>
-                {devotional.rhemaReference}
-              </Text>
-            </View>
+            {parsedRef ? (
+              <View style={styles.referenceRow}>
+                <View style={[styles.referenceLine, { backgroundColor: palette.accent + '30' }]} />
+                <Text style={[styles.referenceText, { color: palette.accent }]}>
+                  {parsedRef}
+                </Text>
+              </View>
+            ) : null}
           </View>
 
           {/* Devotional Reflection (shown for personal journal entries) */}

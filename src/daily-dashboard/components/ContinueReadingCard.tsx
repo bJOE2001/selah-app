@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { useTheme } from '../../design-system';
 import { FONTS } from '../../design-system/tokens/typography';
 import { SPACING, RADIUS, SHADOWS } from '../../design-system/tokens/spacing';
@@ -38,53 +39,95 @@ export function ContinueReadingCard({
   const { colors, isDark } = useTheme();
   const timeAgo = getRelativeTime(lastReadAt);
 
+  const handlePress = () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {}
+    onPress();
+  };
+
   return (
     <View style={styles.container}>
       <Pressable
-        style={[
+        style={({ pressed }) => [
           styles.card,
           {
             backgroundColor: colors.cardBg,
             borderColor: colors.paperLine,
           },
+          pressed && styles.cardPressed,
         ]}
-        onPress={onPress}
-        hitSlop={4}
+        onPress={handlePress}
+        hitSlop={6}
+        accessibilityRole="button"
+        accessibilityLabel={`Continue reading ${bookName} Chapter ${chapter}`}
       >
-        {/* Left: Icon + Text */}
-        <View style={styles.leftContent}>
+        {/* Left Bookmark Ribbon Accent Stripe */}
+        <View
+          style={[
+            styles.ribbonStripe,
+            { backgroundColor: colors.brandGreen },
+          ]}
+        />
+
+        {/* Card Content Row */}
+        <View style={styles.cardInner}>
+          {/* Left: Icon + Text Group */}
+          <View style={styles.leftContent}>
+            <View
+              style={[
+                styles.iconCircle,
+                {
+                  backgroundColor: isDark ? 'rgba(82, 167, 82, 0.18)' : '#EAF4EC',
+                  borderColor: isDark ? 'rgba(82, 167, 82, 0.32)' : '#D0E5D3',
+                },
+              ]}
+            >
+              <Ionicons name="bookmark" size={15} color={colors.brandGreen} />
+            </View>
+
+            <View style={styles.textGroup}>
+              <View style={styles.badgeRow}>
+                <View
+                  style={[
+                    styles.resumePill,
+                    {
+                      backgroundColor: isDark ? 'rgba(82, 167, 82, 0.15)' : '#EBF5ED',
+                      borderColor: isDark ? 'rgba(82, 167, 82, 0.3)' : '#D3EADB',
+                    },
+                  ]}
+                >
+                  <Text style={[styles.resumePillText, { color: colors.brandGreen }]}>
+                    RESUME READING
+                  </Text>
+                </View>
+
+                {timeAgo ? (
+                  <View style={styles.timeRow}>
+                    <Ionicons name="time-outline" size={10} color={colors.inkMuted} />
+                    <Text style={[styles.timeAgo, { color: colors.inkMuted }]}>{timeAgo}</Text>
+                  </View>
+                ) : null}
+              </View>
+
+              <Text style={[styles.reference, { color: colors.inkPrimary }]} numberOfLines={1}>
+                {bookName} • Chapter {chapter}
+              </Text>
+            </View>
+          </View>
+
+          {/* Right: Tactile Resume Button */}
           <View
             style={[
-              styles.iconCircle,
+              styles.resumeButton,
               {
-                backgroundColor: isDark ? '#1C291C' : '#EAF4EC',
+                backgroundColor: isDark ? 'rgba(82, 167, 82, 0.22)' : colors.brandGreenLight,
+                borderColor: isDark ? 'rgba(82, 167, 82, 0.4)' : '#CCE8D2',
               },
             ]}
           >
-            <Ionicons name="bookmark" size={14} color={colors.brandGreen} />
+            <Ionicons name="play" size={13} color={colors.brandGreen} />
           </View>
-
-          <View style={styles.textGroup}>
-            <Text style={[styles.label, { color: colors.inkMuted }]}>Continue Reading</Text>
-            <Text style={[styles.reference, { color: colors.inkPrimary }]} numberOfLines={1}>
-              {bookName} • Chapter {chapter}
-            </Text>
-            {timeAgo ? (
-              <Text style={[styles.timeAgo, { color: colors.inkMuted }]}>{timeAgo}</Text>
-            ) : null}
-          </View>
-        </View>
-
-        {/* Right: Resume Arrow */}
-        <View
-          style={[
-            styles.resumeButton,
-            {
-              backgroundColor: colors.brandGreenLight,
-            },
-          ]}
-        >
-          <Ionicons name="play" size={14} color={colors.brandGreen} />
         </View>
       </Pressable>
     </View>
@@ -94,56 +137,93 @@ export function ContinueReadingCard({
 const styles = StyleSheet.create({
   container: {
     marginHorizontal: SPACING.base,
-    marginBottom: SPACING.sm,
+    marginBottom: SPACING.sm + 2,
   },
   card: {
+    borderRadius: 20,
+    borderWidth: 1,
+    overflow: 'hidden',
+    position: 'relative',
+    ...SHADOWS.card,
+  },
+  cardPressed: {
+    transform: [{ scale: 0.98 }],
+    opacity: 0.94,
+  },
+  ribbonStripe: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 4,
+    borderTopLeftRadius: 20,
+    borderBottomLeftRadius: 20,
+  },
+  cardInner: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderRadius: 20,
-    borderWidth: 1,
     padding: SPACING.sm + 4,
-    paddingHorizontal: SPACING.base,
-    ...SHADOWS.subtle,
+    paddingLeft: SPACING.base,
+    paddingRight: SPACING.base - 2,
   },
   leftContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 12,
     flex: 1,
   },
   iconCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   textGroup: {
     flex: 1,
+    gap: 2,
   },
-  label: {
-    fontFamily: FONTS.body,
-    fontSize: 10,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
-    marginBottom: 1,
+  badgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 2,
   },
-  reference: {
-    fontFamily: FONTS.sectionHeader,
-    fontSize: 14,
-    fontWeight: '700',
+  resumePill: {
+    paddingHorizontal: 6,
+    paddingVertical: 1.5,
+    borderRadius: RADIUS.pill,
+    borderWidth: 0.8,
+  },
+  resumePillText: {
+    fontFamily: FONTS.bodyBold,
+    fontSize: 8.5,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  timeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
   },
   timeAgo: {
     fontFamily: FONTS.body,
-    fontSize: 10,
-    marginTop: 1,
+    fontSize: 9.5,
+    fontWeight: '500',
+  },
+  reference: {
+    fontFamily: FONTS.sectionHeader,
+    fontSize: 14.5,
+    fontWeight: '700',
+    letterSpacing: 0.1,
   },
   resumeButton: {
     width: 32,
     height: 32,
     borderRadius: 16,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: SPACING.sm,

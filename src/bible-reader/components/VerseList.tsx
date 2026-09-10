@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
+import * as Speech from 'expo-speech';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Verse, Book } from '../../bible-data/types';
@@ -21,7 +22,6 @@ export interface VerseListProps {
   book: Book;
   chapter: number;
   verses: Verse[];
-  onSelectRhema: (verse: Verse, reference: string) => void;
   onChapterChange?: (chapter: number) => void;
 }
 
@@ -29,7 +29,6 @@ export function VerseList({
   book,
   chapter,
   verses,
-  onSelectRhema,
   onChapterChange,
 }: VerseListProps) {
   const insets = useSafeAreaInsets();
@@ -37,6 +36,36 @@ export function VerseList({
   const fontSize = useSettingsStore((s) => s.fontSize);
   const setFontSize = useSettingsStore((s) => s.setFontSize);
   const [selectedVerseIds, setSelectedVerseIds] = useState<number[]>([]);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      Speech.stop();
+      setIsSpeaking(false);
+    };
+  }, [chapter, book.id]);
+
+  const toggleSpeech = async () => {
+    try {
+      const speaking = await Speech.isSpeakingAsync();
+      if (speaking || isSpeaking) {
+        Speech.stop();
+        setIsSpeaking(false);
+      } else {
+        const textToRead = verses.map(v => v.text.trim()).join(' ');
+        setIsSpeaking(true);
+        Speech.speak(textToRead, {
+          rate: 0.9,
+          pitch: 1.0,
+          onDone: () => setIsSpeaking(false),
+          onStopped: () => setIsSpeaking(false),
+          onError: () => setIsSpeaking(false),
+        });
+      }
+    } catch (err) {
+      setIsSpeaking(false);
+    }
+  };
 
   const verseIds = useMemo(() => verses.map((v) => v.id), [verses]);
   const { highlights, applyHighlight, clearHighlight } = useChapterHighlights(verseIds);
@@ -71,6 +100,10 @@ export function VerseList({
 
   // Handle sequential verse selection
   const handleVersePress = (tappedVerse: Verse) => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {}
+
     if (selectedVerseIds.length === 0) {
       setSelectedVerseIds([tappedVerse.id]);
       return;
@@ -107,79 +140,102 @@ export function VerseList({
   };
 
   const handleApplyColor = (colorId: string) => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {}
     if (selectedVerseIds.length > 0) {
       applyHighlight(selectedVerseIds, colorId);
     }
   };
 
   const handleClearHighlights = () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {}
     if (selectedVerseIds.length > 0) {
       clearHighlight(selectedVerseIds);
     }
   };
 
   const handleClearSelection = () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {}
     setSelectedVerseIds([]);
   };
 
-  const handleConfirmSelection = () => {
-    if (sortedSelectedVerses.length === 0) return;
-    const firstVerse = sortedSelectedVerses[0];
-    const synthesizedVerse: Verse = {
-      ...firstVerse,
-      text: combinedSelectionText,
-    };
-    onSelectRhema(synthesizedVerse, selectionReference);
-    setSelectedVerseIds([]);
-  };
+
 
   return (
     <View style={[styles.container, { backgroundColor: colors.paperBg }]}>
-      {/* Top Chapter Header Bar */}
-      <View style={[styles.chapterHeader, { backgroundColor: colors.cardBg, borderColor: colors.paperLine }]}>
-        <View style={styles.headerLeft}>
+      {/* Editorial Chapter Heading & Font Size Stepper */}
+      <View style={styles.topHeaderRow}>
+        <View style={styles.titleColumn}>
           <Text style={[styles.chapterTitle, { color: colors.inkPrimary }]}>
             {book.name} {chapter}
           </Text>
-          <Text style={[styles.tipText, { color: colors.inkMuted }]}>
-            Tap verses to highlight or create devotion
-          </Text>
         </View>
 
-        {/* Text Size Control */}
-        <View style={[styles.fontSizeControls, { backgroundColor: isDark ? '#1C1916' : '#F5EFE6', borderColor: colors.paperLine }]}>
+        <View style={styles.topHeaderRight}>
           <Pressable
-            onPress={() => setFontSize(Math.max(12, fontSize - 1))}
+            onPress={toggleSpeech}
+            style={[
+              styles.playBtn,
+              {
+                backgroundColor: isSpeaking ? colors.brandGreen : colors.cardBg,
+                borderColor: isSpeaking ? colors.brandGreen : colors.paperLine,
+              },
+            ]}
+          >
+            <Ionicons
+              name={isSpeaking ? "stop" : "volume-medium"}
+              size={18}
+              color={isSpeaking ? "#FFFFFF" : colors.inkPrimary}
+            />
+          </Pressable>
+
+          {/* Minimal Font Stepper */}
+          <View
+            style={[
+              styles.fontSizeControls,
+              {
+                backgroundColor: colors.cardBg,
+                borderColor: colors.paperLine,
+              },
+            ]}
+          >
+          <Pressable
+            onPress={() => {
+              try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+              setFontSize(Math.max(13, fontSize - 1));
+            }}
             style={styles.fontBtn}
-            hitSlop={6}
+            hitSlop={8}
           >
             <Text style={[styles.fontBtnTextSmall, { color: colors.inkPrimary }]}>A-</Text>
           </Pressable>
           <View style={[styles.fontDivider, { backgroundColor: colors.paperLine }]} />
           <Pressable
-            onPress={() => setFontSize(Math.min(28, fontSize + 1))}
+            onPress={() => {
+              try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+              setFontSize(Math.min(28, fontSize + 1));
+            }}
             style={styles.fontBtn}
-            hitSlop={6}
+            hitSlop={8}
           >
             <Text style={[styles.fontBtnTextLarge, { color: colors.inkPrimary }]}>A+</Text>
           </Pressable>
         </View>
+        </View>
       </View>
 
-      {/* Decorative Drop Cap Chapter Number */}
-      <View style={styles.dropCapContainer}>
-        <Text style={[styles.dropCapNumber, { color: isDark ? 'rgba(74, 124, 89, 0.25)' : 'rgba(74, 124, 89, 0.15)' }]}>
-          {chapter}
-        </Text>
-      </View>
-
-      {/* Main Verse FlatList */}
+      {/* Main Reading Stream (Apple Books Style) */}
       <FlatList
         data={verses}
         keyExtractor={(item) => String(item.id)}
         contentContainerStyle={[
           styles.listContent,
-          { paddingBottom: Math.max(insets.bottom, 16) + 110 },
+          { paddingBottom: Math.max(insets.bottom, 16) + 120 },
         ]}
         showsVerticalScrollIndicator={false}
         renderItem={({ item }) => {
@@ -194,51 +250,51 @@ export function VerseList({
                 const ref = `${book.name} ${chapter}:${item.verse}`;
                 const copyText = `"${item.text.trim()}" — ${ref}`;
                 Clipboard.setStringAsync(copyText);
-                try { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); } catch {}
+                try {
+                  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                } catch {}
                 toast.success('Verse Copied', ref);
               }}
-              delayLongPress={400}
+              delayLongPress={350}
               style={[
                 styles.verseRow,
                 highlightStyle && {
-                  backgroundColor: highlightStyle.bg,
-                  borderColor: highlightStyle.border,
-                  borderWidth: 1,
+                  backgroundColor: isDark ? highlightStyle.darkBg : highlightStyle.bg,
+                  borderRadius: 6,
+                  borderWidth: isDark ? 1 : 0,
+                  borderColor: isDark ? highlightStyle.darkBorder : 'transparent',
                 },
                 isSelected && {
-                  backgroundColor: colors.brandGreenLight,
-                  borderLeftColor: colors.brandGreen,
-                  borderColor: colors.brandGreen + '40',
-                  borderRadius: 12,
+                  backgroundColor: isDark ? 'rgba(82, 167, 82, 0.28)' : 'rgba(58, 125, 58, 0.14)',
+                  borderRadius: 6,
+                  borderWidth: 1,
+                  borderColor: isDark ? 'rgba(82, 167, 82, 0.5)' : 'rgba(58, 125, 58, 0.3)',
                 },
               ]}
             >
-              <View style={styles.verseNumberContainer}>
-                {isSelected ? (
-                  <View style={[styles.checkCircle, { backgroundColor: colors.brandGreen }]}>
-                    <Ionicons name="checkmark" size={10} color="#FFFFFF" />
-                  </View>
-                ) : (
-                  <Text style={[styles.verseNumber, { color: colors.brandGreen, fontSize: Math.max(11, fontSize - 5) }]}>
-                    {item.verse}
-                  </Text>
-                )}
-              </View>
-
               <Text
                 style={[
                   styles.verseText,
                   {
                     color: colors.inkPrimary,
                     fontSize: fontSize,
-                    lineHeight: Math.round(fontSize * 1.65),
-                  },
-                  isSelected && {
-                    color: isDark ? '#FFFFFF' : '#1B3B1B',
-                    fontWeight: '600',
+                    lineHeight: Math.round(fontSize * 1.75),
                   },
                 ]}
               >
+                <Text
+                  style={[
+                    styles.verseNumberInline,
+                    {
+                      color: highlightStyle
+                        ? (isDark ? highlightStyle.dot : colors.inkPrimary)
+                        : colors.inkMuted,
+                      fontSize: Math.max(10, fontSize - 5),
+                    },
+                  ]}
+                >
+                  {item.verse}{'  '}
+                </Text>
                 {item.text}
               </Text>
             </Pressable>
@@ -249,31 +305,45 @@ export function VerseList({
             <View style={[styles.chapterNavFooter, { borderTopColor: colors.paperLine }]}>
               {chapter > 1 ? (
                 <Pressable
-                  onPress={() => onChapterChange(chapter - 1)}
-                  style={[styles.chapterNavBtn, { backgroundColor: colors.cardBg, borderColor: colors.paperLine }]}
-                  hitSlop={6}
+                  onPress={() => {
+                    try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+                    onChapterChange(chapter - 1);
+                  }}
+                  style={styles.chapterNavBtn}
+                  hitSlop={8}
                 >
-                  <Ionicons name="chevron-back" size={16} color={colors.brandGreen} />
-                  <Text style={[styles.chapterNavBtnText, { color: colors.brandGreen }]}>Chapter {chapter - 1}</Text>
+                  <Ionicons name="chevron-back" size={15} color={colors.brandGreen} />
+                  <Text style={[styles.chapterNavBtnText, { color: colors.brandGreen }]}>
+                    Chapter {chapter - 1}
+                  </Text>
                 </Pressable>
-              ) : <View />}
+              ) : (
+                <View />
+              )}
 
               {chapter < book.chapter_count ? (
                 <Pressable
-                  onPress={() => onChapterChange(chapter + 1)}
-                  style={[styles.chapterNavBtn, { backgroundColor: colors.cardBg, borderColor: colors.paperLine }]}
-                  hitSlop={6}
+                  onPress={() => {
+                    try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+                    onChapterChange(chapter + 1);
+                  }}
+                  style={styles.chapterNavBtn}
+                  hitSlop={8}
                 >
-                  <Text style={[styles.chapterNavBtnText, { color: colors.brandGreen }]}>Chapter {chapter + 1}</Text>
-                  <Ionicons name="chevron-forward" size={16} color={colors.brandGreen} />
+                  <Text style={[styles.chapterNavBtnText, { color: colors.brandGreen }]}>
+                    Chapter {chapter + 1}
+                  </Text>
+                  <Ionicons name="chevron-forward" size={15} color={colors.brandGreen} />
                 </Pressable>
-              ) : <View />}
+              ) : (
+                <View />
+              )}
             </View>
           ) : undefined
         }
       />
 
-      {/* Floating Multi-Verse & Highlight Action Palette */}
+      {/* Floating Multi-Verse & Highlight Action Palette (Minimal Pill) */}
       {selectedVerseIds.length > 0 ? (
         <View
           style={[
@@ -281,29 +351,31 @@ export function VerseList({
             { bottom: Math.max(insets.bottom, 14) + 76 },
           ]}
         >
-          <View style={[styles.floatingCard, { backgroundColor: colors.cardBg, borderColor: colors.brandGreen + '50' }]}>
+          <View
+            style={[
+              styles.floatingCard,
+              {
+                backgroundColor: colors.cardBg,
+                borderColor: colors.paperLine,
+              },
+            ]}
+          >
             {/* Top Row: Reference + Clear */}
             <View style={styles.cardTopRow}>
-              <View style={styles.selectionInfo}>
-                <View style={styles.selectionBadge}>
-                  <Ionicons name="sparkles" size={13} color={colors.brandGreen} />
-                  <Text style={[styles.selectionReferenceText, { color: colors.brandGreen }]}>{selectionReference}</Text>
-                </View>
-                <Text style={[styles.selectionCountText, { color: colors.inkMuted }]}>
-                  {selectedVerseIds.length} {selectedVerseIds.length === 1 ? 'verse' : 'verses in sequence'}
-                </Text>
-              </View>
+              <Text style={[styles.selectionReferenceText, { color: colors.inkPrimary }]}>
+                {selectionReference}
+              </Text>
 
               <Pressable
                 onPress={handleClearSelection}
-                style={[styles.clearBtn, { backgroundColor: isDark ? '#1C1916' : '#F5EFE6' }]}
+                style={styles.clearBtn}
                 hitSlop={8}
               >
                 <Ionicons name="close" size={18} color={colors.inkMuted} />
               </Pressable>
             </View>
 
-            {/* Bottom Row: Highlighter Palette & Make Rhema CTA */}
+            {/* Bottom Row: Highlighter Palette & Journal CTA */}
             <View style={[styles.cardBottomRow, { borderTopColor: colors.paperLine }]}>
               {/* Color Swatches */}
               <View style={styles.colorPaletteGroup}>
@@ -319,11 +391,11 @@ export function VerseList({
                   />
                 ))}
 
-                {/* Clear Highlight Icon (if highlighted) */}
+                {/* Clear Highlight Icon */}
                 {hasSelectedHighlights ? (
                   <Pressable
                     onPress={handleClearHighlights}
-                    style={[styles.removeHighlightBtn, { backgroundColor: isDark ? '#33201D' : '#FDF2EE', borderColor: isDark ? '#4D2924' : '#F9D5CB' }]}
+                    style={styles.removeHighlightBtn}
                     hitSlop={6}
                   >
                     <Ionicons name="trash-outline" size={14} color={colors.tapeRhema} />
@@ -331,14 +403,24 @@ export function VerseList({
                 ) : null}
               </View>
 
-              {/* Journal Rhema CTA */}
+              {/* Copy Selection CTA */}
               <Pressable
-                onPress={handleConfirmSelection}
-                style={[styles.journalRhemaBtn, { backgroundColor: colors.brandGreen }]}
+                onPress={() => {
+                  try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); } catch {}
+                  const copyText = `"${combinedSelectionText}" — ${selectionReference}`;
+                  Clipboard.setStringAsync(copyText);
+                  toast.success('Verses Copied', selectionReference);
+                  handleClearSelection();
+                }}
+                style={({ pressed }) => [
+                  styles.journalRhemaBtn,
+                  { backgroundColor: colors.brandGreen },
+                  pressed && { opacity: 0.88 },
+                ]}
                 hitSlop={6}
               >
-                <Ionicons name="create-outline" size={15} color="#FFFFFF" />
-                <Text style={styles.journalRhemaBtnText}>Journal This Verse</Text>
+                <Ionicons name="copy-outline" size={14} color="#FFFFFF" />
+                <Text style={styles.journalRhemaBtnText}>Copy</Text>
               </Pressable>
             </View>
           </View>
@@ -351,186 +433,138 @@ export function VerseList({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    position: 'relative',
   },
-  chapterHeader: {
+  topHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: SPACING.base,
-    paddingVertical: SPACING.sm + 2,
     marginHorizontal: SPACING.base,
-    borderRadius: 16,
-    borderWidth: 1,
-    marginBottom: SPACING.xs,
-    ...SHADOWS.subtle,
+    marginTop: SPACING.xs,
+    marginBottom: SPACING.md,
+    paddingHorizontal: 4,
   },
-  headerLeft: {
+  titleColumn: {
     flex: 1,
   },
   chapterTitle: {
-    fontFamily: FONTS.sectionHeader,
-    fontSize: 18,
+    fontFamily: FONTS.scriptureBold,
+    fontSize: 26,
     fontWeight: '700',
+    letterSpacing: -0.2,
   },
-  tipText: {
-    fontFamily: FONTS.body,
-    fontSize: 11,
-    marginTop: 1,
+  topHeaderRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  playBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...SHADOWS.subtle,
   },
   fontSizeControls: {
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: RADIUS.pill,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
     borderWidth: 1,
-    gap: 6,
-  },
-  fontBtn: {
     paddingHorizontal: 4,
     paddingVertical: 2,
+    ...SHADOWS.subtle,
+  },
+  fontBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  fontBtnTextSmall: {
+    fontFamily: FONTS.bodyBold,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  fontBtnTextLarge: {
+    fontFamily: FONTS.bodyBold,
+    fontSize: 14,
+    fontWeight: '800',
   },
   fontDivider: {
     width: 1,
     height: 12,
   },
-  fontBtnTextSmall: {
-    fontFamily: FONTS.bodyBold,
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  fontBtnTextLarge: {
-    fontFamily: FONTS.bodyBold,
-    fontSize: 13,
-    fontWeight: '800',
-  },
-  dropCapContainer: {
-    alignItems: 'center',
-    marginTop: -4,
-    marginBottom: -12,
-    paddingHorizontal: SPACING.base,
-  },
-  dropCapNumber: {
-    fontFamily: FONTS.scriptureDisplay,
-    fontSize: 72,
-    fontWeight: '700',
-    lineHeight: 80,
-  },
   listContent: {
-    paddingHorizontal: SPACING.base,
-    paddingVertical: SPACING.sm,
-    paddingBottom: 110,
+    paddingHorizontal: SPACING.base + 2,
+    paddingTop: 2,
   },
   verseRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    paddingVertical: SPACING.sm,
-    paddingHorizontal: SPACING.sm,
-    borderRadius: RADIUS.md,
-    marginBottom: 5,
-    borderWidth: 1,
-    borderColor: 'transparent',
-    borderLeftWidth: 3,
-    borderLeftColor: 'transparent',
+    paddingVertical: 5,
+    paddingHorizontal: 6,
+    marginVertical: 1,
   },
-  verseNumberContainer: {
-    width: 26,
-    marginTop: 3,
-    alignItems: 'flex-start',
-  },
-  verseNumber: {
+  verseNumberInline: {
     fontFamily: FONTS.bodyBold,
-    fontWeight: '800',
-  },
-  checkCircle: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
+    fontWeight: '700',
   },
   verseText: {
-    flex: 1,
-    fontFamily: FONTS.scriptureDisplay,
+    fontFamily: FONTS.body,
     letterSpacing: 0.1,
   },
   chapterNavFooter: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    marginTop: SPACING.xl,
     paddingTop: SPACING.lg,
-    paddingBottom: SPACING.xl,
-    marginTop: SPACING.md,
-    borderTopWidth: 1,
+    marginBottom: SPACING.lg,
   },
   chapterNavBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: RADIUS.pill,
-    borderWidth: 1,
-    ...SHADOWS.subtle,
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 4,
   },
   chapterNavBtnText: {
-    fontFamily: FONTS.bodyBold,
-    fontSize: 13,
+    fontFamily: FONTS.sectionHeader,
+    fontSize: 14,
     fontWeight: '700',
   },
 
-  // Floating Action Card
+  // Floating Bar
   floatingBarContainer: {
     position: 'absolute',
-    bottom: 84,
     left: SPACING.base,
     right: SPACING.base,
-    zIndex: 100,
+    zIndex: 50,
   },
   floatingCard: {
-    borderRadius: 20,
-    padding: 12,
-    borderWidth: 1.5,
-    gap: 10,
-    ...SHADOWS.card,
+    borderRadius: RADIUS.xxl,
+    borderWidth: 1,
+    padding: 14,
+    ...SHADOWS.floating,
   },
   cardTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-  },
-  selectionInfo: {
-    flex: 1,
-  },
-  selectionBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
+    marginBottom: 8,
   },
   selectionReferenceText: {
     fontFamily: FONTS.sectionHeader,
     fontSize: 14,
     fontWeight: '700',
   },
-  selectionCountText: {
-    fontFamily: FONTS.body,
-    fontSize: 11,
-    marginTop: 1,
-  },
   clearBtn: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    alignItems: 'center',
-    justifyContent: 'center',
+    padding: 2,
   },
   cardBottomRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 4,
-    borderTopWidth: 1,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingTop: 8,
   },
   colorPaletteGroup: {
     flexDirection: 'row',
@@ -538,34 +572,30 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   colorCircle: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: '#FFFFFF',
-    ...SHADOWS.subtle,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
   },
   removeHighlightBtn: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
   },
   journalRhemaBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    paddingVertical: 8,
-    paddingHorizontal: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
     borderRadius: RADIUS.pill,
     ...SHADOWS.subtle,
   },
   journalRhemaBtnText: {
+    color: '#FFFFFF',
     fontFamily: FONTS.bodyBold,
     fontSize: 12,
-    color: '#FFFFFF',
     fontWeight: '700',
   },
 });

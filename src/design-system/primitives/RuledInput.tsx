@@ -12,7 +12,6 @@ import {
 import { useTheme } from '../theme/useTheme';
 import { useSettingsStore } from '../../settings/store';
 import { FONTS, LINE_HEIGHTS } from '../tokens/typography';
-import { SPACING } from '../tokens/spacing';
 
 export interface RuledInputProps extends Omit<TextInputProps, 'style'> {
   value: string;
@@ -20,6 +19,7 @@ export interface RuledInputProps extends Omit<TextInputProps, 'style'> {
   placeholder?: string;
   minLines?: number;
   lineHeight?: number;
+  fontSize?: number;
   containerStyle?: ViewStyle;
 }
 
@@ -29,6 +29,7 @@ export function RuledInput({
   placeholder = 'Write your thoughts here...',
   minLines = 4,
   lineHeight = LINE_HEIGHTS.ruledLine,
+  fontSize = 13.5,
   containerStyle,
   ...props
 }: RuledInputProps) {
@@ -62,7 +63,7 @@ export function RuledInput({
               style={[
                 styles.ruledLine,
                 {
-                  top: (i + 1) * lineHeight,
+                  top: (i + 1) * lineHeight - 1,
                   backgroundColor: colors.paperLine,
                 },
               ]}
@@ -73,10 +74,12 @@ export function RuledInput({
 
       {/* Foreground TextInput */}
       <TextInput
+        {...props}
         style={[
           styles.textInput,
           {
             lineHeight,
+            fontSize,
             minHeight: totalLines * lineHeight,
             color: colors.inkPrimary,
             ...(Platform.OS === 'web' ? { outlineStyle: 'none' as any } : {}),
@@ -90,7 +93,6 @@ export function RuledInput({
         textAlignVertical="top"
         scrollEnabled={false}
         onContentSizeChange={handleContentSizeChange}
-        {...props}
       />
     </View>
   );
@@ -117,9 +119,12 @@ const styles = StyleSheet.create({
   },
   textInput: {
     fontFamily: FONTS.body,
-    fontSize: 16,
+    fontSize: 13.5,
     padding: 0,
-    paddingTop: SPACING.xs,
+    paddingTop: 0,
+    paddingBottom: 0,
+    paddingVertical: 0,
+    includeFontPadding: false,
     zIndex: 1,
   },
 });

@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getUserDatabase } from './db';
 import * as queries from './queries';
 import { CANONICAL_BOOKS } from './constants';
@@ -78,3 +78,38 @@ export function useVerseSearch(searchTerm: string, translationId: string = 'kjv'
   });
 }
 
+export function useChapterHighlights(bookId: number, chapter: number) {
+  return useQuery({
+    queryKey: ['bible', 'highlights', bookId, chapter],
+    queryFn: async () => {
+      const db = await getUserDatabase();
+      return queries.getHighlightsByChapter(db, bookId, chapter);
+    },
+    enabled: !!bookId && !!chapter,
+  });
+}
+
+export function useToggleHighlight() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      verseId,
+      color,
+    }: {
+      verseId: number;
+      color: string | null;
+    }) => {
+      const db = await getUserDatabase();
+      await queries.toggleHighlight(db, verseId, color);
+    },
+    onSuccess: (_, variables) => {
+      // verse_id format: Book * 1000000 + Chapter * 1000 + Verse
+      const bookId = Math.floor(variables.verseId / 1000000);
+      const chapter = Math.floor((variables.verseId % 1000000) / 1000);
+      queryClient.invalidateQueries({
+        queryKey: ['bible', 'highlights', bookId, chapter],
+      });
+    },
+  });
+}

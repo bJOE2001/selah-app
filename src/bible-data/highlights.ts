@@ -11,11 +11,51 @@ export interface VerseHighlight {
 }
 
 export const HIGHLIGHT_COLORS = [
-  { id: 'yellow', name: 'Gold', dot: '#EAB308', bg: '#FEF9C3', border: '#FDE047' },
-  { id: 'green', name: 'Sage', dot: '#22C55E', bg: '#DCFCE7', border: '#86EFAC' },
-  { id: 'blue', name: 'Sky', dot: '#0EA5E9', bg: '#E0F2FE', border: '#7DD3FC' },
-  { id: 'purple', name: 'Lilac', dot: '#A855F7', bg: '#F3E8FF', border: '#D8B4FE' },
-  { id: 'rose', name: 'Rose', dot: '#F43F5E', bg: '#FFE4E6', border: '#FDA4AF' },
+  {
+    id: 'yellow',
+    name: 'Gold',
+    dot: '#EAB308',
+    bg: '#FEF9C3',
+    darkBg: 'rgba(234, 179, 8, 0.22)',
+    border: '#FDE047',
+    darkBorder: 'rgba(234, 179, 8, 0.40)',
+  },
+  {
+    id: 'green',
+    name: 'Sage',
+    dot: '#22C55E',
+    bg: '#DCFCE7',
+    darkBg: 'rgba(34, 197, 94, 0.20)',
+    border: '#86EFAC',
+    darkBorder: 'rgba(34, 197, 94, 0.40)',
+  },
+  {
+    id: 'blue',
+    name: 'Sky',
+    dot: '#0EA5E9',
+    bg: '#E0F2FE',
+    darkBg: 'rgba(14, 165, 233, 0.20)',
+    border: '#7DD3FC',
+    darkBorder: 'rgba(14, 165, 233, 0.40)',
+  },
+  {
+    id: 'purple',
+    name: 'Lilac',
+    dot: '#A855F7',
+    bg: '#F3E8FF',
+    darkBg: 'rgba(168, 85, 247, 0.22)',
+    border: '#D8B4FE',
+    darkBorder: 'rgba(168, 85, 247, 0.40)',
+  },
+  {
+    id: 'rose',
+    name: 'Rose',
+    dot: '#F43F5E',
+    bg: '#FFE4E6',
+    darkBg: 'rgba(244, 63, 94, 0.22)',
+    border: '#FDA4AF',
+    darkBorder: 'rgba(244, 63, 94, 0.40)',
+  },
 ] as const;
 
 export type HighlightColorId = typeof HIGHLIGHT_COLORS[number]['id'];

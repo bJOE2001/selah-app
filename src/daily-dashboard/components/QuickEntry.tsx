@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { useTheme } from '../../design-system';
 import { FONTS } from '../../design-system/tokens/typography';
 import { SPACING, RADIUS, SHADOWS } from '../../design-system/tokens/spacing';
@@ -13,48 +14,156 @@ export interface QuickEntryProps {
 export function QuickEntry({ onStartDevotion, onOpenBible }: QuickEntryProps) {
   const { colors, isDark } = useTheme();
 
+  const handlePressDevotion = () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {}
+    onStartDevotion();
+  };
+
+  const handlePressBible = () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {}
+    onOpenBible();
+  };
+
   return (
     <View style={styles.container}>
-      {/* Bento Grid: 2 Elegant Side-by-Side Action Hubs */}
+      {/* Bento Grid: 2 Aesthetic Editorial Action Hubs */}
       <View style={styles.gridRow}>
-        {/* 1. Write Devotion Action Card */}
+        {/* 1. Begin Devotion Action Card */}
         <Pressable
-          style={[styles.primaryActionCard, { backgroundColor: colors.tapeRhema }]}
-          onPress={onStartDevotion}
-          hitSlop={4}
-        >
-          <View style={styles.cardHeaderRow}>
-            <View style={styles.primaryIconBox}>
-              <Ionicons name="sparkles" size={16} color="#FFFFFF" />
-            </View>
-            <Ionicons name="arrow-forward" size={16} color="#FFFFFF" style={{ opacity: 0.8 }} />
-          </View>
-
-          <Text style={styles.primaryTitle}>Begin Devotion</Text>
-          <Text style={styles.primarySubtitle}>Guided prayer & reflection</Text>
-        </Pressable>
-
-        {/* 2. Open Bible Reader Action Card */}
-        <Pressable
-          style={[
-            styles.secondaryActionCard,
+          style={({ pressed }) => [
+            styles.actionCard,
             {
               backgroundColor: colors.cardBg,
               borderColor: colors.paperLine,
             },
+            pressed && styles.cardPressed,
           ]}
-          onPress={onOpenBible}
-          hitSlop={4}
+          onPress={handlePressDevotion}
+          hitSlop={6}
+          accessibilityRole="button"
+          accessibilityLabel="Begin Devotion"
         >
-          <View style={styles.cardHeaderRow}>
-            <View style={[styles.secondaryIconBox, { backgroundColor: colors.brandGreenLight }]}>
-              <Ionicons name="book" size={16} color={colors.brandGreen} />
+          {/* Top Row: Icon Box + Arrow Disc */}
+          <View style={styles.cardTopRow}>
+            <View
+              style={[
+                styles.iconBox,
+                {
+                  backgroundColor: isDark
+                    ? 'rgba(212, 175, 55, 0.16)'
+                    : '#FEF3C7',
+                  borderColor: isDark
+                    ? 'rgba(212, 175, 55, 0.32)'
+                    : '#FDE68A',
+                },
+              ]}
+            >
+              <Ionicons
+                name="create-outline"
+                size={18}
+                color={isDark ? '#E5C158' : '#B45309'}
+              />
             </View>
-            <Ionicons name="arrow-forward" size={16} color={colors.inkMuted} />
+
+            <View
+              style={[
+                styles.arrowDisc,
+                {
+                  backgroundColor: isDark ? '#1C1916' : '#F3ECE1',
+                  borderColor: colors.paperLine,
+                },
+              ]}
+            >
+              <Ionicons name="arrow-forward" size={12} color={colors.inkSecondary} />
+            </View>
           </View>
 
-          <Text style={[styles.secondaryTitle, { color: colors.inkPrimary }]}>Holy Scripture</Text>
-          <Text style={[styles.secondarySubtitle, { color: colors.inkSecondary }]}>Read offline across 66 books</Text>
+          {/* Text Content */}
+          <View style={styles.textContent}>
+            <Text
+              style={[styles.cardTitle, { color: colors.inkPrimary }]}
+              numberOfLines={1}
+            >
+              Begin Devotion
+            </Text>
+            <Text
+              style={[styles.cardSubtitle, { color: colors.inkSecondary }]}
+              numberOfLines={2}
+            >
+              Quiet time & prayer
+            </Text>
+          </View>
+        </Pressable>
+
+        {/* 2. Holy Scripture Action Card */}
+        <Pressable
+          style={({ pressed }) => [
+            styles.actionCard,
+            {
+              backgroundColor: colors.cardBg,
+              borderColor: colors.paperLine,
+            },
+            pressed && styles.cardPressed,
+          ]}
+          onPress={handlePressBible}
+          hitSlop={6}
+          accessibilityRole="button"
+          accessibilityLabel="Holy Scripture"
+        >
+          {/* Top Row: Icon Box + Arrow Disc */}
+          <View style={styles.cardTopRow}>
+            <View
+              style={[
+                styles.iconBox,
+                {
+                  backgroundColor: isDark
+                    ? 'rgba(82, 167, 82, 0.16)'
+                    : colors.brandGreenLight,
+                  borderColor: isDark
+                    ? 'rgba(82, 167, 82, 0.32)'
+                    : '#D0E6D4',
+                },
+              ]}
+            >
+              <Ionicons
+                name="book-outline"
+                size={18}
+                color={colors.brandGreen}
+              />
+            </View>
+
+            <View
+              style={[
+                styles.arrowDisc,
+                {
+                  backgroundColor: isDark ? '#1C1916' : '#F3ECE1',
+                  borderColor: colors.paperLine,
+                },
+              ]}
+            >
+              <Ionicons name="arrow-forward" size={12} color={colors.inkSecondary} />
+            </View>
+          </View>
+
+          {/* Text Content */}
+          <View style={styles.textContent}>
+            <Text
+              style={[styles.cardTitle, { color: colors.inkPrimary }]}
+              numberOfLines={1}
+            >
+              Holy Scripture
+            </Text>
+            <Text
+              style={[styles.cardSubtitle, { color: colors.inkSecondary }]}
+              numberOfLines={2}
+            >
+              Read & search offline
+            </Text>
+          </View>
         </Pressable>
       </View>
     </View>
@@ -64,72 +173,60 @@ export function QuickEntry({ onStartDevotion, onOpenBible }: QuickEntryProps) {
 const styles = StyleSheet.create({
   container: {
     marginHorizontal: SPACING.base,
-    marginBottom: SPACING.sm,
+    marginBottom: SPACING.sm + 2,
   },
   gridRow: {
     flexDirection: 'row',
-    gap: SPACING.sm,
+    gap: 12,
   },
-  primaryActionCard: {
+  actionCard: {
     flex: 1,
-    borderRadius: 20,
-    padding: SPACING.base,
-    justifyContent: 'space-between',
-    minHeight: 115,
-    ...SHADOWS.subtle,
-  },
-  secondaryActionCard: {
-    flex: 1,
-    borderRadius: 20,
+    borderRadius: 22,
     borderWidth: 1,
-    padding: SPACING.base,
+    padding: 14,
+    minHeight: 132,
     justifyContent: 'space-between',
-    minHeight: 115,
-    ...SHADOWS.subtle,
+    ...SHADOWS.card,
   },
-  cardHeaderRow: {
+  cardPressed: {
+    transform: [{ scale: 0.97 }],
+    opacity: 0.92,
+  },
+  cardTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: SPACING.sm,
   },
-  primaryIconBox: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.22)',
+  iconBox: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  secondaryIconBox: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+  arrowDisc: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    ...SHADOWS.subtle,
   },
-  primaryTitle: {
+  textContent: {
+    marginTop: 10,
+  },
+  cardTitle: {
     fontFamily: FONTS.sectionHeader,
-    fontSize: 14,
-    color: '#FFFFFF',
+    fontSize: 15.5,
     fontWeight: '700',
-    marginBottom: 2,
+    letterSpacing: 0.1,
+    marginBottom: 3,
   },
-  primarySubtitle: {
+  cardSubtitle: {
     fontFamily: FONTS.body,
-    fontSize: 10,
-    color: 'rgba(255, 255, 255, 0.85)',
-    lineHeight: 14,
-  },
-  secondaryTitle: {
-    fontFamily: FONTS.sectionHeader,
-    fontSize: 14,
-    fontWeight: '700',
-    marginBottom: 2,
-  },
-  secondarySubtitle: {
-    fontFamily: FONTS.body,
-    fontSize: 10,
-    lineHeight: 14,
+    fontSize: 11.5,
+    lineHeight: 16,
   },
 });

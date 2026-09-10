@@ -115,6 +115,12 @@ export function BookmarkIndexModal({
                   year: 'numeric',
                 });
 
+                const fullText = (item.entry.notes || item.entry.notesPreview || '').trim();
+                const rawLines = fullText.split('\n').map((l) => l.trim()).filter(Boolean);
+                const hasMultipleLines = rawLines.length > 1;
+                const title = hasMultipleLines ? rawLines[0] : 'Journal Entry';
+                const snippet = hasMultipleLines ? rawLines.slice(1).join(' ') : (rawLines[0] || 'No preview available');
+
                 return (
                   <Pressable
                     onPress={() => handleSelect(item.pageIndex)}
@@ -149,7 +155,7 @@ export function BookmarkIndexModal({
                           style={[styles.rhemaRef, { color: colors.tapeRhema }]}
                           numberOfLines={1}
                         >
-                          {item.entry.rhemaReference}
+                          {title}
                         </Text>
                         <Text
                           style={[styles.dateText, { color: colors.inkMuted }]}
@@ -161,19 +167,10 @@ export function BookmarkIndexModal({
 
                       <Text
                         style={[styles.verseSnippet, { color: colors.inkPrimary }]}
-                        numberOfLines={1}
+                        numberOfLines={2}
                       >
-                        “{item.entry.rhemaText}”
+                        {snippet}
                       </Text>
-
-                      {item.entry.reflectionPreview ? (
-                        <Text
-                          style={[styles.reflectionPreview, { color: colors.inkSecondary }]}
-                          numberOfLines={1}
-                        >
-                          {item.entry.reflectionPreview}
-                        </Text>
-                      ) : null}
                     </View>
 
                     {/* Turn to Page CTA */}
@@ -217,7 +214,7 @@ const styles = StyleSheet.create({
     zIndex: 9999,
   },
   backdrop: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   modalCard: {
     width: '100%',

@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import React, { useMemo, useRef, useState } from "react";
 import {
   Dimensions,
@@ -17,12 +18,11 @@ import { promptModal, toast, useTheme } from "../../design-system";
 import { RADIUS, SHADOWS, SPACING } from "../../design-system/tokens/spacing";
 import { FONTS } from "../../design-system/tokens/typography";
 import {
-  useDeleteDevotional,
   useToggleBookmarkDevotional,
 } from "../../devotional-core/hooks";
 import { DevotionalSummary } from "../../devotional-core/types";
 import { useSettingsStore } from "../../settings/store";
-import { useIsPremium, FREE_JOURNAL_PAGE_LIMIT } from "../../entitlements";
+import { useIsPremium } from "../../entitlements";
 import { BookmarkIndexModal, BookmarkItemData } from "./BookmarkIndexModal";
 import { DogEarFold } from "./DogEarFold";
 import {
@@ -39,14 +39,12 @@ const SCREEN_WIDTH = Dimensions.get("window").width;
 export interface NotebookBookViewProps {
   entries: DevotionalSummary[];
   onSelectEntry: (id: string) => void;
-  onShareEntry: (id: string) => void;
   onStartNew: () => void;
 }
 
 export function NotebookBookView({
   entries,
   onSelectEntry,
-  onShareEntry,
   onStartNew,
 }: NotebookBookViewProps) {
   const insets = useSafeAreaInsets();
@@ -57,7 +55,6 @@ export function NotebookBookView({
   const [isBookmarkIndexOpen, setIsBookmarkIndexOpen] = useState(false);
   const [isNavigatorOpen, setIsNavigatorOpen] = useState(false);
   const toggleBookmarkMutation = useToggleBookmarkDevotional();
-  const deleteMutation = useDeleteDevotional();
   const isPremium = useIsPremium();
 
   const {
@@ -66,6 +63,7 @@ export function NotebookBookView({
     journalCoverVerseRef,
     journalCoverMaterial,
     journalCoverEmblem,
+    paperLined,
   } = useSettingsStore();
 
   // Initialize bookmarked state mapping from entries
@@ -95,21 +93,30 @@ export function NotebookBookView({
 
   // Page structure:
   // Index 0: Front Cover
-  // Index 1..N: Devotional Entry Pages (Chronological: Page 1 = First Entry, Page N = Latest Entry)
+  // Index 1..N: Devotional Entry Pages (Chronological: 1 Devotion = 1 Complete Page)
   // Index N+1: Blank Page ("Write Today")
   const pages = useMemo(() => {
     const list: Array<{
       type: "cover" | "entry" | "blank";
       data?: DevotionalSummary;
       index: number;
+      entryNumber?: number;
+      pageLabel?: string;
     }> = [];
 
     // 0: Cover
     list.push({ type: "cover", index: 0 });
 
-    // 1..N: Entries (Chronological)
+    // 1..N: Entries (1 Devotion = 1 Complete Page)
     chronologicalEntries.forEach((e, idx) => {
-      list.push({ type: "entry", data: e, index: idx + 1 });
+      const entryNum = idx + 1;
+      list.push({
+        type: "entry",
+        data: e,
+        index: entryNum,
+        entryNumber: entryNum,
+        pageLabel: `PAGE ${entryNum}`,
+      });
     });
 
     // N+1: Blank Page
@@ -146,6 +153,9 @@ export function NotebookBookView({
   };
 
   const turnToPage = (targetIndex: number) => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {}
     const validIndex = Math.max(0, Math.min(targetIndex, totalPages - 1));
     flatListRef.current?.scrollToOffset({
       offset: validIndex * SCREEN_WIDTH,
@@ -155,6 +165,9 @@ export function NotebookBookView({
   };
 
   const toggleBookmark = (id: string) => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {}
     const currentStatus = bookmarkedIds[id] ?? false;
     const nextState = !currentStatus;
     setBookmarkedIds((prev) => ({
@@ -169,28 +182,6 @@ export function NotebookBookView({
     } else {
       toast.info("Bookmark Removed", "Unfolded the page corner.");
     }
-  };
-
-  const handleDeletePage = (entry: DevotionalSummary, pageNumber: number) => {
-    promptModal.confirm({
-      title: "Delete Journal Page?",
-      message: `Are you sure you want to delete Page ${pageNumber} (${entry.rhemaReference})?\n\nThis entry will be permanently removed from your journal.`,
-      confirmText: "Delete Page",
-      cancelText: "Keep Page",
-      isDestructive: true,
-      onConfirm: async () => {
-        try {
-          const targetIndex = Math.max(0, pageNumber - 1);
-          turnToPage(targetIndex);
-
-          await deleteMutation.mutateAsync(entry.id);
-          toast.success("Page Deleted", "The devotional entry has been removed.");
-        } catch (err) {
-          console.error("Failed to delete entry:", err);
-          toast.error("Error", "Could not delete this entry. Please try again.");
-        }
-      },
-    });
   };
 
   const renderCoverPage = () => {
@@ -345,9 +336,7 @@ export function NotebookBookView({
                   <Text
                     style={[styles.coverStatsText, { color: tokens.isDarkCover ? tokens.textColor : colors.inkPrimary }]}
                   >
-                    {isPremium
-                      ? `${entries.length} ${entries.length === 1 ? "Page" : "Pages"} (Unlimited)`
-                      : `Volume 1 • ${entries.length} / ${FREE_JOURNAL_PAGE_LIMIT} Pages`}
+                    {`${entries.length} ${entries.length === 1 ? "Page" : "Pages"}`}
                   </Text>
                 </View>
 
@@ -397,7 +386,10 @@ export function NotebookBookView({
     );
   };
 
-  const renderEntryPage = (entry: DevotionalSummary, pageNumber: number) => {
+  const renderEntryPage = (pageItem: (typeof pages)[0]) => {
+    const entry = pageItem.data;
+    if (!entry) return null;
+
     const isBookmarked = bookmarkedIds[entry.id] ?? entry.isBookmarked;
     const dateObj = new Date(entry.createdAt);
     const dateStr = dateObj.toLocaleDateString("en-US", {
@@ -406,6 +398,73 @@ export function NotebookBookView({
       day: "numeric",
       year: "numeric",
     });
+
+    const pageLabel = pageItem.pageLabel || `PAGE ${pageItem.entryNumber || pageItem.index}`;
+
+    const renderRuledSection = (
+      badgeLabel: string,
+      badgeColor: string,
+      content: string | undefined,
+      fallbackText: string
+    ) => {
+      const isFilled = !!content;
+      const text = content || fallbackText;
+      const totalChars = text.length;
+      const explicitNewlines = text.split("\n").length - 1;
+      const computedLineCount = Math.max(
+        3,
+        Math.ceil(totalChars / 38) + explicitNewlines
+      );
+
+      return (
+        <View style={styles.notebookLinesSection}>
+          <View style={styles.sectionHeaderRow}>
+            <View
+              style={[
+                styles.stepBadge,
+                {
+                  backgroundColor: badgeColor + "20",
+                },
+              ]}
+            >
+              <Text style={[styles.stepBadgeText, { color: badgeColor }]}>
+                {badgeLabel}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.ruledTextWrapper}>
+            {paperLined ? (
+              <View style={styles.pageRuledLinesContainer} pointerEvents="none">
+                {Array.from({ length: computedLineCount + 1 }).map((_, i) => (
+                  <View
+                    key={`line-${i}`}
+                    style={[
+                      styles.pageRuledLine,
+                      {
+                        top: (i + 1) * 24 - 1,
+                        backgroundColor: colors.paperLine,
+                      },
+                    ]}
+                  />
+                ))}
+              </View>
+            ) : null}
+
+            <Text
+              style={[
+                styles.handwritingText,
+                {
+                  color: isFilled ? colors.inkPrimary : colors.inkPlaceholder,
+                },
+              ]}
+            >
+              {text}
+            </Text>
+          </View>
+        </View>
+      );
+    };
 
     return (
       <NotebookPageFrame
@@ -425,237 +484,54 @@ export function NotebookBookView({
             contentContainerStyle={styles.entryScrollContent}
             showsVerticalScrollIndicator={false}
           >
+            {/* Clean Editorial Page Folio Header */}
             <View style={styles.pageFolioHeader}>
               <View style={styles.folioDateCol}>
                 <Text
                   style={[styles.folioPageNumber, { color: colors.brandGreen }]}
                 >
-                  PAGE {pageNumber} OF {entries.length}
+                  {pageLabel} OF {chronologicalEntries.length}
                 </Text>
                 <Text
-                  style={[styles.folioDateText, { color: colors.inkSecondary }]}
+                  style={[styles.folioDateText, { color: colors.inkMuted }]}
                 >
                   {dateStr}
                 </Text>
               </View>
-
-              <View style={styles.folioActionsRow}>
-                <Pressable
-                  onPress={() => onShareEntry(entry.id)}
-                  style={[
-                    styles.miniHeaderBtn,
-                    {
-                      backgroundColor: colors.cardBg,
-                      borderColor: colors.paperLine,
-                    },
-                  ]}
-                  hitSlop={6}
-                  accessibilityLabel="Share Entry"
-                >
-                  <Ionicons
-                    name="share-social-outline"
-                    size={15}
-                    color={colors.inkSecondary}
-                  />
-                </Pressable>
-
-                <Pressable
-                  onPress={() => handleDeletePage(entry, pageNumber)}
-                  style={[
-                    styles.miniHeaderBtn,
-                    {
-                      backgroundColor: colors.cardBg,
-                      borderColor: colors.paperLine,
-                    },
-                  ]}
-                  hitSlop={6}
-                  accessibilityLabel="Delete Page"
-                >
-                  <Ionicons
-                    name="trash-outline"
-                    size={15}
-                    color={colors.tapeRhema}
-                  />
-                </Pressable>
-              </View>
             </View>
 
-            {/* 1. R — RHEMA (Scripture) */}
-            <View
-              style={[
-                styles.scriptureBox,
-                {
-                  backgroundColor: colors.cardBg,
-                  borderColor: colors.paperLine,
-                },
-              ]}
-            >
-              <View style={styles.rhemaTapeHeader}>
-                <View
-                  style={[
-                    styles.stepBadge,
-                    {
-                      backgroundColor: colors.tapeRhema + "20",
-                      borderColor: colors.tapeRhema + "50",
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[styles.stepBadgeText, { color: colors.tapeRhema }]}
-                  >
-                    RHEMA
-                  </Text>
-                </View>
-                <Text
-                  style={[styles.rhemaRefText, { color: colors.tapeRhema }]}
-                >
-                  {entry.rhemaReference}
-                </Text>
-              </View>
-              <Text
-                style={[styles.scriptureQuote, { color: colors.inkPrimary }]}
-              >
-                “{entry.rhemaText}”
-              </Text>
-            </View>
+            {/* SINGLE NOTES SECTION */}
+            {renderRuledSection(
+              "JOURNAL ENTRY",
+              colors.tapeReflection,
+              entry.notes || entry.notesPreview,
+              "No notes written yet"
+            )}
 
-            {/* 2. R — REFLECTION */}
-            <View style={styles.notebookLinesSection}>
-              <View style={styles.sectionHeaderRow}>
-                <View
-                  style={[
-                    styles.stepBadge,
-                    {
-                      backgroundColor: colors.tapeReflection + "20",
-                      borderColor: colors.tapeReflection + "50",
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.stepBadgeText,
-                      { color: colors.tapeReflection },
-                    ]}
-                  >
-                    REFLECTION
-                  </Text>
-                </View>
-              </View>
-              <Text
-                style={[
-                  styles.handwritingText,
-                  {
-                    color: entry.reflection
-                      ? colors.inkPrimary
-                      : colors.inkPlaceholder,
-                  },
-                ]}
-              >
-                {entry.reflection ||
-                  entry.reflectionPreview ||
-                  "No reflection written yet"}
-              </Text>
-            </View>
-
-            {/* 3. M — MOTIVATION */}
-            <View style={styles.notebookLinesSection}>
-              <View style={styles.sectionHeaderRow}>
-                <View
-                  style={[
-                    styles.stepBadge,
-                    {
-                      backgroundColor: colors.tapeMotivation + "20",
-                      borderColor: colors.tapeMotivation + "50",
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.stepBadgeText,
-                      { color: colors.tapeMotivation },
-                    ]}
-                  >
-                    MOTIVATION
-                  </Text>
-                </View>
-              </View>
-              <Text
-                style={[
-                  styles.handwritingText,
-                  {
-                    color: entry.motivation
-                      ? colors.inkPrimary
-                      : colors.inkPlaceholder,
-                  },
-                ]}
-              >
-                {entry.motivation || "No motivation written yet"}
-              </Text>
-            </View>
-
-            {/* 4. A — APPLICATION */}
-            <View style={styles.notebookLinesSection}>
-              <View style={styles.sectionHeaderRow}>
-                <View
-                  style={[
-                    styles.stepBadge,
-                    {
-                      backgroundColor: colors.tapeApplication + "20",
-                      borderColor: colors.tapeApplication + "50",
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.stepBadgeText,
-                      { color: colors.tapeApplication },
-                    ]}
-                  >
-                    APPLICATION
-                  </Text>
-                </View>
-              </View>
-              <Text
-                style={[
-                  styles.handwritingText,
-                  {
-                    color: entry.application
-                      ? colors.inkPrimary
-                      : colors.inkPlaceholder,
-                  },
-                ]}
-              >
-                {entry.application ||
-                  (entry.totalTasks > 0
-                    ? `(${entry.completedTasks}/${entry.totalTasks} Action tasks)`
-                    : "No application written yet")}
-              </Text>
-            </View>
-
-            {/* Bottom Actions */}
+            {/* Bottom Edit Action */}
             <View style={styles.pageBottomActions}>
               <Pressable
-                onPress={() => onSelectEntry(entry.id)}
-                style={[
+                onPress={() => {
+                  try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+                  onSelectEntry(entry.id);
+                }}
+                style={({ pressed }) => [
                   styles.editPageBtn,
                   {
-                    backgroundColor: colors.cardBg,
-                    borderColor: colors.paperLine,
+                    backgroundColor: colors.brandGreen,
                   },
+                  pressed && { opacity: 0.9 },
                 ]}
               >
                 <Ionicons
                   name="create-outline"
                   size={14}
-                  color={colors.brandGreen}
+                  color="#FFFFFF"
                 />
-                <Text
-                  style={[styles.editPageBtnText, { color: colors.brandGreen }]}
-                >
-                  Edit
+                <Text style={styles.editPageBtnText}>
+                  Edit Entry
                 </Text>
               </Pressable>
-
             </View>
           </ScrollView>
         </View>
@@ -715,178 +591,29 @@ export function NotebookBookView({
               </View>
             </View>
 
-            {/* Inspiring Scripture Invocation Card */}
-            <View
-              style={[
-                styles.blankScriptureCard,
-                {
-                  backgroundColor: isDark ? "#23201D" : "#FAF6F0",
-                  borderColor: colors.brandGold + "50",
-                },
-              ]}
-            >
-              <View style={styles.blankVerseHeader}>
-                <Ionicons
-                  name="sunny-outline"
-                  size={13}
-                  color={colors.brandGold}
-                />
-                <Text
-                  style={[styles.blankVerseRef, { color: colors.brandGold }]}
-                >
-                  Lamentations 3:22-23
-                </Text>
-              </View>
-              <Text
-                style={[styles.blankVerseText, { color: colors.inkPrimary }]}
-              >
-                “The steadfast love of the Lord never ceases; His mercies never
-                come to an end; they are new every morning.”
-              </Text>
-            </View>
-
-            {/* 4-Step R.R.M.A. Outline Guide */}
+            {/* Ready Guide */}
             <View style={styles.blankStepsOutline}>
               <Text
-                style={[styles.blankSectionHeader, { color: colors.inkMuted }]}
+                style={[styles.blankSectionHeader, { color: colors.inkMuted, textAlign: 'center', marginTop: SPACING.xl }]}
               >
-                READY FOR TODAY'S DEVOTION
+                READY FOR TODAY'S JOURNAL ENTRY
               </Text>
 
-              {/* RHEMA */}
               <View
                 style={[
                   styles.blankStepRow,
                   {
                     backgroundColor: colors.cardBg,
                     borderColor: colors.paperLine,
+                    justifyContent: 'center',
+                    paddingVertical: SPACING.lg,
                   },
                 ]}
               >
-                <View
-                  style={[
-                    styles.stepBadge,
-                    {
-                      backgroundColor: colors.tapeRhema + "18",
-                      borderColor: colors.tapeRhema + "40",
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[styles.stepBadgeText, { color: colors.tapeRhema }]}
-                  >
-                    RHEMA
-                  </Text>
-                </View>
                 <Text
-                  style={[styles.blankStepHint, { color: colors.inkSecondary }]}
+                  style={[styles.blankStepHint, { color: colors.inkSecondary, textAlign: 'center' }]}
                 >
-                  
-                </Text>
-              </View>
-
-              {/* REFLECTION */}
-              <View
-                style={[
-                  styles.blankStepRow,
-                  {
-                    backgroundColor: colors.cardBg,
-                    borderColor: colors.paperLine,
-                  },
-                ]}
-              >
-                <View
-                  style={[
-                    styles.stepBadge,
-                    {
-                      backgroundColor: colors.tapeReflection + "18",
-                      borderColor: colors.tapeReflection + "40",
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.stepBadgeText,
-                      { color: colors.tapeReflection },
-                    ]}
-                  >
-                    REFLECTION
-                  </Text>
-                </View>
-                <Text
-                  style={[styles.blankStepHint, { color: colors.inkSecondary }]}
-                >
-                  
-                </Text>
-              </View>
-
-              {/* MOTIVATION */}
-              <View
-                style={[
-                  styles.blankStepRow,
-                  {
-                    backgroundColor: colors.cardBg,
-                    borderColor: colors.paperLine,
-                  },
-                ]}
-              >
-                <View
-                  style={[
-                    styles.stepBadge,
-                    {
-                      backgroundColor: colors.tapeMotivation + "18",
-                      borderColor: colors.tapeMotivation + "40",
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.stepBadgeText,
-                      { color: colors.tapeMotivation },
-                    ]}
-                  >
-                    MOTIVATION
-                  </Text>
-                </View>
-                <Text
-                  style={[styles.blankStepHint, { color: colors.inkSecondary }]}
-                >
-                  
-                </Text>
-              </View>
-
-              {/* APPLICATION */}
-              <View
-                style={[
-                  styles.blankStepRow,
-                  {
-                    backgroundColor: colors.cardBg,
-                    borderColor: colors.paperLine,
-                  },
-                ]}
-              >
-                <View
-                  style={[
-                    styles.stepBadge,
-                    {
-                      backgroundColor: colors.tapeApplication + "18",
-                      borderColor: colors.tapeApplication + "40",
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.stepBadgeText,
-                      { color: colors.tapeApplication },
-                    ]}
-                  >
-                    APPLICATION
-                  </Text>
-                </View>
-                <Text
-                  style={[styles.blankStepHint, { color: colors.inkSecondary }]}
-                >
-                  
+                  Write down your thoughts, prayers, or reflections...
                 </Text>
               </View>
             </View>
@@ -915,9 +642,7 @@ export function NotebookBookView({
       <View style={styles.pageSlideWrapper}>
         <View style={styles.pageInnerBox}>
           {item.type === "cover" && renderCoverPage()}
-          {item.type === "entry" &&
-            item.data &&
-            renderEntryPage(item.data, item.index)}
+          {item.type === "entry" && renderEntryPage(item)}
           {item.type === "blank" && renderBlankPage()}
         </View>
       </View>
@@ -1335,7 +1060,7 @@ const styles = StyleSheet.create({
   entryScrollContent: {
     padding: SPACING.base,
     paddingRight: SPACING.lg + 4,
-    paddingBottom: SPACING.lg,
+    paddingBottom: 100,
   },
   pageFolioHeader: {
     flexDirection: "row",
@@ -1403,32 +1128,55 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   rhemaRefText: {
-    fontFamily: FONTS.scriptureBold,
-    fontSize: 13,
+    fontFamily: FONTS.bodyBold,
+    fontSize: 13.5,
     fontWeight: "700",
   },
   scriptureQuote: {
-    fontFamily: FONTS.scriptureItalic,
-    fontSize: 13,
-    lineHeight: 18,
+    fontFamily: FONTS.body,
+    fontSize: 13.5,
+    lineHeight: 20,
+    letterSpacing: 0.1,
   },
   notebookLinesSection: {
-    marginBottom: SPACING.md,
+    marginBottom: SPACING.sm + 4,
   },
   sectionHeaderRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 5,
-    marginBottom: 6,
+    marginBottom: 4,
+  },
+  ruledTextWrapper: {
+    position: "relative",
+    width: "100%",
+  },
+  pageRuledLinesContainer: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    zIndex: 0,
+  },
+  pageRuledLine: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    height: 1,
+    opacity: 0.65,
   },
   handwritingText: {
-    fontFamily: FONTS.userInput,
-    fontSize: 16,
+    fontFamily: FONTS.body,
+    fontSize: 13.5,
     lineHeight: 24,
+    letterSpacing: 0.1,
+    zIndex: 1,
+    includeFontPadding: false,
   },
   handwritingEmptyText: {
     fontFamily: FONTS.body,
-    fontSize: 12,
+    fontSize: 12.5,
     fontStyle: "italic",
   },
   pageBottomActions: {
@@ -1442,14 +1190,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
     borderRadius: RADIUS.pill,
-    borderWidth: 1,
+    ...SHADOWS.subtle,
   },
   editPageBtnText: {
     fontFamily: FONTS.bodyBold,
-    fontSize: 11,
+    fontSize: 12,
+    color: "#FFFFFF",
     fontWeight: "700",
   },
   deletePageBtn: {

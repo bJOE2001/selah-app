@@ -11,8 +11,9 @@ import { Platform } from 'react-native';
  */
 
 export const SUPABASE_CONFIG = {
-  url: 'https://YOUR_SUPABASE_PROJECT_ID.supabase.co',
-  anonKey: 'YOUR_SUPABASE_ANON_KEY',
+  url: 'https://fkvvhqkxectbbnykawlt.supabase.co',
+  anonKey:
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZrdnZocWt4ZWN0YmJueWthd2x0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg1OTgyNTQsImV4cCI6MjEwNDE3NDI1NH0.W6bXwas7R-h29kF2NYHVokcEHMFy-kZTxx320AlQ11A',
 };
 
 // Check if credentials are configured

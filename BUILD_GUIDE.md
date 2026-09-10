@@ -156,7 +156,7 @@ selah-web/
 │   └── images/
 │       ├── app-icon.jpg            # Branding favicon & icons
 │       ├── mascot-cozy-reading-transparent.png # Hero section mascot
-│       ├── mascot-writing-journal-transparent.png # R.R.M.A. mascot
+│       ├── mascot-writing-journal-transparent.png # Journal mascot
 │       ├── mascot-holding-bible-transparent.png # About section mascot
 │       └── screenshot-1.jpg ~ 6.jpg # Real app carousel screenshots
 ├── src/

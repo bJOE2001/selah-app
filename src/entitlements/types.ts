@@ -2,7 +2,7 @@
  * Entitlement Types
  *
  * Central type definitions for the premium/free entitlement system.
- * All feature-gating across Shepema reads from these types.
+ * All feature-gating across Selah reads from these types.
  */
 
 /** Subscription tier identifiers matching RevenueCat product IDs */
@@ -42,8 +42,6 @@ export const DEFAULT_ENTITLEMENT: EntitlementInfo = {
   willRenew: false,
 };
 
-/** Maximum number of free journal pages before Grace upgrade is required */
-export const FREE_JOURNAL_PAGE_LIMIT = 30;
 
 /**
  * Feature flags gated behind premium.

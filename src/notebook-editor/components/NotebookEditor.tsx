@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import * as Haptics from "expo-haptics";
 import React, { useRef, useState } from "react";
 import {
     KeyboardAvoidingView,
@@ -13,22 +14,12 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { promptModal, toast, useTheme } from "../../design-system";
 import { RuledInput } from "../../design-system/primitives/RuledInput";
-import { ScriptureCard } from "../../design-system/primitives/ScriptureCard";
-import { TapeHeader } from "../../design-system/primitives/TapeHeader";
 import { RADIUS, SHADOWS, SPACING } from "../../design-system/tokens/spacing";
 import { FONTS } from "../../design-system/tokens/typography";
 import {
-  useDeleteDevotional,
   useSaveDevotional,
-  useRecentDevotionals,
 } from "../../devotional-core/hooks";
 import { useDraftStore } from "../../devotional-core/store";
-import { ChangeRhemaModal } from "./ChangeRhemaModal";
-import {
-  useIsPremium,
-  FREE_JOURNAL_PAGE_LIMIT,
-  PaywallModal,
-} from "../../entitlements";
 
 export interface NotebookEditorProps {
   onSaveSuccess?: (devotionalId: string) => void;
@@ -39,70 +30,25 @@ export function NotebookEditor({ onSaveSuccess }: NotebookEditorProps) {
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
   const scrollRef = useRef<ScrollView>(null);
-  const [isChangeRhemaOpen, setIsChangeRhemaOpen] = useState(false);
-  const [isPaywallOpen, setIsPaywallOpen] = useState(false);
-
-  const isPremium = useIsPremium();
-  const { data: recentEntries } = useRecentDevotionals(100);
 
   const {
     editingDevotionalId,
-    rhemaVerseId,
-    rhemaText,
-    rhemaReference,
-    reflection,
-    motivation,
-    selectedMoodTagIds,
-    application,
-    setRhema,
-    setReflection,
-    setMotivation,
-    setApplication,
+    notes,
+    setNotes,
     reset,
   } = useDraftStore();
 
   const saveMutation = useSaveDevotional();
-  const deleteMutation = useDeleteDevotional();
-
-  const handleDelete = () => {
-    if (!editingDevotionalId) return;
-    promptModal.confirm({
-      title: "Delete Devotion?",
-      message:
-        "Are you sure you want to delete this devotional entry? This action cannot be undone.",
-      confirmText: "Delete Entry",
-      cancelText: "Keep Writing",
-      isDestructive: true,
-      onConfirm: async () => {
-        try {
-          await deleteMutation.mutateAsync(editingDevotionalId);
-          reset();
-          toast.success(
-            "Devotion Deleted",
-            "Your devotional entry has been deleted.",
-          );
-          router.replace("/(tabs)/journal");
-        } catch (err) {
-          console.error("Failed to delete devotional:", err);
-          toast.error(
-            "Delete Error",
-            "Could not delete this entry. Please try again.",
-          );
-        }
-      },
-    });
-  };
 
   const handleSave = async () => {
-    if (!editingDevotionalId && !isPremium && (recentEntries || []).length >= FREE_JOURNAL_PAGE_LIMIT) {
-      setIsPaywallOpen(true);
-      return;
-    }
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    } catch {}
 
-    if (!rhemaText || !rhemaReference) {
+    if (!notes.trim()) {
       promptModal.info(
-        "Rhema Scripture Needed",
-        "Please select a Scripture verse to begin your devotional reflection.",
+        "Entry is Empty",
+        "Please write something before saving.",
       );
       return;
     }
@@ -110,21 +56,14 @@ export function NotebookEditor({ onSaveSuccess }: NotebookEditorProps) {
     try {
       const savedId = await saveMutation.mutateAsync({
         id: editingDevotionalId || undefined,
-        rhemaVerseId: rhemaVerseId || 1,
-        rhemaText,
-        rhemaReference,
-        reflection,
-        motivation,
-        application,
-        moodTagIds: selectedMoodTagIds,
-        tasks: [],
+        notes,
         isDraft: false,
       });
 
       reset();
       toast.success(
-        editingDevotionalId ? "Devotional Updated" : "Devotional Saved",
-        "Your reflection has been recorded in your journal.",
+        editingDevotionalId ? "Journal Updated" : "Journal Saved",
+        "Your devotion has been recorded in your journal.",
       );
 
       if (onSaveSuccess) {
@@ -133,10 +72,10 @@ export function NotebookEditor({ onSaveSuccess }: NotebookEditorProps) {
         router.replace("/(tabs)/journal");
       }
     } catch (err) {
-      console.error("Failed to save devotional:", err);
+      console.error("Failed to save journal:", err);
       toast.error(
         "Save Error",
-        "Could not save your devotional entry. Please try again.",
+        "Could not save your journal entry. Please try again.",
       );
     }
   };
@@ -170,16 +109,17 @@ export function NotebookEditor({ onSaveSuccess }: NotebookEditorProps) {
         >
           <Pressable
             onPress={() => {
-              if (!reflection && !motivation && !application) {
+              try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+              if (!notes.trim()) {
                 reset();
                 router.back();
                 return;
               }
 
               promptModal.confirm({
-                title: "Discard Devotion?",
+                title: "Discard Draft?",
                 message:
-                  "Are you sure you want to discard this devotional draft? Your unsaved writing will be lost.",
+                  "Are you sure you want to discard this draft? Your unsaved writing will be lost.",
                 confirmText: "Discard Draft",
                 cancelText: "Keep Writing",
                 isDestructive: true,
@@ -189,51 +129,44 @@ export function NotebookEditor({ onSaveSuccess }: NotebookEditorProps) {
                 },
               });
             }}
-            style={styles.toolbarButton}
+            style={({ pressed }) => [
+              styles.cancelPillButton,
+              {
+                backgroundColor: colors.cardBg,
+                borderColor: colors.paperLine,
+              },
+              pressed && { opacity: 0.8 },
+            ]}
             hitSlop={8}
           >
-            <Ionicons name="arrow-back" size={20} color={colors.inkSecondary} />
+            <Ionicons name="arrow-back" size={15} color={colors.inkSecondary} />
             <Text
-              style={[styles.toolbarButtonText, { color: colors.inkSecondary }]}
+              style={[styles.cancelButtonText, { color: colors.inkSecondary }]}
             >
-              Cancel
+              Back
             </Text>
           </Pressable>
 
-          <View style={styles.topRightActions}>
-            {editingDevotionalId ? (
-              <Pressable
-                onPress={handleDelete}
-                style={[
-                  styles.deleteButton,
-                  {
-                    backgroundColor: isDark ? "#2A1816" : "#FDF2F0",
-                    borderColor: colors.tapeRhema + "40",
-                  },
-                ]}
-                hitSlop={8}
-                accessibilityLabel="Delete Devotion"
-              >
-                <Ionicons
-                  name="trash-outline"
-                  size={16}
-                  color={colors.tapeRhema}
-                />
-              </Pressable>
-            ) : null}
+          <View style={styles.centerTitleGroup}>
+            <Text style={[styles.centerTitleText, { color: colors.inkMuted }]}>
+              {editingDevotionalId ? 'EDIT ENTRY' : 'DEVOTIONAL'}
+            </Text>
+          </View>
 
+          <View style={styles.topRightActions}>
             <Pressable
               onPress={handleSave}
-              style={[
+              style={({ pressed }) => [
                 styles.saveButton,
                 { backgroundColor: colors.brandGreen },
                 saveMutation.isPending && styles.saveButtonDisabled,
+                pressed && { opacity: 0.88 },
               ]}
               disabled={saveMutation.isPending}
             >
-              <Ionicons name="bookmark-outline" size={18} color="#FFFFFF" />
+              <Ionicons name="bookmark-outline" size={15} color="#FFFFFF" />
               <Text style={styles.saveButtonText}>
-                {saveMutation.isPending ? "Saving..." : "Save Devotion"}
+                {saveMutation.isPending ? "Saving..." : "Save"}
               </Text>
             </Pressable>
           </View>
@@ -248,200 +181,23 @@ export function NotebookEditor({ onSaveSuccess }: NotebookEditorProps) {
           keyboardDismissMode="on-drag"
           automaticallyAdjustKeyboardInsets={true}
         >
-          {/* ═══════════════ 1. RHEMA SECTION ═══════════════ */}
-          <TapeHeader label="✦  R H E M A" color={colors.tapeRhema} />
           <View style={styles.sectionContent}>
-            <View style={styles.rhemaSubtitleRow}>
-              <Text
-                style={[
-                  styles.sectionSubtitle,
-                  { color: colors.inkSecondary, flex: 1, marginBottom: 0 },
-                ]}
-              >
-                The highlighted Scripture that spoke directly to your heart
-                today
-              </Text>
-
-              {rhemaText ? (
-                <Pressable
-                  onPress={() => setIsChangeRhemaOpen(true)}
-                  style={[
-                    styles.changeRhemaBtn,
-                    {
-                      backgroundColor: colors.tapeRhema + "18",
-                      borderColor: colors.tapeRhema + "45",
-                    },
-                  ]}
-                  hitSlop={6}
-                  accessibilityLabel="Change Rhema Scripture"
-                >
-                  <Ionicons
-                    name="swap-horizontal"
-                    size={13}
-                    color={colors.tapeRhema}
-                  />
-                  <Text
-                    style={[
-                      styles.changeRhemaBtnText,
-                      { color: colors.tapeRhema },
-                    ]}
-                  >
-                    Change
-                  </Text>
-                </Pressable>
-              ) : null}
-            </View>
-
-            {rhemaText ? (
-              <View style={styles.rhemaCardWrapper}>
-                <ScriptureCard reference={rhemaReference} text={rhemaText} />
-                <Pressable
-                  onPress={() => setIsChangeRhemaOpen(true)}
-                  style={[
-                    styles.bottomChangeVerseBtn,
-                    {
-                      borderColor: colors.paperLine,
-                      backgroundColor: isDark ? "#23201D" : "#FAF6F0",
-                    },
-                  ]}
-                >
-                  <Ionicons
-                    name="book-outline"
-                    size={13}
-                    color={colors.brandGreen}
-                  />
-                  <Text
-                    style={[
-                      styles.bottomChangeVerseText,
-                      { color: colors.brandGreen },
-                    ]}
-                  >
-                    Select Different Verse or Translation
-                  </Text>
-                  <Ionicons
-                    name="chevron-forward"
-                    size={12}
-                    color={colors.brandGreen}
-                  />
-                </Pressable>
-              </View>
-            ) : (
-              <Pressable
-                onPress={() => setIsChangeRhemaOpen(true)}
-                style={[
-                  styles.emptyRhemaCard,
-                  {
-                    backgroundColor: colors.cardBg,
-                    borderColor: colors.tapeRhema,
-                  },
-                ]}
-              >
-                <Ionicons
-                  name="book-outline"
-                  size={24}
-                  color={colors.tapeRhema}
-                />
-                <Text
-                  style={[styles.emptyRhemaText, { color: colors.tapeRhema }]}
-                >
-                  Tap here to open the Bible and select today’s Rhema verse
-                </Text>
-              </Pressable>
-            )}
-          </View>
-
-          {/* ═══════════════ 2. REFLECTION SECTION ═══════════════ */}
-          <TapeHeader
-            label="✦  R E F L E C T I O N"
-            color={colors.tapeReflection}
-          />
-          <View style={styles.sectionContent}>
-            <Text
-              style={[styles.sectionSubtitle, { color: colors.inkSecondary }]}
-            >
-              What is God saying to you through this verse?
-            </Text>
             <RuledInput
-              value={reflection}
-              onChangeText={setReflection}
-              onFocus={() => {
-                setTimeout(() => {
-                  scrollRef.current?.scrollTo({ y: 160, animated: true });
-                }, 100);
-              }}
-              placeholder="Write your personal reflections here..."
-              minLines={6}
-            />
-          </View>
-
-          {/* ═══════════════ 3. MOTIVATION SECTION ═══════════════ */}
-          <TapeHeader
-            label="✦  M O T I V A T I O N"
-            color={colors.tapeMotivation}
-          />
-          <View style={styles.sectionContent}>
-            <Text
-              style={[styles.sectionSubtitle, { color: colors.inkSecondary }]}
-            >
-              What encouragement do you find in this scripture?
-            </Text>
-            <RuledInput
-              value={motivation}
-              onChangeText={setMotivation}
-              onFocus={() => {
-                setTimeout(() => {
-                  scrollRef.current?.scrollTo({ y: 400, animated: true });
-                }, 100);
-              }}
-              placeholder="Write what touched your heart today..."
-              minLines={4}
-            />
-          </View>
-
-          {/* ═══════════════ 4. APPLICATION SECTION ═══════════════ */}
-          <TapeHeader
-            label="✦  A P P L I C A T I O N"
-            color={colors.tapeApplication}
-          />
-          <View style={styles.sectionContent}>
-            <Text
-              style={[styles.sectionSubtitle, { color: colors.inkSecondary }]}
-            >
-              How will you put this verse into practice today?
-            </Text>
-            <RuledInput
-              value={application}
-              onChangeText={setApplication}
-              onFocus={() => {
-                setTimeout(() => {
-                  scrollRef.current?.scrollTo({ y: 640, animated: true });
-                }, 100);
-              }}
-              placeholder="Write your action steps or prayer commitments..."
-              minLines={4}
+              value={notes}
+              onChangeText={setNotes}
+              placeholder="Write your journal entry here..."
+              minLines={25}
+              fontSize={16}
+              lineHeight={28}
             />
           </View>
 
           {/* Bottom spacing for keyboard */}
-          <View style={{ height: SPACING.huge }} />
+          <View style={{ height: 280 }} />
         </ScrollView>
 
-        {/* Change Rhema Verse Selection Modal */}
-        <ChangeRhemaModal
-          visible={isChangeRhemaOpen}
-          onClose={() => setIsChangeRhemaOpen(false)}
-        />
-
-        {/* Shepema Grace Paywall Modal */}
-        <PaywallModal
-          visible={isPaywallOpen}
-          onClose={() => setIsPaywallOpen(false)}
-          triggerFeature="Unlimited Devotional Pages (30/30 Limit Reached)"
-        />
-
         {/* 
-          Solid backdrop behind the phone's bottom 3-button navigation bar (matching Bible / Tab screens).
-          This prevents scrolling page content from showing behind the Android back/home/recent buttons.
+          Solid backdrop behind the phone's bottom 3-button navigation bar.
         */}
         {insets.bottom > 0 ? (
           <View
@@ -486,35 +242,46 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     zIndex: 2,
   },
-  toolbarButton: {
+  cancelPillButton: {
     flexDirection: "row",
     alignItems: "center",
-    gap: SPACING.xs,
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: RADIUS.pill,
+    borderWidth: 1,
+    ...SHADOWS.subtle,
   },
-  toolbarButtonText: {
-    fontFamily: FONTS.body,
-    fontSize: 14,
+  cancelButtonText: {
+    fontFamily: FONTS.bodyBold,
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  centerTitleGroup: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    alignItems: "center",
+    pointerEvents: "none",
+  },
+  centerTitleText: {
+    fontFamily: FONTS.bodyBold,
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 1,
   },
   topRightActions: {
     flexDirection: "row",
     alignItems: "center",
     gap: SPACING.sm,
   },
-  deleteButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
   saveButton: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: SPACING.sm,
-    paddingHorizontal: SPACING.base,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
     borderRadius: RADIUS.pill,
-    gap: SPACING.xs,
+    gap: 5,
     ...SHADOWS.subtle,
   },
   saveButtonDisabled: {
@@ -522,7 +289,7 @@ const styles = StyleSheet.create({
   },
   saveButtonText: {
     fontFamily: FONTS.bodyBold,
-    fontSize: 13,
+    fontSize: 12.5,
     color: "#FFFFFF",
     fontWeight: "700",
   },
@@ -536,65 +303,5 @@ const styles = StyleSheet.create({
   },
   sectionContent: {
     marginBottom: SPACING.xl,
-  },
-  sectionSubtitle: {
-    fontFamily: FONTS.bodyItalic,
-    fontSize: 13,
-    marginBottom: SPACING.md,
-    lineHeight: 18,
-  },
-  rhemaSubtitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: SPACING.md,
-    gap: 8,
-  },
-  changeRhemaBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: RADIUS.pill,
-    borderWidth: 0.8,
-  },
-  changeRhemaBtnText: {
-    fontFamily: FONTS.bodyBold,
-    fontSize: 10,
-    fontWeight: "800",
-  },
-  rhemaCardWrapper: {
-    gap: 6,
-  },
-  bottomChangeVerseBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    paddingVertical: 7,
-    paddingHorizontal: 12,
-    borderRadius: RADIUS.sm,
-    borderWidth: 1,
-  },
-  bottomChangeVerseText: {
-    fontFamily: FONTS.bodyBold,
-    fontSize: 11,
-    fontWeight: "700",
-  },
-  emptyRhemaCard: {
-    borderWidth: 1.5,
-    borderStyle: "dashed",
-    borderRadius: RADIUS.md,
-    padding: SPACING.xl,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: SPACING.sm,
-  },
-  emptyRhemaText: {
-    fontFamily: FONTS.body,
-    fontSize: 14,
-    textAlign: "center",
-    fontWeight: "600",
   },
 });

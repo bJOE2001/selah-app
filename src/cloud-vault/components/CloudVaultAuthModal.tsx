@@ -160,7 +160,7 @@ export function CloudVaultAuthModal({ visible, onClose }: CloudVaultAuthModalPro
             >
               <Ionicons name="lock-closed" size={14} color="#C59B27" style={{ marginTop: 2 }} />
               <Text style={[styles.privacyNoticeText, { color: colors.inkSecondary }]}>
-                All personal reflections are encrypted client-side with AES-256 before leaving your device. Only you can decrypt your prayers.
+                All personal journal entries are encrypted client-side with AES-256 before leaving your device. Only you can decrypt your prayers.
               </Text>
             </View>
 
@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
     zIndex: 9999,
   },
   backdrop: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   modalCard: {
     width: '100%',

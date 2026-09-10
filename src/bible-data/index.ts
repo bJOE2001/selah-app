@@ -7,4 +7,3 @@ export * from './downloadStore';
 export * from './db';
 export * from './queries';
 export * from './hooks';
-export * from './highlights';

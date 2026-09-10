@@ -1,11 +1,17 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
-import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { FONTS } from '../tokens/typography';
 import { SPACING, RADIUS } from '../tokens/spacing';
 import { useTheme } from '../theme/useTheme';
+
+export interface ModernTabBarProps {
+  state: any;
+  descriptors: any;
+  navigation: any;
+}
 
 interface TabConfig {
   name: string;
@@ -41,7 +47,7 @@ const TAB_CONFIGS: Record<string, TabConfig> = {
   },
 };
 
-export function ModernTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
+export function ModernTabBar({ state, descriptors, navigation }: ModernTabBarProps) {
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
 
@@ -82,7 +88,7 @@ export function ModernTabBar({ state, descriptors, navigation }: BottomTabBarPro
             },
           ]}
         >
-          {state.routes.map((route, index) => {
+          {state.routes.map((route: any, index: number) => {
             const { options } = descriptors[route.key];
             const isFocused = state.index === index;
             const config = TAB_CONFIGS[route.name] || {
@@ -93,6 +99,10 @@ export function ModernTabBar({ state, descriptors, navigation }: BottomTabBarPro
             };
 
             const onPress = () => {
+              try {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              } catch {}
+
               const event = navigation.emit({
                 type: 'tabPress',
                 target: route.key,
@@ -105,6 +115,9 @@ export function ModernTabBar({ state, descriptors, navigation }: BottomTabBarPro
             };
 
             const onLongPress = () => {
+              try {
+                Haptics.selectionAsync();
+              } catch {}
               navigation.emit({
                 type: 'tabLongPress',
                 target: route.key,
@@ -116,12 +129,12 @@ export function ModernTabBar({ state, descriptors, navigation }: BottomTabBarPro
                 key={route.key}
                 accessibilityRole="button"
                 accessibilityState={isFocused ? { selected: true } : {}}
-                accessibilityLabel={options.tabBarAccessibilityLabel}
+                accessibilityLabel={options.tabBarAccessibilityLabel || config.label}
                 onPress={onPress}
                 onLongPress={onLongPress}
                 style={({ pressed }) => [
                   styles.tabItem,
-                  isFocused && styles.tabItemFocused,
+                  isFocused && [styles.tabItemFocused, { backgroundColor: colors.tabActivePill }],
                   pressed && styles.tabItemPressed,
                 ]}
                 hitSlop={6}
@@ -129,27 +142,30 @@ export function ModernTabBar({ state, descriptors, navigation }: BottomTabBarPro
                 <View
                   style={[
                     styles.iconCapsule,
-                    isFocused && { backgroundColor: colors.brandGreenLight },
+                    isFocused && {
+                      backgroundColor: isDark ? 'rgba(82, 167, 82, 0.22)' : colors.brandGreenLight,
+                    },
                   ]}
                 >
                   <Ionicons
                     name={isFocused ? config.activeIcon : config.inactiveIcon}
-                    size={18}
-                    color={isFocused ? colors.brandGreen : colors.inkSecondary}
+                    size={19}
+                    color={isFocused ? colors.brandGreen : colors.inkMuted}
                   />
                 </View>
 
                 <Text
                   style={[
                     styles.tabLabel,
-                    { color: isFocused ? colors.brandGreen : colors.inkSecondary },
+                    { color: isFocused ? colors.brandGreen : colors.inkMuted },
                     isFocused && styles.tabLabelFocused,
                   ]}
+                  numberOfLines={1}
                 >
                   {config.label}
                 </Text>
 
-                {/* Active Dot Indicator */}
+                {/* Subtle jewel indicator dot */}
                 {isFocused ? (
                   <View style={[styles.activeDot, { backgroundColor: colors.brandGreen }]} />
                 ) : (
@@ -192,23 +208,23 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     width: '100%',
     maxWidth: 420,
-    height: 64,
+    height: 66,
     borderRadius: RADIUS.pill,
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 4,
     borderWidth: 1.2,
     ...Platform.select({
       ios: {
         shadowColor: '#2C2520',
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.12,
-        shadowRadius: 14,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.14,
+        shadowRadius: 18,
       },
       android: {
-        elevation: 8,
+        elevation: 10,
       },
       web: {
-        boxShadow: '0 8px 24px rgba(44, 37, 32, 0.10)',
+        boxShadow: '0 10px 32px rgba(44, 37, 32, 0.12)',
       },
     }),
   },
@@ -217,7 +233,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 4,
-    borderRadius: RADIUS.pill,
+    borderRadius: 22,
+    marginHorizontal: 2,
   },
   tabItemFocused: {},
   tabItemPressed: {
