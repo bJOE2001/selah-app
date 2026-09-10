@@ -2,7 +2,7 @@
   "expo": {
     "name": "Selah",
     "slug": "selah-app",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/app-icon.jpg",
     "scheme": "selah",
@@ -13,7 +13,7 @@
     },
     "android": {
       "package": "com.selah.devotional",
-      "versionCode": 2,
+      "versionCode": 3,
       "adaptiveIcon": {
         "backgroundColor": "#377333",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
