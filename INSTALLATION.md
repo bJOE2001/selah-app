@@ -1,8 +1,8 @@
-# Selah: Daily Bible & Devotions — Installation & Setup Guide
+# Selah: Bible & Devotional — Installation & Setup Guide
 
 > *Pause, Reflect & Praise*
 
-Welcome to **Selah: Daily Bible & Devotions**, an aesthetic devotional journaling and Scripture reader app built with **React Native**, **Expo SDK 54**, **Expo Router**, **TypeScript**, and **Expo SQLite**.
+Welcome to **Selah: Bible & Devotional**, an aesthetic devotional journaling and Scripture reader app built with **React Native**, **Expo SDK 54**, **Expo Router**, **TypeScript**, and **Expo SQLite**.
 
 This guide walks you through setting up, configuring, and running the project from scratch on your local development machine.
 

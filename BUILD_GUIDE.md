@@ -1,4 +1,4 @@
-# 📖 Selah: Daily Bible & Devotions — Complete Build & Deployment Guide
+# 📖 Selah: Bible & Devotional — Complete Build & Deployment Guide
 
 This guide provides step-by-step instructions for:
 1. Building the **Selah Android APK** (`selah-app`).

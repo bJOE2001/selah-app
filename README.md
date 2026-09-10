@@ -1,8 +1,8 @@
-# Selah: Daily Bible & Devotions 📖✨
+# Selah: Bible & Devotional 📖✨
 
 > *Pause, Reflect & Praise* — An aesthetic devotional journaling and Scripture reader app crafted with a classic paper notebook aesthetic and warm companion mascot.
 
-**Selah: Daily Bible & Devotions** is a mobile application built with **React Native**, **Expo SDK 54**, and **Expo SQLite**, designed for thoughtful Scripture meditation, structured devotional reflection, habit tracking, and aesthetic shareable cards.
+**Selah: Bible & Devotional** is a mobile application built with **React Native**, **Expo SDK 54**, and **Expo SQLite**, designed for thoughtful Scripture meditation, structured devotional reflection, habit tracking, and aesthetic shareable cards.
 
 ---
 

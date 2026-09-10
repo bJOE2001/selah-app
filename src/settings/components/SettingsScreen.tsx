@@ -276,7 +276,7 @@ export function SettingsScreen() {
       );
 
       const exportData = {
-        app: 'Selah: Daily Bible & Devotions',
+        app: 'Selah: Bible & Devotional',
         version: '1.0.1',
         exportedAt: new Date().toISOString(),
         totalEntries: fullEntries.length,
