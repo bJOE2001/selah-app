@@ -143,6 +143,20 @@ export async function initRevenueCat(): Promise<void> {
 }
 
 /**
+ * Safely check if RevenueCat Purchases has been configured and is ready to use.
+ */
+export async function isPurchasesConfigured(): Promise<boolean> {
+  if (isExpoGo) return false;
+  const Purchases = getPurchasesModule();
+  if (!Purchases) return false;
+  try {
+    return await Purchases.default.isConfigured();
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Offering & Package types for the paywall.
  * Prices are fetched dynamically from RevenueCat (configured in dashboard).
  */
@@ -176,12 +190,16 @@ export async function getOfferings(): Promise<PaywallPackage[]> {
     return [];
   }
 
+  const configured = await isPurchasesConfigured();
+  if (!configured) {
+    return [];
+  }
+
   try {
     const offerings = await Purchases.default.getOfferings();
     const currentOffering = offerings.current;
 
     if (!currentOffering?.availablePackages) {
-      console.warn('[RevenueCat] No current offering available');
       return [];
     }
 
@@ -215,7 +233,10 @@ export async function getOfferings(): Promise<PaywallPackage[]> {
         rcPackage: pkg,
       };
     });
-  } catch (err) {
+  } catch (err: any) {
+    if (err?.message?.includes('singleton') || err?.message?.includes('configure')) {
+      return [];
+    }
     console.warn('[RevenueCat] Error fetching offerings:', err);
     return [];
   }
@@ -234,6 +255,12 @@ export async function purchasePackage(paywallPackage: PaywallPackage): Promise<b
   const Purchases = getPurchasesModule();
   if (!Purchases) return false;
 
+  const configured = await isPurchasesConfigured();
+  if (!configured) {
+    console.warn('[RevenueCat] In-app purchases unavailable: Purchases not configured.');
+    return false;
+  }
+
   try {
     const { customerInfo } = await Purchases.default.purchasePackage(
       paywallPackage.rcPackage
@@ -249,6 +276,10 @@ export async function purchasePackage(paywallPackage: PaywallPackage): Promise<b
       console.log('[RevenueCat] Purchase cancelled by user');
       return false;
     }
+    if (err?.message?.includes('singleton') || err?.message?.includes('configure')) {
+      console.warn('[RevenueCat] Purchases singleton not ready:', err?.message);
+      return false;
+    }
     console.warn('[RevenueCat] Purchase error:', err);
     throw err;
   }
@@ -259,8 +290,19 @@ export async function purchasePackage(paywallPackage: PaywallPackage): Promise<b
  * Returns true if premium was restored.
  */
 export async function restorePurchases(): Promise<boolean> {
+  if (isExpoGo) {
+    console.log('[RevenueCat] Restore skipped in Expo Go sandbox (native store billing disabled).');
+    return false;
+  }
+
   const Purchases = getPurchasesModule();
   if (!Purchases) return false;
+
+  const configured = await isPurchasesConfigured();
+  if (!configured) {
+    console.log('[RevenueCat] Restore skipped: Purchases is not configured.');
+    return false;
+  }
 
   try {
     const customerInfo = await Purchases.default.restorePurchases();
@@ -268,7 +310,11 @@ export async function restorePurchases(): Promise<boolean> {
     useEntitlementStore.getState().setEntitlement(entitlement);
 
     return entitlement.isPremium;
-  } catch (err) {
+  } catch (err: any) {
+    if (err?.message?.includes('singleton') || err?.message?.includes('configure')) {
+      console.log('[RevenueCat] Purchases singleton not ready:', err?.message);
+      return false;
+    }
     console.warn('[RevenueCat] Restore error:', err);
     throw err;
   }

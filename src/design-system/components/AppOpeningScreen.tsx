@@ -121,7 +121,7 @@ export function AppOpeningScreen() {
           </Text>
           <View style={styles.madeWithRow}>
             <Text style={[styles.madeWithText, { color: colors.inkMuted }]}>
-              Made with ❤️ and faith
+              Crafted with faith & grace
             </Text>
           </View>
         </View>

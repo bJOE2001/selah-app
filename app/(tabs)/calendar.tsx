@@ -387,14 +387,21 @@ export default function CalendarTabScreen() {
                     ],
                   ]}
                 >
-                  <Text
-                    style={[
-                      styles.filterTabText,
-                      { color: activeFilter === 'bookmarked' ? colors.tapeRhema : colors.inkSecondary },
-                    ]}
-                  >
-                    ★ Bookmarked ({bookmarkedCount})
-                  </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                    <Ionicons
+                      name="bookmark"
+                      size={11}
+                      color={activeFilter === 'bookmarked' ? colors.tapeRhema : colors.inkSecondary}
+                    />
+                    <Text
+                      style={[
+                        styles.filterTabText,
+                        { color: activeFilter === 'bookmarked' ? colors.tapeRhema : colors.inkSecondary },
+                      ]}
+                    >
+                      Bookmarked ({bookmarkedCount})
+                    </Text>
+                  </View>
                 </Pressable>
               </View>
             </View>

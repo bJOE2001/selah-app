@@ -129,10 +129,10 @@ export function ShareCardModal({
           {/* Theme Selector Tabs */}
           <View style={[styles.themeSelector, { backgroundColor: isDark ? '#1F1B17' : '#EFE9DE' }]}>
             {([
-              { key: 'classic', label: '📜 Classic Paper' },
-              { key: 'minimal', label: '🤍 Clean Modern' },
-              { key: 'midnight', label: '🌙 Midnight Onyx' },
-            ] as { key: CardTheme; label: string }[]).map((t) => (
+              { key: 'classic', label: 'Classic Paper', icon: 'document-text-outline' },
+              { key: 'minimal', label: 'Clean Modern', icon: 'square-outline' },
+              { key: 'midnight', label: 'Midnight Onyx', icon: 'moon-outline' },
+            ] as { key: CardTheme; label: string; icon: keyof typeof Ionicons.glyphMap }[]).map((t) => (
               <Pressable
                 key={t.key}
                 onPress={() => setTheme(t.key)}
@@ -144,15 +144,22 @@ export function ShareCardModal({
                   ],
                 ]}
               >
-                <Text
-                  style={[
-                    styles.themeTabText,
-                    { color: colors.inkSecondary },
-                    theme === t.key && styles.themeTabTextActive,
-                  ]}
-                >
-                  {t.label}
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                  <Ionicons
+                    name={t.icon}
+                    size={12}
+                    color={theme === t.key ? '#FFFFFF' : colors.inkSecondary}
+                  />
+                  <Text
+                    style={[
+                      styles.themeTabText,
+                      { color: colors.inkSecondary },
+                      theme === t.key && styles.themeTabTextActive,
+                    ]}
+                  >
+                    {t.label}
+                  </Text>
+                </View>
               </Pressable>
             ))}
           </View>

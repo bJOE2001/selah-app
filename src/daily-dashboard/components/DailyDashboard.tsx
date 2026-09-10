@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet, Pressable, Image } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -13,7 +13,6 @@ import { useDraftStore } from '../../devotional-core/store';
 import { useSettingsStore } from '../../settings/store';
 import { RhemaGuideModal } from '../../devotional-guide';
 import { useReadingStore } from '../../bible-data/readingStore';
-import { ContinueReadingCard } from './ContinueReadingCard';
 import { MilestoneCelebrationCard } from './MilestoneCelebrationCard';
 import { useIsPremium, PaywallModal } from '../../entitlements';
 import { useTheme } from '../../design-system';
@@ -144,90 +143,37 @@ export function DailyDashboard() {
         {/* 1. Hero Greeting Header with Mascot Halo & Chat Bubble */}
         <DashboardHeader onOpenGuide={() => setIsRhemaGuideOpen(true)} />
 
-        {/* 1.5 Rhema Devotional Method Guide Card */}
-        <Pressable
-          onPress={() => {
-            try {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            } catch {}
-            setIsRhemaGuideOpen(true);
-          }}
-          style={({ pressed }) => [
-            styles.rhemaGuideBanner,
-            {
-              backgroundColor: isDark ? '#1C2920' : '#F2F8F4',
-              borderColor: isDark ? '#2E4735' : '#D2E7D7',
-            },
-            pressed && { opacity: 0.88, transform: [{ scale: 0.99 }] },
-          ]}
-          accessibilityRole="button"
-          accessibilityLabel="How to write a devotional: Learn the 4-step Rhema Method with Selah"
-        >
-          <View style={styles.rhemaGuideContent}>
-            <View
-              style={[
-                styles.rhemaGuideIconCircle,
-                {
-                  backgroundColor: isDark ? 'rgba(74, 124, 89, 0.3)' : '#E0EFE4',
-                  borderColor: isDark ? 'rgba(74, 124, 89, 0.5)' : '#C4E2CB',
-                },
-              ]}
-            >
-              <Image
-                source={require('../../../assets/images/mascot/selah-mascot-welcome.png')}
-                style={{ width: 34, height: 34 }}
-                resizeMode="contain"
-              />
-            </View>
-            <View style={styles.rhemaGuideTextCol}>
-              <View style={styles.rhemaGuideBadgeRow}>
-                <View style={[styles.rhemaGuideBadge, { backgroundColor: isDark ? 'rgba(196, 98, 70, 0.25)' : '#FCECE7' }]}>
-                  <Text style={[styles.rhemaGuideBadgeText, { color: colors.tapeRhema }]}>RHEMA METHOD</Text>
-                </View>
-                <Text style={[styles.rhemaGuideStepsTag, { color: colors.inkMuted }]}>4 Steps</Text>
-              </View>
-              <Text style={[styles.rhemaGuideHeadline, { color: colors.inkPrimary }]}>
-                How to Write a Devotional
-              </Text>
-              <Text style={[styles.rhemaGuideSubtext, { color: colors.inkSecondary }]}>
-                Learn Rhema, Reflection, Motivation & Application with Selah
-              </Text>
-            </View>
-            <View style={[styles.rhemaGuideArrowCircle, { backgroundColor: isDark ? '#25352A' : '#E5F1E8' }]}>
-              <Ionicons name="chevron-forward" size={14} color={colors.brandGreen} />
-            </View>
-          </View>
-        </Pressable>
-
         {/* 2. Weekly Devotion Tracker */}
         <WeeklyStreakTracker
           completedDayIndexes={currentWeekDays}
           streakDays={currentWeekDays.length}
         />
 
-        {/* 3. Bento Action Hub: Begin Devotion & Holy Scripture */}
+        {/* 3. Bento Action Hub: Begin Devotion & Holy Scripture (Dynamic Resume) + Rhema Method Guide */}
         <QuickEntry
           onStartDevotion={() => {
             reset();
             router.push('/devotional/new');
           }}
           onOpenBible={() => router.push('/(tabs)/bible')}
+          resumeReading={
+            lastBookId !== null && lastChapter !== null
+              ? {
+                  bookId: lastBookId,
+                  chapter: lastChapter,
+                  bookName: lastBookName || 'Holy Scripture',
+                  lastReadAt,
+                }
+              : null
+          }
+          onResumeReading={(bookId, chapter) => {
+            router.push({
+              pathname: '/(tabs)/bible',
+              params: { bookId: String(bookId), chapter: String(chapter) },
+            });
+          }}
+          onOpenGuide={() => setIsRhemaGuideOpen(true)}
         />
-
-        {/* 4. Continue Reading Card (only if user has reading history) */}
-        {lastBookId !== null && lastChapter !== null ? (
-          <ContinueReadingCard
-            bookName={lastBookName}
-            chapter={lastChapter}
-            lastReadAt={lastReadAt}
-            onPress={() =>
-              router.push({
-                pathname: '/(tabs)/bible',
-                params: { bookId: String(lastBookId), chapter: String(lastChapter) },
-              })
-            }
-          />
-        ) : null}
 
         {/* 5. Spiritual Milestone Celebration (Free users only) */}
         {!isPremium && (entries || []).length > 0 ? (
@@ -262,53 +208,6 @@ export function DailyDashboard() {
                 </Text>
               </Pressable>
             </View>
-
-            {/* Storage Awareness Status Pill */}
-            <Pressable
-              onPress={() => {
-                if (!isPremium) {
-                  try {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  } catch {}
-                  setPaywallFeature('Automatic Cloud Backup');
-                  setIsPaywallOpen(true);
-                }
-              }}
-              disabled={isPremium}
-              style={({ pressed }) => [
-                styles.storageStatusPill,
-                {
-                  backgroundColor: isPremium
-                    ? (isDark ? 'rgba(82, 167, 82, 0.12)' : '#EAF4EC')
-                    : (isDark ? 'rgba(230, 188, 92, 0.12)' : '#FAF4EA'),
-                  borderColor: isPremium
-                    ? (isDark ? 'rgba(82, 167, 82, 0.28)' : '#D0E5D3')
-                    : (isDark ? 'rgba(230, 188, 92, 0.28)' : '#EFE2CC'),
-                },
-                pressed && !isPremium && { opacity: 0.75 },
-              ]}
-              accessibilityRole="button"
-              accessibilityLabel={isPremium ? "Cloud Backup Active" : "Stored locally on this device. Tap to back up."}
-            >
-              <Ionicons
-                name={isPremium ? 'cloud-done-outline' : 'phone-portrait-outline'}
-                size={12}
-                color={isPremium ? colors.brandGreen : colors.brandGold}
-              />
-              <Text
-                style={[
-                  styles.storageStatusText,
-                  { color: isPremium ? colors.brandGreen : colors.inkSecondary },
-                ]}
-              >
-                {isPremium
-                  ? 'Cloud Backup Active · Synced & Protected'
-                  : `Stored on this device only (${(entries || []).length === 1 ? '1 devotion' : `${(entries || []).length} devotions`}) · Tap to back up`}
-              </Text>
-              {!isPremium ? (
-                <Ionicons name="arrow-forward" size={10} color={colors.inkMuted} />
-              ) : null}
-            </Pressable>
 
             {(entries || []).slice(0, 3).map((entry) => (
               <EntryCard
@@ -445,87 +344,5 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.bodyBold,
     fontSize: 11.5,
     fontWeight: '700',
-  },
-  storageStatusPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-    borderRadius: RADIUS.pill,
-    borderWidth: 1,
-    gap: 6,
-    marginBottom: SPACING.sm,
-  },
-  storageStatusText: {
-    fontFamily: FONTS.bodyBold,
-    fontWeight: '600',
-    fontSize: 11,
-    letterSpacing: 0.1,
-  },
-  rhemaGuideBanner: {
-    marginHorizontal: SPACING.base,
-    marginTop: SPACING.xs,
-    marginBottom: SPACING.sm,
-    padding: SPACING.sm + 2,
-    borderRadius: RADIUS.lg,
-    borderWidth: 1,
-    ...SHADOWS.subtle,
-  },
-  rhemaGuideContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm + 2,
-  },
-  rhemaGuideIconCircle: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  rhemaGuideTextCol: {
-    flex: 1,
-  },
-  rhemaGuideBadgeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 2,
-  },
-  rhemaGuideBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 1.5,
-    borderRadius: RADIUS.pill,
-  },
-  rhemaGuideBadgeText: {
-    fontFamily: FONTS.bodyBold,
-    fontSize: 9,
-    fontWeight: '700',
-    letterSpacing: 0.4,
-  },
-  rhemaGuideStepsTag: {
-    fontFamily: FONTS.body,
-    fontSize: 9.5,
-    fontWeight: '600',
-  },
-  rhemaGuideHeadline: {
-    fontFamily: FONTS.sectionHeader,
-    fontSize: 13.5,
-    fontWeight: '700',
-    marginBottom: 1,
-  },
-  rhemaGuideSubtext: {
-    fontFamily: FONTS.body,
-    fontSize: 11,
-    lineHeight: 14.5,
-  },
-  rhemaGuideArrowCircle: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 });

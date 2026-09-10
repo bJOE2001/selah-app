@@ -23,16 +23,19 @@ export interface RuledInputProps extends Omit<TextInputProps, 'style'> {
   containerStyle?: ViewStyle;
 }
 
-export function RuledInput({
-  value,
-  onChangeText,
-  placeholder = 'Write your thoughts here...',
-  minLines = 4,
-  lineHeight = LINE_HEIGHTS.ruledLine,
-  fontSize = 13.5,
-  containerStyle,
-  ...props
-}: RuledInputProps) {
+export const RuledInput = React.forwardRef<TextInput, RuledInputProps>(function RuledInput(
+  {
+    value,
+    onChangeText,
+    placeholder = 'Write your thoughts here...',
+    minLines = 4,
+    lineHeight = LINE_HEIGHTS.ruledLine,
+    fontSize = 13.5,
+    containerStyle,
+    ...props
+  },
+  ref
+) {
   const { colors } = useTheme();
   const paperLined = useSettingsStore((s) => s.paperLined);
   const [contentHeight, setContentHeight] = useState<number>(minLines * lineHeight);
@@ -41,12 +44,14 @@ export function RuledInput({
     e: NativeSyntheticEvent<TextInputContentSizeChangeEventData>
   ) => {
     const rawHeight = e.nativeEvent?.contentSize?.height;
-    if (!rawHeight) return;
-    const textLines = (value || '').split('\n').length;
-    const measuredLines = Math.round(rawHeight / lineHeight);
-    const computedLines = Math.max(minLines, textLines, measuredLines);
-    const newHeight = computedLines * lineHeight;
-    setContentHeight((prev) => (Math.abs(prev - newHeight) >= lineHeight ? newHeight : prev));
+    if (rawHeight) {
+      const textLines = (value || '').split('\n').length;
+      const measuredLines = Math.round(rawHeight / lineHeight);
+      const computedLines = Math.max(minLines, textLines, measuredLines);
+      const newHeight = computedLines * lineHeight;
+      setContentHeight((prev) => (Math.abs(prev - newHeight) >= lineHeight ? newHeight : prev));
+    }
+    props.onContentSizeChange?.(e);
   };
 
   const textLines = (value || '').split('\n').length;
@@ -74,6 +79,7 @@ export function RuledInput({
 
       {/* Foreground TextInput */}
       <TextInput
+        ref={ref}
         {...props}
         style={[
           styles.textInput,
@@ -96,7 +102,7 @@ export function RuledInput({
       />
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {

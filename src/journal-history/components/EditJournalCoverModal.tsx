@@ -304,7 +304,6 @@ export const COVER_EMBLEMS: CoverEmblem[] = [
     id: 'mascot',
     name: 'Rhema Lamb',
     isPremium: false,
-    emoji: '🐑',
   },
   {
     id: 'cross',
@@ -313,9 +312,9 @@ export const COVER_EMBLEMS: CoverEmblem[] = [
   },
   {
     id: 'dove',
-    name: 'Holy Dove',
+    name: 'Holy Spirit',
     isPremium: true,
-    emoji: '🕊️',
+    iconName: 'flame-outline',
   },
   {
     id: 'bible',
@@ -629,9 +628,7 @@ export function EditJournalCoverModal({
                             size={16}
                             color={isSelected ? '#C59B27' : colors.inkPrimary}
                           />
-                        ) : (
-                          <Text style={styles.emblemEmoji}>{emb.emoji}</Text>
-                        )}
+                        ) : null}
                       </View>
                       )}
                       <Text
@@ -811,7 +808,7 @@ export function EditJournalCoverModal({
                       ) : emblem === 'cross' ? (
                         <SacredCross size={24} color={selectedTokens.accent} />
                       ) : emblem === 'dove' ? (
-                        <Text style={{ fontSize: 16 }}>🕊️</Text>
+                        <Ionicons name="flame-outline" size={20} color={selectedTokens.accent} />
                       ) : emblem === 'bible' ? (
                         <Ionicons name="book-outline" size={18} color={selectedTokens.accent} />
                       ) : (

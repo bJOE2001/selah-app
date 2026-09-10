@@ -1,14 +1,18 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
+    Keyboard,
     KeyboardAvoidingView,
+    NativeSyntheticEvent,
     Platform,
     Pressable,
     ScrollView,
     StyleSheet,
     Text,
+    TextInput,
+    TextInputSelectionChangeEventData,
     View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -25,11 +29,39 @@ export interface NotebookEditorProps {
   onSaveSuccess?: (devotionalId: string) => void;
 }
 
+const LINE_HEIGHT = 28;
+const PADDING_TOP = 16;
+const APPROX_CHARS_PER_LINE = 36;
+
+/**
+ * Calculates the vertical pixel offset (Y) of the cursor within RuledInput,
+ * accounting for newlines and soft line wraps.
+ */
+function getCursorY(text: string, cursorIndex: number): number {
+  if (!text || cursorIndex <= 0) return PADDING_TOP;
+
+  const textBefore = text.slice(0, Math.min(cursorIndex, text.length));
+  const paragraphs = textBefore.split('\n');
+  let visualLines = 0;
+
+  for (let i = 0; i < paragraphs.length; i++) {
+    const p = paragraphs[i];
+    if (p.length === 0) {
+      visualLines += 1;
+    } else {
+      visualLines += Math.max(1, Math.ceil(p.length / APPROX_CHARS_PER_LINE));
+    }
+  }
+
+  return PADDING_TOP + Math.max(0, visualLines - 1) * LINE_HEIGHT;
+}
+
 export function NotebookEditor({ onSaveSuccess }: NotebookEditorProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const scrollRef = useRef<ScrollView>(null);
+  const inputRef = useRef<TextInput>(null);
 
   const {
     editingDevotionalId,
@@ -38,7 +70,89 @@ export function NotebookEditor({ onSaveSuccess }: NotebookEditorProps) {
     reset,
   } = useDraftStore();
 
+  const notesRef = useRef(notes);
+  notesRef.current = notes;
+
+  const selectionRef = useRef<{ start: number; end: number }>({
+    start: notes.length,
+    end: notes.length,
+  });
+  const viewportHeightRef = useRef<number>(500);
+  const currentScrollY = useRef<number>(0);
+  const isKeyboardOpenRef = useRef<boolean>(false);
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
+
   const saveMutation = useSaveDevotional();
+
+  /**
+   * Smoothly keeps the active typing cursor in view with generous breathing room above the keyboard.
+   */
+  const scrollToCursor = (cursorIndex: number, force: boolean = false) => {
+    const cursorY = getCursorY(notesRef.current, cursorIndex);
+    const viewportH = viewportHeightRef.current;
+    const currentY = currentScrollY.current;
+
+    // Desired safe margin from bottom edge of visible area:
+    // When keyboard is open, keep cursor 140px above the bottom so next lines are also visible.
+    const bottomComfortMargin = isKeyboardOpenRef.current ? 140 : 60;
+    const topMargin = 24;
+
+    const cursorRelativeY = cursorY - currentY;
+
+    if (force || cursorRelativeY > viewportH - bottomComfortMargin) {
+      const targetY = Math.max(0, cursorY - viewportH + bottomComfortMargin);
+      scrollRef.current?.scrollTo({ y: targetY, animated: true });
+    } else if (cursorRelativeY < topMargin) {
+      const targetY = Math.max(0, cursorY - topMargin);
+      scrollRef.current?.scrollTo({ y: targetY, animated: true });
+    }
+  };
+
+  useEffect(() => {
+    const showSub = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      () => {
+        isKeyboardOpenRef.current = true;
+        setIsKeyboardOpen(true);
+        setTimeout(() => {
+          scrollToCursor(selectionRef.current.start, true);
+        }, 120);
+      }
+    );
+
+    const hideSub = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        isKeyboardOpenRef.current = false;
+        setIsKeyboardOpen(false);
+      }
+    );
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
+  const handleSelectionChange = (
+    e: NativeSyntheticEvent<TextInputSelectionChangeEventData>
+  ) => {
+    const sel = e.nativeEvent.selection;
+    selectionRef.current = sel;
+    scrollToCursor(sel.start, false);
+  };
+
+  const handleNotesChange = (text: string) => {
+    setNotes(text);
+    requestAnimationFrame(() => {
+      scrollToCursor(selectionRef.current.start, false);
+    });
+  };
+
+  const handleDismissKeyboard = () => {
+    try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+    Keyboard.dismiss();
+  };
 
   const handleSave = async () => {
     try {
@@ -154,6 +268,27 @@ export function NotebookEditor({ onSaveSuccess }: NotebookEditorProps) {
           </View>
 
           <View style={styles.topRightActions}>
+            {/* Quick Keyboard Dismiss Button */}
+            {isKeyboardOpen ? (
+              <Pressable
+                onPress={handleDismissKeyboard}
+                style={({ pressed }) => [
+                  styles.dismissKeyBtn,
+                  {
+                    backgroundColor: colors.cardBg,
+                    borderColor: colors.paperLine,
+                  },
+                  pressed && { opacity: 0.75 },
+                ]}
+                hitSlop={6}
+              >
+                <Ionicons name="chevron-down" size={14} color={colors.inkSecondary} />
+                <Text style={[styles.dismissKeyText, { color: colors.inkSecondary }]}>
+                  Done
+                </Text>
+              </Pressable>
+            ) : null}
+
             <Pressable
               onPress={handleSave}
               style={({ pressed }) => [
@@ -175,31 +310,41 @@ export function NotebookEditor({ onSaveSuccess }: NotebookEditorProps) {
         <ScrollView
           ref={scrollRef}
           style={styles.scrollView}
-          contentContainerStyle={[styles.scrollContent, { paddingBottom: 380 }]}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingBottom: isKeyboardOpen ? 260 : 120 },
+          ]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="on-drag"
-          automaticallyAdjustKeyboardInsets={true}
+          keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+          automaticallyAdjustKeyboardInsets={false}
+          onScroll={(e) => {
+            currentScrollY.current = e.nativeEvent.contentOffset.y;
+          }}
+          scrollEventThrottle={16}
+          onLayout={(e) => {
+            viewportHeightRef.current = e.nativeEvent.layout.height;
+          }}
         >
           <View style={styles.sectionContent}>
             <RuledInput
+              ref={inputRef}
               value={notes}
-              onChangeText={setNotes}
+              onChangeText={handleNotesChange}
+              onSelectionChange={handleSelectionChange}
               placeholder="Write your journal entry here..."
               minLines={25}
               fontSize={16}
-              lineHeight={28}
+              lineHeight={LINE_HEIGHT}
             />
           </View>
-
-          {/* Bottom spacing for keyboard */}
-          <View style={{ height: 280 }} />
         </ScrollView>
 
         {/* 
           Solid backdrop behind the phone's bottom 3-button navigation bar.
+          Only visible when keyboard is hidden to avoid overlaying the editor.
         */}
-        {insets.bottom > 0 ? (
+        {insets.bottom > 0 && !isKeyboardOpen ? (
           <View
             style={{
               position: 'absolute',
@@ -274,6 +419,21 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: SPACING.sm,
+  },
+  dismissKeyBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: RADIUS.pill,
+    borderWidth: 1,
+    ...SHADOWS.subtle,
+  },
+  dismissKeyText: {
+    fontFamily: FONTS.bodyBold,
+    fontSize: 11.5,
+    fontWeight: "700",
   },
   saveButton: {
     flexDirection: "row",

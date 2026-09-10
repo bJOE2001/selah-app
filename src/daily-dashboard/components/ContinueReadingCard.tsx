@@ -62,14 +62,6 @@ export function ContinueReadingCard({
         accessibilityRole="button"
         accessibilityLabel={`Continue reading ${bookName} Chapter ${chapter}`}
       >
-        {/* Left Bookmark Ribbon Accent Stripe */}
-        <View
-          style={[
-            styles.ribbonStripe,
-            { backgroundColor: colors.brandGreen },
-          ]}
-        />
-
         {/* Card Content Row */}
         <View style={styles.cardInner}>
           {/* Left: Icon + Text Group */}
@@ -150,22 +142,12 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.98 }],
     opacity: 0.94,
   },
-  ribbonStripe: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: 4,
-    borderTopLeftRadius: 20,
-    borderBottomLeftRadius: 20,
-  },
   cardInner: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: SPACING.sm + 4,
-    paddingLeft: SPACING.base,
-    paddingRight: SPACING.base - 2,
+    paddingHorizontal: SPACING.base,
   },
   leftContent: {
     flexDirection: 'row',

@@ -54,18 +54,6 @@ export function EntryCard({ entry, onPress }: EntryCardProps) {
       ]}
       accessibilityRole="button"
     >
-      {/* Subtle Full-Height Left Binding Accent Spine */}
-      <View
-        style={[
-          styles.leftBindingStripe,
-          {
-            backgroundColor: entry.isBookmarked
-              ? colors.tapeRhema
-              : colors.brandGreen,
-          },
-        ]}
-      />
-
       {/* Top Header: Date & Bookmark Badge & Actions */}
       <View style={styles.header}>
         <View style={styles.dateBlock}>
@@ -125,20 +113,10 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
     padding: SPACING.base,
-    paddingLeft: SPACING.base + 5,
     marginBottom: SPACING.md - 2,
     position: 'relative',
     overflow: 'hidden',
     ...SHADOWS.card,
-  },
-  leftBindingStripe: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: 4,
-    borderTopLeftRadius: 20,
-    borderBottomLeftRadius: 20,
   },
   cardPressed: {
     transform: [{ scale: 0.985 }],

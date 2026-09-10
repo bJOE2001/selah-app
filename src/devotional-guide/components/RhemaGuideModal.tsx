@@ -9,6 +9,9 @@ import {
   Animated,
   ScrollView,
   Dimensions,
+  Easing,
+  PanResponder,
+  AccessibilityInfo,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -42,18 +45,18 @@ const GUIDE_STEPS: GuideStep[] = [
   {
     id: 'welcome',
     badge: 'WELCOME',
-    stepNumber: '🌿',
+    stepNumber: '•',
     title: 'The Rhema Method',
     subtitle: '4 simple steps to hear from God',
     mascotImage: require('../../../assets/images/mascot/selah-mascot-welcome.png'),
-    mascotMood: 'Selah is greeting you warmly 🌿',
+    mascotMood: 'Selah is greeting you warmly',
     dialogue:
-      "Hi, I'm Selah! 🐑 Writing a devotion is simple. Just pause, listen to God, and put His Word into practice.",
+      "Hi, I'm Selah! Writing a devotion is simple. Just pause, listen to God, and put His Word into practice.",
     question: 'How does this method work?',
     exampleRef: '4 Simple Steps',
-    exampleScripture: 'Rhema • Reflection • Motivation • Application',
+    exampleScripture: 'Rhema → Reflect → Motivate → Apply',
     exampleText:
-      'These 4 steps take you from reading a verse to living it out in daily life. Let’s walk through them together!',
+      'A simple path from reading Scripture to living it out in your daily walk.',
   },
   {
     id: 'rhema',
@@ -62,7 +65,7 @@ const GUIDE_STEPS: GuideStep[] = [
     title: 'Rhema',
     subtitle: 'The verse that speaks to you',
     mascotImage: require('../../../assets/images/mascot/selah-mascot-rhema.png'),
-    mascotMood: 'Selah finding a verse 📖',
+    mascotMood: 'Selah finding a verse',
     dialogue:
       "A 'Rhema' is a verse that stands out to you while reading—like God speaking directly to your heart today.",
     question: 'What verse stood out to me today?',
@@ -78,7 +81,7 @@ const GUIDE_STEPS: GuideStep[] = [
     title: 'Reflection',
     subtitle: 'Thinking about what it means',
     mascotImage: require('../../../assets/images/mascot/selah-mascot-reflection.png'),
-    mascotMood: 'Selah thinking quietly 🕊️',
+    mascotMood: 'Selah thinking quietly',
     dialogue:
       'Take a moment to think about the verse. What does it teach you about who God is and how He cares for you?',
     question: 'What is God teaching me through this verse?',
@@ -94,7 +97,7 @@ const GUIDE_STEPS: GuideStep[] = [
     title: 'Motivation',
     subtitle: 'Why your heart needs this today',
     mascotImage: require('../../../assets/images/mascot/selah-mascot-motivation.png'),
-    mascotMood: "Listening to God's whisper 🕊️",
+    mascotMood: "Listening to God's whisper",
     dialogue:
       'Why did you need this verse today? Think about what you are going through—is God giving you peace, comfort, or a gentle reminder?',
     question: 'Why did my heart need this reminder today?',
@@ -110,7 +113,7 @@ const GUIDE_STEPS: GuideStep[] = [
     title: 'Application',
     subtitle: 'Putting it into practice',
     mascotImage: require('../../../assets/images/mascot/selah-mascot-application.png'),
-    mascotMood: 'Selah writing in the journal ✍️',
+    mascotMood: 'Selah writing in the journal',
     dialogue:
       'Faith is lived out every day. What is one simple thing you can do or pray today because of what you read?',
     question: 'What will I do differently today?',
@@ -130,18 +133,162 @@ export function RhemaGuideModal({
   const { colors, isDark } = useTheme();
 
   const [currentStep, setCurrentStep] = useState(0);
+  const [renderModal, setRenderModal] = useState(visible);
   const scrollRef = useRef<ScrollView>(null);
-  const mascotBounce = useRef(new Animated.Value(1)).current;
+  const isClosingRef = useRef(false);
+  const isReduceMotion = useRef(false);
 
-  const screenWidth = Dimensions.get('window').width;
-  const sheetWidth = Math.min(screenWidth, 500);
+  const screenDimensions = Dimensions.get('window');
+  const screenHeight = screenDimensions.height || 800;
+  const sheetWidth = Math.min(screenDimensions.width, 500);
+
+  const backdropAnim = useRef(new Animated.Value(0)).current;
+  const sheetTranslateY = useRef(new Animated.Value(screenHeight)).current;
+  const mascotBounce = useRef(new Animated.Value(1)).current;
+  const mascotEntrance = useRef(new Animated.Value(0.85)).current;
+
+  // Respect system reduced-motion accessibility preferences
+  useEffect(() => {
+    AccessibilityInfo.isReduceMotionEnabled().then((enabled) => {
+      isReduceMotion.current = enabled;
+    });
+    const sub = AccessibilityInfo.addEventListener('reduceMotionChanged', (enabled) => {
+      isReduceMotion.current = enabled;
+    });
+    return () => {
+      sub?.remove();
+    };
+  }, []);
+
+  const handleAnimatedClose = (customCallback?: () => void) => {
+    if (isClosingRef.current) return;
+    isClosingRef.current = true;
+
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {}
+
+    if (isReduceMotion.current) {
+      setRenderModal(false);
+      isClosingRef.current = false;
+      if (customCallback) {
+        customCallback();
+      } else {
+        onClose();
+      }
+      return;
+    }
+
+    // ui-ux-pro-max: Exit animation faster than enter (220ms ease-in)
+    Animated.parallel([
+      Animated.timing(backdropAnim, {
+        toValue: 0,
+        duration: 190,
+        easing: Easing.in(Easing.quad),
+        useNativeDriver: true,
+      }),
+      Animated.timing(sheetTranslateY, {
+        toValue: screenHeight,
+        duration: 220,
+        easing: Easing.in(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setRenderModal(false);
+      isClosingRef.current = false;
+      if (customCallback) {
+        customCallback();
+      } else {
+        onClose();
+      }
+    });
+  };
 
   useEffect(() => {
     if (visible) {
+      setRenderModal(true);
+      isClosingRef.current = false;
       setCurrentStep(0);
       scrollRef.current?.scrollTo({ x: 0, animated: false });
+
+      if (isReduceMotion.current) {
+        backdropAnim.setValue(1);
+        sheetTranslateY.setValue(0);
+        mascotEntrance.setValue(1);
+      } else {
+        backdropAnim.setValue(0);
+        sheetTranslateY.setValue(screenHeight);
+        mascotEntrance.setValue(0.85);
+
+        // ui-ux-pro-max: Fluid spring opening with soft secondary mascot pop
+        Animated.parallel([
+          Animated.timing(backdropAnim, {
+            toValue: 1,
+            duration: 280,
+            easing: Easing.out(Easing.quad),
+            useNativeDriver: true,
+          }),
+          Animated.spring(sheetTranslateY, {
+            toValue: 0,
+            damping: 26,
+            mass: 0.88,
+            stiffness: 240,
+            useNativeDriver: true,
+          }),
+          Animated.spring(mascotEntrance, {
+            toValue: 1,
+            friction: 5,
+            tension: 180,
+            delay: 60,
+            useNativeDriver: true,
+          }),
+        ]).start();
+      }
+    } else if (!visible && renderModal && !isClosingRef.current) {
+      handleAnimatedClose();
     }
   }, [visible]);
+
+  // Tactile swipe-down to dismiss gesture
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        return (
+          gestureState.dy > 6 &&
+          Math.abs(gestureState.dy) > Math.abs(gestureState.dx) * 1.2
+        );
+      },
+      onPanResponderMove: (_, gestureState) => {
+        if (gestureState.dy > 0) {
+          sheetTranslateY.setValue(gestureState.dy);
+          const dimRatio = Math.max(0, 1 - gestureState.dy / 450);
+          backdropAnim.setValue(dimRatio);
+        } else {
+          sheetTranslateY.setValue(gestureState.dy * 0.15);
+        }
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        if (gestureState.dy > 110 || gestureState.vy > 0.55) {
+          handleAnimatedClose();
+        } else {
+          Animated.parallel([
+            Animated.spring(sheetTranslateY, {
+              toValue: 0,
+              damping: 24,
+              stiffness: 260,
+              useNativeDriver: true,
+            }),
+            Animated.timing(backdropAnim, {
+              toValue: 1,
+              duration: 150,
+              useNativeDriver: true,
+            }),
+          ]).start();
+        }
+      },
+    })
+  ).current;
 
   const triggerBounce = () => {
     mascotBounce.setValue(0.92);
@@ -176,31 +323,53 @@ export function RhemaGuideModal({
     }
   };
 
-  if (!visible) return null;
+  if (!renderModal) return null;
 
   const step = GUIDE_STEPS[currentStep];
   const isLastStep = currentStep === GUIDE_STEPS.length - 1;
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+    <Modal
+      visible={renderModal}
+      transparent
+      animationType="none"
+      onRequestClose={() => handleAnimatedClose()}
+      statusBarTranslucent
+    >
       <View style={styles.overlayContainer}>
-        {/* Backdrop overlay */}
-        <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel="Close guide" />
+        {/* Animated Backdrop overlay */}
+        <Animated.View
+          style={[
+            styles.backdrop,
+            {
+              opacity: backdropAnim,
+            },
+          ]}
+        >
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={() => handleAnimatedClose()}
+            accessibilityLabel="Close guide"
+          />
+        </Animated.View>
 
         {/* Native Bottom Sheet Container */}
-        <View
+        <Animated.View
           style={[
             styles.bottomSheet,
             {
               backgroundColor: colors.cardBg,
               borderColor: colors.paperLine,
               paddingBottom: Math.max(insets.bottom, 14),
+              transform: [{ translateY: sheetTranslateY }],
             },
           ]}
         >
-          {/* Top Grab Handle */}
-          <View style={styles.grabHandleRow}>
-            <View style={[styles.grabHandle, { backgroundColor: colors.paperLine }]} />
+          {/* Top Grab Handle Area with Drag-to-Dismiss PanResponder */}
+          <View {...panResponder.panHandlers} style={styles.dragHandleArea}>
+            <View style={styles.grabHandleRow}>
+              <View style={[styles.grabHandle, { backgroundColor: colors.paperLine }]} />
+            </View>
           </View>
 
           {/* Header Navigation Bar */}
@@ -253,12 +422,7 @@ export function RhemaGuideModal({
 
             {/* Close Button */}
             <Pressable
-              onPress={() => {
-                try {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                } catch {}
-                onClose();
-              }}
+              onPress={() => handleAnimatedClose()}
               style={({ pressed }) => [
                 styles.closeBtn,
                 { backgroundColor: colors.paperBg, borderColor: colors.paperLine },
@@ -290,8 +454,15 @@ export function RhemaGuideModal({
                     showsVerticalScrollIndicator={false}
                     contentContainerStyle={styles.slideScrollContent}
                   >
-                    {/* Mascot Stage */}
-                    <View style={styles.mascotStage}>
+                    {/* Mascot Stage with entrance animation */}
+                    <Animated.View
+                      style={[
+                        styles.mascotStage,
+                        {
+                          transform: [{ scale: mascotEntrance }],
+                        },
+                      ]}
+                    >
                       <Animated.View
                         style={[
                           styles.mascotWrapper,
@@ -306,7 +477,7 @@ export function RhemaGuideModal({
                           resizeMode="contain"
                         />
                       </Animated.View>
-                    </View>
+                    </Animated.View>
 
                     {/* Selah's Comic Speech Bubble with Upward Pointer Tail */}
                     <View
@@ -344,7 +515,11 @@ export function RhemaGuideModal({
                             },
                           ]}
                         >
-                          <Text style={{ fontSize: 11 }}>🐑</Text>
+                          <Ionicons
+                            name="chatbubble-ellipses-outline"
+                            size={11}
+                            color={isDark ? '#A7F3D0' : '#2D6A35'}
+                          />
                           <Text
                             style={[
                               styles.bubbleHeaderText,
@@ -421,42 +596,132 @@ export function RhemaGuideModal({
                         </Text>
                       </View>
 
-                      {/* Psalm 23 Scriptural Paper Note */}
-                      <View
-                        style={[
-                          styles.scriptureNoteCard,
-                          {
-                            backgroundColor: isDark ? '#1C261E' : '#F2F8F3',
-                            borderColor: colors.brandGreen + '30',
-                          },
-                        ]}
-                      >
-                        {/* Washi Tape Accent on Top Left */}
+                      {/* Psalm 23 Scriptural Paper Note / Journey Pipeline for Welcome */}
+                      {item.id === 'welcome' ? (
                         <View
                           style={[
-                            styles.washiTape,
+                            styles.scriptureNoteCard,
                             {
-                              backgroundColor: colors.brandGreen + '28',
-                              borderColor: colors.brandGreen + '45',
+                              backgroundColor: isDark ? '#1C261E' : '#F2F8F3',
+                              borderColor: colors.brandGreen + '30',
                             },
                           ]}
-                        />
+                        >
+                          {/* Washi Tape Accent on Top Left */}
+                          <View
+                            style={[
+                              styles.washiTape,
+                              {
+                                backgroundColor: colors.brandGreen + '28',
+                                borderColor: colors.brandGreen + '45',
+                              },
+                            ]}
+                          />
 
-                        <View style={styles.noteHeaderRow}>
-                          <Ionicons name="book" size={13} color={colors.brandGreen} />
-                          <Text style={[styles.noteRefText, { color: colors.brandGreen }]}>
-                            {item.exampleRef}
+                          <View style={styles.noteHeaderRow}>
+                            <Ionicons name="git-commit-outline" size={14} color={colors.brandGreen} />
+                            <Text style={[styles.noteRefText, { color: colors.brandGreen }]}>
+                              4 Simple Steps
+                            </Text>
+                          </View>
+
+                          {/* Visual Flow Pipeline: Horizontal Badge Sequence */}
+                          <View style={styles.pipelineContainer}>
+                            {[
+                              { num: '1', name: 'Rhema' },
+                              { num: '2', name: 'Reflect' },
+                              { num: '3', name: 'Motivate' },
+                              { num: '4', name: 'Apply' },
+                            ].map((pStep, pIdx) => (
+                              <React.Fragment key={pStep.name}>
+                                <View
+                                  style={[
+                                    styles.pipelinePill,
+                                    {
+                                      backgroundColor: isDark
+                                        ? 'rgba(74, 124, 89, 0.22)'
+                                        : '#FFFFFF',
+                                      borderColor: isDark
+                                        ? 'rgba(74, 124, 89, 0.45)'
+                                        : 'rgba(55, 115, 51, 0.25)',
+                                    },
+                                  ]}
+                                >
+                                  <View
+                                    style={[
+                                      styles.pipelineNumBadge,
+                                      { backgroundColor: colors.brandGreen },
+                                    ]}
+                                  >
+                                    <Text style={styles.pipelineNumText}>{pStep.num}</Text>
+                                  </View>
+                                  <Text
+                                    style={[
+                                      styles.pipelineNameText,
+                                      { color: colors.inkPrimary },
+                                    ]}
+                                  >
+                                    {pStep.name}
+                                  </Text>
+                                </View>
+                                {pIdx < 3 && (
+                                  <Ionicons
+                                    name="chevron-forward"
+                                    size={12}
+                                    color={colors.brandGreen}
+                                    style={{ opacity: 0.6, marginHorizontal: -1 }}
+                                  />
+                                )}
+                              </React.Fragment>
+                            ))}
+                          </View>
+
+                          <Text
+                            style={[
+                              styles.noteBodyText,
+                              { color: colors.inkSecondary, marginTop: 4 },
+                            ]}
+                          >
+                            {item.exampleText}
                           </Text>
                         </View>
+                      ) : (
+                        <View
+                          style={[
+                            styles.scriptureNoteCard,
+                            {
+                              backgroundColor: isDark ? '#1C261E' : '#F2F8F3',
+                              borderColor: colors.brandGreen + '30',
+                            },
+                          ]}
+                        >
+                          {/* Washi Tape Accent on Top Left */}
+                          <View
+                            style={[
+                              styles.washiTape,
+                              {
+                                backgroundColor: colors.brandGreen + '28',
+                                borderColor: colors.brandGreen + '45',
+                              },
+                            ]}
+                          />
 
-                        <Text style={[styles.noteScriptureText, { color: colors.inkPrimary }]}>
-                          {item.exampleScripture}
-                        </Text>
+                          <View style={styles.noteHeaderRow}>
+                            <Ionicons name="book" size={13} color={colors.brandGreen} />
+                            <Text style={[styles.noteRefText, { color: colors.brandGreen }]}>
+                              {item.exampleRef}
+                            </Text>
+                          </View>
 
-                        <Text style={[styles.noteBodyText, { color: colors.inkSecondary }]}>
-                          {item.exampleText}
-                        </Text>
-                      </View>
+                          <Text style={[styles.noteScriptureText, { color: colors.inkPrimary }]}>
+                            {item.exampleScripture}
+                          </Text>
+
+                          <Text style={[styles.noteBodyText, { color: colors.inkSecondary }]}>
+                            {item.exampleText}
+                          </Text>
+                        </View>
+                      )}
                     </View>
                   </ScrollView>
                 </View>
@@ -490,14 +755,7 @@ export function RhemaGuideModal({
               {isLastStep ? (
                 <Pressable
                   onPress={() => {
-                    try {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                    } catch {}
-                    if (onOpenBible) {
-                      onOpenBible();
-                    } else {
-                      onClose();
-                    }
+                    handleAnimatedClose(onOpenBible || onClose);
                   }}
                   style={({ pressed }) => [
                     styles.nextButton,
@@ -527,7 +785,7 @@ export function RhemaGuideModal({
               )}
             </View>
           </View>
-        </View>
+        </Animated.View>
       </View>
     </Modal>
   );
@@ -537,10 +795,17 @@ const styles = StyleSheet.create({
   overlayContainer: {
     flex: 1,
     justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0, 0, 0, 0.52)',
+    backgroundColor: 'transparent',
   },
   backdrop: {
     ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(0, 0, 0, 0.65)',
+  },
+  dragHandleArea: {
+    width: '100%',
+    paddingTop: 8,
+    paddingBottom: 2,
+    alignItems: 'center',
   },
   bottomSheet: {
     width: '100%',
@@ -554,12 +819,12 @@ const styles = StyleSheet.create({
   },
   grabHandleRow: {
     alignItems: 'center',
-    paddingTop: 10,
-    paddingBottom: 4,
+    paddingVertical: 4,
+    paddingHorizontal: 20,
   },
   grabHandle: {
-    width: 38,
-    height: 4.5,
+    width: 44,
+    height: 5,
     borderRadius: 2.5,
   },
   headerBar: {
@@ -768,6 +1033,43 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     position: 'relative',
     gap: 4,
+  },
+  /* Visual Flow Pipeline (Welcome Slide) */
+  pipelineContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 5,
+    marginVertical: 2,
+  },
+  pipelinePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  pipelineNumBadge: {
+    width: 15,
+    height: 15,
+    borderRadius: 7.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pipelineNumText: {
+    fontFamily: FONTS.bodyBold,
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    lineHeight: 11,
+  },
+  pipelineNameText: {
+    fontFamily: FONTS.bodyBold,
+    fontSize: 10.5,
+    fontWeight: '700',
+    letterSpacing: 0.2,
   },
   washiTape: {
     position: 'absolute',

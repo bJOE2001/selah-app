@@ -26,7 +26,6 @@ import { EditJournalCoverModal } from '../../journal-history';
 import { DevotionalTimePickerModal } from './DevotionalTimePickerModal';
 import { getUserDatabase } from '../../bible-data/db';
 import { useRecentDevotionals } from '../../devotional-core/hooks';
-import { RhemaGuideModal } from '../../devotional-guide';
 import { useSettingsStore, ThemeMode } from '../store';
 import { useTheme, promptModal, toast, JournalToggle, ThemeSegmentedControl } from '../../design-system';
 import { syncMorningReminder, syncEveningReminder } from '../../notifications';
@@ -180,7 +179,6 @@ export function SettingsScreen() {
   const { data: entries } = useRecentDevotionals(200);
   const [isExporting, setIsExporting] = useState(false);
   const [isClearingDownloads, setIsClearingDownloads] = useState(false);
-  const [isRhemaGuideOpen, setIsRhemaGuideOpen] = useState(false);
 
   // Entitlements & Subscription
   const isPremium = useIsPremium();
@@ -540,7 +538,7 @@ export function SettingsScreen() {
                     onPress={() => {
                       promptModal.confirm({
                         title: 'Sign Out of Vault?',
-                        message: 'Local journal entries will remain safe on your device.',
+                        message: 'Local devotional entries will remain safe on your device.',
                         confirmText: 'Sign Out',
                         cancelText: 'Cancel',
                         onConfirm: () => {
@@ -925,7 +923,7 @@ export function SettingsScreen() {
             <View style={styles.statsOverviewRow}>
               <View style={styles.statMiniCard}>
                 <Text style={[styles.statMiniNumber, { color: colors.inkPrimary }]}>{(entries || []).length}</Text>
-                <Text style={[styles.statMiniLabel, { color: colors.inkMuted }]}>Journal Entries</Text>
+                <Text style={[styles.statMiniLabel, { color: colors.inkMuted }]}>Devotional Entries</Text>
               </View>
               <View style={[styles.statMiniDivider, { backgroundColor: colors.paperLine }]} />
               <View style={styles.statMiniCard}>
@@ -1067,7 +1065,7 @@ export function SettingsScreen() {
                   <Text style={[styles.aboutBuddyPillText, { color: colors.brandGreen }]}>Bible & Devotional</Text>
                 </View>
                 <Text style={[styles.aboutAppName, { color: colors.inkPrimary }]}>Selah</Text>
-                <Text style={[styles.aboutVersion, { color: colors.inkSecondary }]}>Bible & Devotional • v1.0.1</Text>
+                <Text style={[styles.aboutVersion, { color: colors.inkSecondary }]}>Bible & Devotional</Text>
               </View>
             </View>
 
@@ -1099,124 +1097,6 @@ export function SettingsScreen() {
                 <Text style={[styles.aboutBadgeText, { color: colors.inkPrimary }]}>Data Stays Private</Text>
               </View>
             </View>
-
-            {/* Spiritual Journaling Guide / Rhema Method */}
-            <Pressable
-              onPress={() => {
-                try {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                } catch {}
-                setIsRhemaGuideOpen(true);
-              }}
-              style={({ pressed }) => [
-                styles.guideContainer,
-                { backgroundColor: isDark ? '#221E1A' : '#FBF7F0', borderColor: colors.paperLine },
-                pressed && { opacity: 0.92 },
-              ]}
-              accessibilityRole="button"
-              accessibilityLabel="Spiritual Journaling Guide: 4-Step Rhema Method"
-            >
-              <View style={styles.guideHeader}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <View style={[styles.guideBadge, { backgroundColor: colors.brandGreenLight }]}>
-                    <Ionicons name="sparkles" size={12} color={colors.brandGreen} />
-                    <Text style={[styles.guideBadgeText, { color: colors.brandGreen }]}>DEVOTIONAL FRAMEWORK</Text>
-                  </View>
-                  <View style={[styles.pillBadge, { backgroundColor: isDark ? '#2A3B30' : '#E2EFE5', borderColor: colors.brandGreen + '40' }]}>
-                    <Text style={[styles.pillBadgeText, { color: colors.brandGreen }]}>Interactive 🐑</Text>
-                  </View>
-                </View>
-
-                <Text style={[styles.guideMainTitle, { color: colors.inkPrimary }]}>
-                  The 4-Step Rhema Method
-                </Text>
-                <Text style={[styles.guideIntroText, { color: colors.inkSecondary }]}>
-                  A quiet-time path to pause, hear God’s voice, and walk out His Word every day. Tap to explore with Selah.
-                </Text>
-              </View>
-
-              <View style={[styles.guideDivider, { backgroundColor: colors.paperLine }]} />
-
-              {/* Step 1: Rhema */}
-              <View style={styles.guideStepItem}>
-                <View style={[styles.guideStepBadge, { backgroundColor: colors.tapeRhema + '22', borderColor: colors.tapeRhema }]}>
-                  <Text style={[styles.guideStepLetter, { color: colors.tapeRhema }]}>R</Text>
-                </View>
-                <View style={styles.guideStepContent}>
-                  <View style={styles.guideStepTitleRow}>
-                    <Text style={[styles.guideStepName, { color: colors.tapeRhema }]}>RHEMA</Text>
-                    <Text style={[styles.guideStepTag, { color: colors.inkSecondary }]}>The Spoken Word</Text>
-                  </View>
-                  <Text style={[styles.guideStepDesc, { color: colors.inkSecondary }]}>
-                    What verse jumped out and spoke to your heart while reading?
-                  </Text>
-                </View>
-              </View>
-
-              {/* Step 2: Reflection */}
-              <View style={styles.guideStepItem}>
-                <View style={[styles.guideStepBadge, { backgroundColor: colors.tapeReflection + '22', borderColor: colors.tapeReflection }]}>
-                  <Text style={[styles.guideStepLetter, { color: colors.tapeReflection }]}>R</Text>
-                </View>
-                <View style={styles.guideStepContent}>
-                  <View style={styles.guideStepTitleRow}>
-                    <Text style={[styles.guideStepName, { color: colors.tapeReflection }]}>REFLECTION</Text>
-                    <Text style={[styles.guideStepTag, { color: colors.inkSecondary }]}>Meditate on Truth</Text>
-                  </View>
-                  <Text style={[styles.guideStepDesc, { color: colors.inkSecondary }]}>
-                    What does this passage reveal about God's character and your season?
-                  </Text>
-                </View>
-              </View>
-
-              {/* Step 3: Motivation */}
-              <View style={styles.guideStepItem}>
-                <View style={[styles.guideStepBadge, { backgroundColor: colors.tapeMotivation + '22', borderColor: colors.tapeMotivation }]}>
-                  <Text style={[styles.guideStepLetter, { color: colors.tapeMotivation }]}>M</Text>
-                </View>
-                <View style={styles.guideStepContent}>
-                  <View style={styles.guideStepTitleRow}>
-                    <Text style={[styles.guideStepName, { color: colors.tapeMotivation }]}>MOTIVATION</Text>
-                    <Text style={[styles.guideStepTag, { color: colors.inkSecondary }]}>Spirit Conviction</Text>
-                  </View>
-                  <Text style={[styles.guideStepDesc, { color: colors.inkSecondary }]}>
-                    Why did your soul need to hear this word from God today?
-                  </Text>
-                </View>
-              </View>
-
-              {/* Step 4: Application */}
-              <View style={styles.guideStepItem}>
-                <View style={[styles.guideStepBadge, { backgroundColor: colors.tapeApplication + '22', borderColor: colors.tapeApplication }]}>
-                  <Text style={[styles.guideStepLetter, { color: colors.tapeApplication }]}>A</Text>
-                </View>
-                <View style={styles.guideStepContent}>
-                  <View style={styles.guideStepTitleRow}>
-                    <Text style={[styles.guideStepName, { color: colors.tapeApplication }]}>APPLICATION</Text>
-                    <Text style={[styles.guideStepTag, { color: colors.inkSecondary }]}>Faith in Action</Text>
-                  </View>
-                  <Text style={[styles.guideStepDesc, { color: colors.inkSecondary }]}>
-                    How will you walk out this truth in prayer and deeds today?
-                  </Text>
-                </View>
-              </View>
-
-              {/* Open Guide Button */}
-              <View
-                style={[
-                  styles.openGuideBtn,
-                  {
-                    backgroundColor: isDark ? '#2D3E32' : colors.brandGreenLight,
-                    borderColor: colors.brandGreen + '40',
-                  },
-                ]}
-              >
-                <Text style={[styles.openGuideBtnText, { color: colors.brandGreen }]}>
-                  Open Interactive Walkthrough with Selah 🐑
-                </Text>
-                <Ionicons name="arrow-forward" size={13} color={colors.brandGreen} />
-              </View>
-            </Pressable>
 
             {/* Legal & Support Links */}
             <View style={[styles.divider, { backgroundColor: colors.paperLine }]} />
@@ -1275,7 +1155,7 @@ export function SettingsScreen() {
                 {`Selah: Bible & Devotional • Version ${Constants.expoConfig?.version || '1.0.0'} (Build ${Constants.expoConfig?.android?.versionCode || 1})`}
               </Text>
               <Text style={{ fontFamily: FONTS.scriptureItalic, fontSize: 11, color: colors.inkSecondary, marginTop: 3 }}>
-                Soli Deo Gloria ✦ To God Alone Be the Glory
+                Soli Deo Gloria • To God Alone Be the Glory
               </Text>
             </View>
           </View>
@@ -1338,15 +1218,6 @@ export function SettingsScreen() {
         onClose={() => setIsCloudAuthOpen(false)}
       />
 
-      {/* Rhema Devotional Method Guide Walkthrough Modal */}
-      <RhemaGuideModal
-        visible={isRhemaGuideOpen}
-        onClose={() => setIsRhemaGuideOpen(false)}
-        onOpenBible={() => {
-          setIsRhemaGuideOpen(false);
-          router.push('/(tabs)/bible');
-        }}
-      />
     </View>
   );
 }
@@ -1879,112 +1750,5 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.bodyBold,
     fontSize: 11,
     fontWeight: '600',
-  },
-  /* ── Spiritual Journaling Guide ── */
-  guideContainer: {
-    marginTop: SPACING.md,
-    padding: SPACING.md,
-    borderRadius: 16,
-    borderWidth: 1,
-    gap: SPACING.sm,
-  },
-  guideHeader: {
-    gap: 4,
-  },
-  guideBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: RADIUS.pill,
-    alignSelf: 'flex-start',
-  },
-  guideBadgeText: {
-    fontFamily: FONTS.bodyBold,
-    fontSize: 9.5,
-    fontWeight: '800',
-    letterSpacing: 0.6,
-  },
-  guideMainTitle: {
-    fontFamily: FONTS.sectionHeader,
-    fontSize: 16,
-    fontWeight: '700',
-    marginTop: 2,
-  },
-  guideIntroText: {
-    fontFamily: FONTS.body,
-    fontSize: 11.5,
-    lineHeight: 17,
-  },
-  guideDivider: {
-    height: 1,
-    marginVertical: 4,
-  },
-  guideStepItem: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: SPACING.sm + 2,
-  },
-  guideStepBadge: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 2,
-  },
-  guideStepLetter: {
-    fontFamily: FONTS.bodyBold,
-    fontSize: 13,
-    fontWeight: '800',
-  },
-  guideStepContent: {
-    flex: 1,
-    gap: 3,
-  },
-  guideStepTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 8,
-  },
-  guideStepName: {
-    fontFamily: FONTS.bodyBold,
-    fontSize: 12,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-  },
-  guideStepTag: {
-    fontFamily: FONTS.bodyItalic,
-    fontSize: 10.5,
-  },
-  guideStepDesc: {
-    fontFamily: FONTS.body,
-    fontSize: 11,
-    lineHeight: 16,
-  },
-  guideStepPrompt: {
-    fontFamily: FONTS.bodyItalic,
-    fontSize: 10.5,
-    lineHeight: 15,
-    marginTop: 2,
-  },
-  openGuideBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 9,
-    paddingHorizontal: 12,
-    borderRadius: RADIUS.pill,
-    borderWidth: 1,
-    marginTop: 8,
-  },
-  openGuideBtnText: {
-    fontFamily: FONTS.bodyBold,
-    fontSize: 11.5,
-    fontWeight: '700',
   },
 });

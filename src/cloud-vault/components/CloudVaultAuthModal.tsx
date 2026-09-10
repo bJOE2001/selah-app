@@ -38,7 +38,7 @@ export function CloudVaultAuthModal({ visible, onClose }: CloudVaultAuthModalPro
     try {
       const success = await signInWithEmail(email.trim(), password);
       if (success) {
-        toast.success('Signed In to Cloud Vault', 'Encrypting and syncing your journal entries...');
+        toast.success('Signed In to Cloud Vault', 'Encrypting and syncing your devotional entries...');
         onClose();
         // Trigger background initial sync
         syncToCloud().catch(() => {});
@@ -160,7 +160,7 @@ export function CloudVaultAuthModal({ visible, onClose }: CloudVaultAuthModalPro
             >
               <Ionicons name="lock-closed" size={14} color="#C59B27" style={{ marginTop: 2 }} />
               <Text style={[styles.privacyNoticeText, { color: colors.inkSecondary }]}>
-                All personal journal entries are encrypted client-side with AES-256 before leaving your device. Only you can decrypt your prayers.
+                All devotional entries are encrypted client-side with AES-256 before leaving your device. Only you can decrypt your prayers.
               </Text>
             </View>
 

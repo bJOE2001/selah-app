@@ -20,23 +20,26 @@ export interface DashboardHeaderProps {
 }
 
 const SELAH_WHISPERS = [
-  'The Lord is your Shepherd, you lack nothing! 🐑',
-  'In quietness and confidence shall be your strength. 🌿',
-  'His mercies are fresh and new this very morning. ☀️',
-  'Rhema: Listen for the verse that speaks straight to your soul today. 🌿',
-  'Be still and know that He is with you right now. 🕊️',
-  'Reflection: Meditate on who God is in your current season. 🤍',
-  'Cast all your worries upon Him, for He cares for you. 🌿',
-  'Motivation: Why did your heart need this Word today? Be honest with Him. ✨',
-  'Thy word is a lamp unto my feet and a light unto my path. 📖',
-  'Application: Take one small, faithful step of obedience today. 🌱',
-  'You are fearfully and wonderfully made by God! ✨',
-  'Grace and peace be multiplied to you today. 🤍',
-  'Proud of you for taking time to be with the Lord! 🌱',
-  'Draw near to God, and He will draw near to you. 💛',
-  'The joy of the LORD is your everlasting strength! 🌟',
-  'Trust in the LORD with all thine heart. 🕊️',
-  'Peace I leave with you; my peace I give you. 🌿',
+  'Proud of you for pausing to seek God today. Keep pressing forward!',
+  'You can do all things through Christ who gives you strength.',
+  'God is fighting for you right now, even when you can’t see it.',
+  'Take heart! His mercies are brand new for you this very morning.',
+  'When you feel weary, remember: the Lord renews your strength like eagles.',
+  'You are deeply loved, chosen, and never walking this path alone.',
+  'Cast every worry on Him today—He cares for you more than you know.',
+  'Take a deep breath. God is already in your tomorrow, making a way.',
+  'Do not give up. The seeds of faith you plant today will bear fruit.',
+  'The joy of the Lord is your real strength today. Lift your head high!',
+  'God sees every effort, every prayer, and every quiet moment you give Him.',
+  'Walk boldly today. If God is for you, nothing can stand against you.',
+  'Peace is not the absence of trouble; it is the presence of Jesus with you.',
+  'You were created on purpose, for a purpose. Keep trusting His plan.',
+  'Your small daily moments with God are building an unshakable foundation.',
+  'Trust the Lord with all your heart. He is directing your every step.',
+  'There is no storm too big for the peace Jesus brings into your heart.',
+  'Be strong and courageous today. The Lord your God is with you wherever you go.',
+  'Grace covers your past, love holds your today, and hope secures your future.',
+  'You are making progress one day at a time. God is so pleased with you!',
 ];
 
 export function DashboardHeader({ onOpenGuide }: DashboardHeaderProps) {
@@ -194,7 +197,11 @@ export function DashboardHeader({ onOpenGuide }: DashboardHeaderProps) {
                         },
                       ]}
                     >
-                      <Text style={{ fontSize: 10 }}>🐑</Text>
+                      <Ionicons
+                        name="chatbubble-ellipses-outline"
+                        size={11}
+                        color={isDark ? '#A7F3D0' : '#2D6A35'}
+                      />
                       <Text
                         style={[
                           styles.bubbleHeaderText,
@@ -213,7 +220,7 @@ export function DashboardHeader({ onOpenGuide }: DashboardHeaderProps) {
                       styles.chatBubbleText,
                       { color: colors.inkPrimary },
                     ]}
-                    numberOfLines={3}
+                    numberOfLines={4}
                   >
                     “{SELAH_WHISPERS[whisperIndex]}”
                   </Text>
@@ -380,7 +387,10 @@ export function DashboardHeader({ onOpenGuide }: DashboardHeaderProps) {
                     },
                   ]}
                 >
-                  <Text style={styles.tapHintText}>Tap me! ✨</Text>
+                  <View style={styles.tapHintContent}>
+                    <Ionicons name="sparkles" size={9} color="#FFFFFF" />
+                    <Text style={styles.tapHintText}>Tap me!</Text>
+                  </View>
                 </View>
               )}
             </Animated.View>
@@ -609,5 +619,10 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.bodyBold,
     fontSize: 8,
     fontWeight: '800',
+  },
+  tapHintContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
   },
 });

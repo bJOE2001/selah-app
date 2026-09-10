@@ -8,13 +8,14 @@ import {
   LayoutChangeEvent,
   Animated,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../theme/useTheme';
 import { ThemeMode } from '../../settings/store';
 
 export interface ThemeOption {
   key: ThemeMode;
   label: string;
-  icon?: string;
+  icon?: keyof typeof Ionicons.glyphMap;
 }
 
 interface ThemeSegmentedControlProps {
@@ -24,9 +25,9 @@ interface ThemeSegmentedControlProps {
 }
 
 const DEFAULT_OPTIONS: ThemeOption[] = [
-  { key: 'light', label: '☀️ Light' },
-  { key: 'dark', label: '🌙 Dark' },
-  { key: 'system', label: '📱 System' },
+  { key: 'light', label: 'Light', icon: 'sunny-outline' },
+  { key: 'dark', label: 'Dark', icon: 'moon-outline' },
+  { key: 'system', label: 'System', icon: 'phone-portrait-outline' },
 ];
 
 export function ThemeSegmentedControl({
@@ -99,21 +100,37 @@ export function ThemeSegmentedControl({
             style={styles.segmentBtn}
             hitSlop={4}
           >
-            <Text
-              style={[
-                styles.segmentText,
-                {
-                  color: isSelected
-                    ? '#FFFFFF'
-                    : isDark
-                    ? '#A89E92'
-                    : '#7A6E5F',
-                  fontWeight: isSelected ? '700' : '600',
-                },
-              ]}
-            >
-              {item.label}
-            </Text>
+            <View style={styles.segmentInner}>
+              {item.icon ? (
+                <Ionicons
+                  name={item.icon}
+                  size={13}
+                  color={
+                    isSelected
+                      ? '#FFFFFF'
+                      : isDark
+                      ? '#A89E92'
+                      : '#7A6E5F'
+                  }
+                  style={styles.segmentIcon}
+                />
+              ) : null}
+              <Text
+                style={[
+                  styles.segmentText,
+                  {
+                    color: isSelected
+                      ? '#FFFFFF'
+                      : isDark
+                      ? '#A89E92'
+                      : '#7A6E5F',
+                    fontWeight: isSelected ? '700' : '600',
+                  },
+                ]}
+              >
+                {item.label}
+              </Text>
+            </View>
           </Pressable>
         );
       })}
@@ -172,5 +189,14 @@ const styles = StyleSheet.create({
         transition: 'color 200ms ease',
       },
     }),
+  },
+  segmentInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+  },
+  segmentIcon: {
+    marginBottom: 0.5,
   },
 });

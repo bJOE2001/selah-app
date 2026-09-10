@@ -145,8 +145,9 @@ export const ShareCardCanvas = forwardRef<View, ShareCardCanvasProps>(
 
               {themeTag ? (
                 <View style={[styles.themePill, { backgroundColor: palette.badgeBg, borderColor: palette.frameBorder }]}>
+                  <Ionicons name="bookmark-outline" size={10} color={palette.textSecondary} />
                   <Text style={[styles.themePillText, { color: palette.textSecondary }]}>
-                    ✦ {themeTag}
+                    {themeTag}
                   </Text>
                 </View>
               ) : null}
@@ -169,7 +170,7 @@ export const ShareCardCanvas = forwardRef<View, ShareCardCanvasProps>(
             ) : null}
           </View>
 
-          {/* Devotional Reflection (shown for personal journal entries) */}
+          {/* Devotional Reflection (shown for devotional entries) */}
           {reflectionText ? (
             <View
               style={[
@@ -307,6 +308,9 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
   },
   themePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: RADIUS.pill,

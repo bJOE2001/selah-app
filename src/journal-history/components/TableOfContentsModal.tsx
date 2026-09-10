@@ -139,9 +139,12 @@ export function TableOfContentsModal({
 
           {/* Quick Jump Shortcuts */}
           <View style={styles.shortcutsSection}>
-            <Text style={[styles.sectionTitle, { color: colors.brandGold }]}>
-              ✦ QUICK ACTIONS
-            </Text>
+            <View style={styles.sectionTitleRow}>
+              <Ionicons name="flash-outline" size={12} color={colors.brandGold} />
+              <Text style={[styles.sectionTitle, { color: colors.brandGold, marginBottom: 0 }]}>
+                QUICK ACTIONS
+              </Text>
+            </View>
 
             <View style={styles.shortcutsGrid}>
               {/* 1. Write Today (Instant Blank Page) */}
@@ -283,9 +286,12 @@ export function TableOfContentsModal({
           {/* Browse by Month Table of Contents */}
           {monthlyGroups.length > 0 ? (
             <View style={styles.monthlySection}>
-              <Text style={[styles.sectionTitle, { color: colors.brandGold }]}>
-                ✦ BROWSE BY MONTH
-              </Text>
+              <View style={styles.sectionTitleRow}>
+                <Ionicons name="calendar-outline" size={12} color={colors.brandGold} />
+                <Text style={[styles.sectionTitle, { color: colors.brandGold, marginBottom: 0 }]}>
+                  BROWSE BY MONTH
+                </Text>
+              </View>
 
               <FlatList
                 data={monthlyGroups}
@@ -396,6 +402,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.xs,
     gap: 6,
+  },
+  sectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginBottom: 4,
   },
   sectionTitle: {
     fontFamily: FONTS.bodyBold,

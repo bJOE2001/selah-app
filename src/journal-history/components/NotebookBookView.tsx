@@ -267,7 +267,7 @@ export function NotebookBookView({
                       ) : activeEmblem === "cross" ? (
                         <SacredCross size={40} color={tokens.accent} />
                       ) : activeEmblem === "dove" ? (
-                        <Text style={{ fontSize: 30 }}>🕊️</Text>
+                        <Ionicons name="flame-outline" size={32} color={tokens.accent} />
                       ) : activeEmblem === "bible" ? (
                         <Ionicons name="book-outline" size={30} color={tokens.accent} />
                       ) : (
@@ -402,10 +402,10 @@ export function NotebookBookView({
     const pageLabel = pageItem.pageLabel || `PAGE ${pageItem.entryNumber || pageItem.index}`;
 
     const renderRuledSection = (
-      badgeLabel: string,
-      badgeColor: string,
       content: string | undefined,
-      fallbackText: string
+      fallbackText: string,
+      badgeLabel?: string,
+      badgeColor?: string
     ) => {
       const isFilled = !!content;
       const text = content || fallbackText;
@@ -418,20 +418,22 @@ export function NotebookBookView({
 
       return (
         <View style={styles.notebookLinesSection}>
-          <View style={styles.sectionHeaderRow}>
-            <View
-              style={[
-                styles.stepBadge,
-                {
-                  backgroundColor: badgeColor + "20",
-                },
-              ]}
-            >
-              <Text style={[styles.stepBadgeText, { color: badgeColor }]}>
-                {badgeLabel}
-              </Text>
+          {badgeLabel ? (
+            <View style={styles.sectionHeaderRow}>
+              <View
+                style={[
+                  styles.stepBadge,
+                  {
+                    backgroundColor: (badgeColor || colors.brandGreen) + "20",
+                  },
+                ]}
+              >
+                <Text style={[styles.stepBadgeText, { color: badgeColor || colors.brandGreen }]}>
+                  {badgeLabel}
+                </Text>
+              </View>
             </View>
-          </View>
+          ) : null}
 
           <View style={styles.ruledTextWrapper}>
             {paperLined ? (
@@ -502,8 +504,6 @@ export function NotebookBookView({
 
             {/* SINGLE NOTES SECTION */}
             {renderRuledSection(
-              "JOURNAL ENTRY",
-              colors.tapeReflection,
               entry.notes || entry.notesPreview,
               "No notes written yet"
             )}
@@ -596,30 +596,12 @@ export function NotebookBookView({
               <Text
                 style={[styles.blankSectionHeader, { color: colors.inkMuted, textAlign: 'center', marginTop: SPACING.xl }]}
               >
-                READY FOR TODAY'S JOURNAL ENTRY
+                READY FOR TODAY'S DEVOTION
               </Text>
-
-              <View
-                style={[
-                  styles.blankStepRow,
-                  {
-                    backgroundColor: colors.cardBg,
-                    borderColor: colors.paperLine,
-                    justifyContent: 'center',
-                    paddingVertical: SPACING.lg,
-                  },
-                ]}
-              >
-                <Text
-                  style={[styles.blankStepHint, { color: colors.inkSecondary, textAlign: 'center' }]}
-                >
-                  Write down your thoughts, prayers, or reflections...
-                </Text>
-              </View>
             </View>
 
             {/* Action CTA Button */}
-            <View style={styles.blankCtaWrapper}>
+            <View style={[styles.blankCtaWrapper, { marginTop: SPACING.sm + 2 }]}>
               <Pressable
                 onPress={onStartNew}
                 style={[

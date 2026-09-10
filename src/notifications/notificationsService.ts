@@ -144,7 +144,7 @@ export async function syncMorningReminder(enabled: boolean, timeStr: string): Pr
     await Notifications.scheduleNotificationAsync({
       identifier: MORNING_NOTIFICATION_ID,
       content: {
-        title: '🌅 Morning Devotion • Selah',
+        title: 'Morning Devotion • Selah',
         body: 'Start your day with God’s presence. Discover today’s Scripture & devotion.',
         sound: true,
         data: { targetScreen: '/(tabs)/journal' },
@@ -188,7 +188,7 @@ export async function syncEveningReminder(enabled: boolean, timeStr: string): Pr
     await Notifications.scheduleNotificationAsync({
       identifier: EVENING_NOTIFICATION_ID,
       content: {
-        title: '🌙 Evening Reflection • Selah',
+        title: 'Evening Reflection • Selah',
         body: 'Pause and reflect on God’s faithfulness today. Record your thoughts before bed.',
         sound: true,
         data: { targetScreen: '/(tabs)/journal' },
