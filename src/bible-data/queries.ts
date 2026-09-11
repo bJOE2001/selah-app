@@ -23,7 +23,7 @@ export async function getBookById(db: SQLiteDatabase, bookId: number): Promise<B
  * Get all verses in a given book and chapter for a specific translation (default KJV)
  *
  * - For KJV: reads directly from KJV.db (bundled offline database).
- * - For other translations (NLT, ESV, NIV, etc.): reads directly from local downloaded_verses table.
+ * - For other translations (BSB, WEB, etc.): reads directly from local downloaded_verses table.
  * - If not downloaded, returns empty array so UI can prompt user to download.
  */
 export async function getChapterVerses(

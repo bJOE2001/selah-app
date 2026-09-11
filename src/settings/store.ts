@@ -18,7 +18,6 @@ export interface SettingsState {
 
   // Reading — continuous numeric font size (px)
   fontSize: number;
-  redLetter: boolean;
 
   // Reminders
   morningReminderEnabled: boolean;
@@ -42,7 +41,6 @@ export interface SettingsState {
   // Actions
   setThemeMode: (mode: ThemeMode) => void;
   setFontSize: (size: number) => void;
-  setRedLetter: (enabled: boolean) => void;
   setMorningReminder: (enabled: boolean, time?: string) => void;
   setEveningReminder: (enabled: boolean, time?: string) => void;
   setPaperLined: (enabled: boolean) => void;
@@ -69,7 +67,6 @@ export const useSettingsStore = create<SettingsState>()(
     (set) => ({
       themeMode: 'system',
       fontSize: FONT_SIZE_DEFAULT,
-      redLetter: true,
       morningReminderEnabled: false,
       morningReminderTime: '07:00 AM',
       eveningReminderEnabled: false,
@@ -92,7 +89,6 @@ export const useSettingsStore = create<SettingsState>()(
       },
       setFontSize: (fontSize) =>
         set({ fontSize: Math.round(Math.max(FONT_SIZE_MIN, Math.min(FONT_SIZE_MAX, fontSize))) }),
-      setRedLetter: (redLetter) => set({ redLetter }),
       setMorningReminder: (enabled, time) =>
         set((state) => ({
           morningReminderEnabled: enabled,

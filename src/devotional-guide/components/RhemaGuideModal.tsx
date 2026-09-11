@@ -33,7 +33,6 @@ interface GuideStep {
   title: string;
   subtitle: string;
   mascotImage: any;
-  mascotMood: string;
   dialogue: string;
   question: string;
   exampleRef: string;
@@ -49,7 +48,6 @@ const GUIDE_STEPS: GuideStep[] = [
     title: 'The Rhema Method',
     subtitle: '4 simple steps to hear from God',
     mascotImage: require('../../../assets/images/mascot/selah-mascot-welcome.png'),
-    mascotMood: 'Selah is greeting you warmly',
     dialogue:
       "Hi, I'm Selah! Writing a devotion is simple. Just pause, listen to God, and put His Word into practice.",
     question: 'How does this method work?',
@@ -65,7 +63,6 @@ const GUIDE_STEPS: GuideStep[] = [
     title: 'Rhema',
     subtitle: 'The verse that speaks to you',
     mascotImage: require('../../../assets/images/mascot/selah-mascot-rhema.png'),
-    mascotMood: 'Selah finding a verse',
     dialogue:
       "A 'Rhema' is a verse that stands out to you while reading—like God speaking directly to your heart today.",
     question: 'What verse stood out to me today?',
@@ -81,7 +78,6 @@ const GUIDE_STEPS: GuideStep[] = [
     title: 'Reflection',
     subtitle: 'Thinking about what it means',
     mascotImage: require('../../../assets/images/mascot/selah-mascot-reflection.png'),
-    mascotMood: 'Selah thinking quietly',
     dialogue:
       'Take a moment to think about the verse. What does it teach you about who God is and how He cares for you?',
     question: 'What is God teaching me through this verse?',
@@ -97,7 +93,6 @@ const GUIDE_STEPS: GuideStep[] = [
     title: 'Motivation',
     subtitle: 'Why your heart needs this today',
     mascotImage: require('../../../assets/images/mascot/selah-mascot-motivation.png'),
-    mascotMood: "Listening to God's whisper",
     dialogue:
       'Why did you need this verse today? Think about what you are going through—is God giving you peace, comfort, or a gentle reminder?',
     question: 'Why did my heart need this reminder today?',
@@ -113,7 +108,6 @@ const GUIDE_STEPS: GuideStep[] = [
     title: 'Application',
     subtitle: 'Putting it into practice',
     mascotImage: require('../../../assets/images/mascot/selah-mascot-application.png'),
-    mascotMood: 'Selah writing in the journal',
     dialogue:
       'Faith is lived out every day. What is one simple thing you can do or pray today because of what you read?',
     question: 'What will I do differently today?',
@@ -123,6 +117,192 @@ const GUIDE_STEPS: GuideStep[] = [
       "Whenever I feel worried today, I will pause, take a deep breath, and pray: 'Lord, You are my shepherd, I trust You.'",
   },
 ];
+
+interface TypewriterDialogueProps {
+  dialogue: string;
+  isActive: boolean;
+  isDark: boolean;
+  colors: any;
+  isReduceMotion: boolean;
+}
+
+function TypewriterDialogue({
+  dialogue,
+  isActive,
+  isDark,
+  colors,
+  isReduceMotion,
+}: TypewriterDialogueProps) {
+  const [displayedLength, setDisplayedLength] = useState(isReduceMotion ? dialogue.length : 0);
+  const [isTyping, setIsTyping] = useState(false);
+  const [cursorVisible, setCursorVisible] = useState(false);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const cursorIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    if (!isActive) {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (cursorIntervalRef.current) clearInterval(cursorIntervalRef.current);
+      setDisplayedLength(0);
+      setIsTyping(false);
+      setCursorVisible(false);
+      return;
+    }
+
+    if (isReduceMotion) {
+      setDisplayedLength(dialogue.length);
+      setIsTyping(false);
+      setCursorVisible(false);
+      return;
+    }
+
+    // Gentle single haptic tap on speech start
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {}
+
+    setDisplayedLength(0);
+    setIsTyping(true);
+    setCursorVisible(true);
+
+    let currentIndex = 0;
+    const totalLength = dialogue.length;
+
+    // Cursor blink timer
+    cursorIntervalRef.current = setInterval(() => {
+      setCursorVisible((v) => !v);
+    }, 450);
+
+    // Typing interval (~18ms per character)
+    intervalRef.current = setInterval(() => {
+      currentIndex += 1;
+      setDisplayedLength(currentIndex);
+
+      if (currentIndex >= totalLength) {
+        if (intervalRef.current) clearInterval(intervalRef.current);
+        setIsTyping(false);
+        // Fade cursor after 800ms
+        setTimeout(() => {
+          if (cursorIntervalRef.current) clearInterval(cursorIntervalRef.current);
+          setCursorVisible(false);
+        }, 800);
+      }
+    }, 18);
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (cursorIntervalRef.current) clearInterval(cursorIntervalRef.current);
+    };
+  }, [isActive, dialogue, isReduceMotion]);
+
+  const handleInstantSkip = () => {
+    if (isTyping) {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (cursorIntervalRef.current) clearInterval(cursorIntervalRef.current);
+      setDisplayedLength(dialogue.length);
+      setIsTyping(false);
+      setCursorVisible(false);
+      try {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      } catch {}
+    }
+  };
+
+  const visibleText = dialogue.slice(0, displayedLength);
+
+  return (
+    <Pressable
+      onPress={handleInstantSkip}
+      style={[
+        styles.speechBubble,
+        {
+          backgroundColor: isDark ? '#1C2920' : '#EDF6F0',
+          borderColor: isDark ? '#2E4735' : '#C8E2CF',
+        },
+      ]}
+      accessibilityRole="button"
+      accessibilityLabel={`Selah: ${dialogue}`}
+      accessibilityHint={isTyping ? 'Tap to reveal full text immediately' : undefined}
+    >
+      {/* Triangular speech bubble tail pointing up toward Mascot */}
+      <View
+        style={[
+          styles.speechTail,
+          {
+            backgroundColor: isDark ? '#1C2920' : '#EDF6F0',
+            borderColor: isDark ? '#2E4735' : '#C8E2CF',
+          },
+        ]}
+      />
+
+      {/* Mascot Speech Bubble Header */}
+      <View style={styles.bubbleHeaderRow}>
+        <View
+          style={[
+            styles.bubbleHeaderPill,
+            {
+              backgroundColor: isDark
+                ? isTyping
+                  ? 'rgba(74, 124, 89, 0.45)'
+                  : 'rgba(74, 124, 89, 0.3)'
+                : isTyping
+                ? 'rgba(55, 115, 51, 0.18)'
+                : 'rgba(55, 115, 51, 0.12)',
+              borderColor: isDark
+                ? 'rgba(74, 124, 89, 0.5)'
+                : 'rgba(55, 115, 51, 0.25)',
+            },
+          ]}
+        >
+          {isTyping ? (
+            <View
+              style={[
+                styles.pulsingTypingDot,
+                { backgroundColor: isDark ? '#A7F3D0' : '#2D6A35' },
+              ]}
+            />
+          ) : (
+            <Ionicons
+              name="chatbubble-ellipses-outline"
+              size={11}
+              color={isDark ? '#A7F3D0' : '#2D6A35'}
+            />
+          )}
+          <Text
+            style={[
+              styles.bubbleHeaderText,
+              { color: isDark ? '#A7F3D0' : '#2D6A35' },
+            ]}
+          >
+            {isTyping ? 'Selah is speaking...' : 'Selah says'}
+          </Text>
+        </View>
+        {isTyping && (
+          <Text style={[styles.skipHintText, { color: colors.inkMuted }]}>
+            tap to skip
+          </Text>
+        )}
+      </View>
+
+      {/* Dialogue Body with fixed minHeight to prevent layout shifts */}
+      <View style={styles.dialogueContainer}>
+        <Text style={[styles.dialogueText, { color: colors.inkPrimary }]}>
+          "{visibleText}"
+          {cursorVisible && (
+            <Text
+              style={[
+                styles.typingCursor,
+                { color: isDark ? '#A7F3D0' : colors.brandGreen },
+              ]}
+            >
+              {' '}▮
+            </Text>
+          )}
+        </Text>
+      </View>
+    </Pressable>
+  );
+}
 
 export function RhemaGuideModal({
   visible,
@@ -479,66 +659,14 @@ export function RhemaGuideModal({
                       </Animated.View>
                     </Animated.View>
 
-                    {/* Selah's Comic Speech Bubble with Upward Pointer Tail */}
-                    <View
-                      style={[
-                        styles.speechBubble,
-                        {
-                          backgroundColor: isDark ? '#1C2920' : '#EDF6F0',
-                          borderColor: isDark ? '#2E4735' : '#C8E2CF',
-                        },
-                      ]}
-                    >
-                      {/* Triangular speech bubble tail pointing up toward Mascot */}
-                      <View
-                        style={[
-                          styles.speechTail,
-                          {
-                            backgroundColor: isDark ? '#1C2920' : '#EDF6F0',
-                            borderColor: isDark ? '#2E4735' : '#C8E2CF',
-                          },
-                        ]}
-                      />
-
-                      {/* Mascot Speech Bubble Header */}
-                      <View style={styles.bubbleHeaderRow}>
-                        <View
-                          style={[
-                            styles.bubbleHeaderPill,
-                            {
-                              backgroundColor: isDark
-                                ? 'rgba(74, 124, 89, 0.3)'
-                                : 'rgba(55, 115, 51, 0.12)',
-                              borderColor: isDark
-                                ? 'rgba(74, 124, 89, 0.5)'
-                                : 'rgba(55, 115, 51, 0.25)',
-                            },
-                          ]}
-                        >
-                          <Ionicons
-                            name="chatbubble-ellipses-outline"
-                            size={11}
-                            color={isDark ? '#A7F3D0' : '#2D6A35'}
-                          />
-                          <Text
-                            style={[
-                              styles.bubbleHeaderText,
-                              { color: isDark ? '#A7F3D0' : '#2D6A35' },
-                            ]}
-                          >
-                            Selah says
-                          </Text>
-                        </View>
-                        <Text style={[styles.mascotMoodText, { color: colors.inkMuted }]}>
-                          {item.mascotMood}
-                        </Text>
-                      </View>
-
-                      {/* Dialogue Body */}
-                      <Text style={[styles.dialogueText, { color: colors.inkPrimary }]}>
-                        "{item.dialogue}"
-                      </Text>
-                    </View>
+                    {/* Selah's Comic Speech Bubble with Typewriter Animation */}
+                    <TypewriterDialogue
+                      dialogue={item.dialogue}
+                      isActive={isCurrent}
+                      isDark={isDark}
+                      colors={colors}
+                      isReduceMotion={Boolean(isReduceMotion.current)}
+                    />
 
                     {/* Unified Story Card: Guiding Prompt + Psalm 23 Example Note */}
                     <View
@@ -948,7 +1076,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '800',
   },
-  mascotMoodText: {
+  skipHintText: {
     fontFamily: FONTS.bodyItalic,
     fontSize: 10,
   },
@@ -956,6 +1084,19 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.body,
     fontSize: 13,
     lineHeight: 19,
+  },
+  dialogueContainer: {
+    minHeight: 56,
+    justifyContent: 'center',
+  },
+  pulsingTypingDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  typingCursor: {
+    fontSize: 12,
+    fontWeight: '900',
   },
 
   /* ── Unified Story Card ── */

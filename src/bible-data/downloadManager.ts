@@ -130,8 +130,23 @@ export async function downloadTranslation(
 
   onProgress?.(10, `Downloading ${translation.name}...`);
 
-  const url = `https://bolls.life/static/translations/${encodeURIComponent(apiCode)}.json`;
-  const response = await fetch(url);
+  let response: Response;
+  const targetUrl =
+    translation.downloadUrl ||
+    `https://bolls.life/static/translations/${encodeURIComponent(apiCode)}.json`;
+
+  try {
+    response = await fetch(targetUrl);
+    if (!response.ok && translation.fallbackUrl) {
+      response = await fetch(translation.fallbackUrl);
+    }
+  } catch (fetchErr) {
+    if (translation.fallbackUrl) {
+      response = await fetch(translation.fallbackUrl);
+    } else {
+      throw fetchErr;
+    }
+  }
 
   if (!response.ok) {
     throw new Error(
@@ -140,7 +155,32 @@ export async function downloadTranslation(
   }
 
   onProgress?.(40, 'Preparing Scripture verses...');
-  const rawVerses: RawApiVerse[] = await response.json();
+  const rawData: any = await response.json();
+  let rawVerses: RawApiVerse[] = [];
+
+  if (Array.isArray(rawData)) {
+    rawVerses = rawData;
+  } else if (rawData && Array.isArray(rawData.books)) {
+    // Nested format (e.g. scrollmapper canonical 66 books)
+    rawData.books.forEach((b: any, bIdx: number) => {
+      const bookNum = bIdx + 1;
+      if (Array.isArray(b.chapters)) {
+        b.chapters.forEach((c: any) => {
+          const chapterNum = Number(c.chapter);
+          if (Array.isArray(c.verses)) {
+            c.verses.forEach((v: any) => {
+              rawVerses.push({
+                book: bookNum,
+                chapter: chapterNum,
+                verse: Number(v.verse),
+                text: String(v.text || ''),
+              });
+            });
+          }
+        });
+      }
+    });
+  }
 
   if (!Array.isArray(rawVerses) || rawVerses.length === 0) {
     throw new Error(`The downloaded data for ${translation.name} was empty or invalid.`);

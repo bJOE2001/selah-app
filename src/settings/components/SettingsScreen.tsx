@@ -162,8 +162,6 @@ export function SettingsScreen() {
   const {
     fontSize,
     setFontSize,
-    redLetter,
-    setRedLetter,
     morningReminderEnabled,
     morningReminderTime,
     setMorningReminder,
@@ -758,26 +756,6 @@ export function SettingsScreen() {
                 onChange={setFontSize}
                 colors={colors}
                 isDark={isDark}
-              />
-            </View>
-
-            <View style={[styles.divider, { backgroundColor: colors.paperLine }]} />
-
-            {/* Red Letter Text */}
-            <View style={styles.rowItem}>
-              <View style={styles.rowLeft}>
-                <View style={[styles.iconBox, { backgroundColor: isDark ? '#33201D' : '#FFF0ED' }]}>
-                  <Ionicons name="heart" size={17} color={colors.tapeRhema} />
-                </View>
-                <View style={styles.rowTextCol}>
-                  <Text style={[styles.rowTitle, { color: colors.inkPrimary }]}>Words of Christ in Red</Text>
-                  <Text style={[styles.rowSubtitle, { color: colors.inkSecondary }]}>Highlight direct speech in Gospels</Text>
-                </View>
-              </View>
-              <JournalToggle
-                value={redLetter}
-                onValueChange={setRedLetter}
-                activeColor={colors.tapeRhema}
               />
             </View>
 

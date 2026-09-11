@@ -63,4 +63,4 @@ Selah is intended for general audiences aged 13 and older. We do not knowingly c
 If you have questions, feedback, or data deletion requests regarding this Privacy Policy, please contact us:
 
 * **App Name:** Selah - Bible & Devotional
-* **Developer Contact:** basadrebellyjoe143@gmail.com
+* **Developer Contact:** basadre.bellyjoe@gmail.com

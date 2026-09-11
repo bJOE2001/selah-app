@@ -88,6 +88,8 @@ export function AppOpeningScreen() {
           {/* Typography */}
           <View style={styles.textGroup}>
             <Text
+              allowFontScaling={false}
+              textBreakStrategy="simple"
               style={[
                 styles.brandTitle,
                 {
@@ -103,7 +105,11 @@ export function AppOpeningScreen() {
                 { backgroundColor: colors.brandGold + '60' },
               ]}
             />
-            <Text style={[styles.subtitle, { color: colors.inkSecondary }]}>
+            <Text
+              allowFontScaling={false}
+              textBreakStrategy="simple"
+              style={[styles.subtitle, { color: colors.inkSecondary }]}
+            >
               Bible & Devotional
             </Text>
           </View>
@@ -116,12 +122,20 @@ export function AppOpeningScreen() {
             { bottom: Math.max(insets.bottom, 24) + 36 },
           ]}
         >
-          <Text style={[styles.loadingText, { color: colors.inkSecondary }]}>
+          <Text
+            allowFontScaling={false}
+            textBreakStrategy="simple"
+            style={[styles.loadingText, { color: colors.inkSecondary }]}
+          >
             Opening your devotional journal...
           </Text>
           <View style={styles.madeWithRow}>
-            <Text style={[styles.madeWithText, { color: colors.inkMuted }]}>
-              Crafted with faith & grace
+            <Text
+              allowFontScaling={false}
+              textBreakStrategy="simple"
+              style={[styles.madeWithText, { color: colors.inkMuted }]}
+            >
+              Made with faith & grace
             </Text>
           </View>
         </View>
@@ -180,9 +194,8 @@ const styles = StyleSheet.create({
     letterSpacing: 3,
     lineHeight: 32,
     paddingVertical: 2,
-    paddingHorizontal: 8,
+    paddingHorizontal: 16,
     textAlign: 'center',
-    includeFontPadding: false,
   },
   goldDivider: {
     width: 36,
@@ -194,25 +207,23 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 22,
     paddingVertical: 4,
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
     textAlign: 'center',
-    includeFontPadding: false,
   },
   footer: {
     position: 'absolute',
     alignItems: 'center',
     left: 0,
     right: 0,
-    paddingHorizontal: SPACING.lg,
+    paddingHorizontal: SPACING.base,
   },
   loadingText: {
     fontFamily: FONTS.body,
     fontSize: 12,
     lineHeight: 18,
     paddingVertical: 3,
-    paddingHorizontal: 8,
+    paddingHorizontal: 16,
     textAlign: 'center',
-    includeFontPadding: false,
   },
   madeWithRow: {
     flexDirection: 'row',
@@ -220,7 +231,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 4,
     marginTop: 5,
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
     paddingVertical: 2,
   },
   madeWithText: {
@@ -228,7 +239,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     lineHeight: 16,
     paddingVertical: 2,
-    paddingHorizontal: 4,
-    includeFontPadding: false,
+    paddingHorizontal: 8,
+    textAlign: 'center',
   },
 });

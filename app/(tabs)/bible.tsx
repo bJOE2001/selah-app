@@ -291,6 +291,12 @@ export default function BibleTabScreen() {
             setSelectedChapter(ch);
             setLastRead(selectedBook.id, selectedBook.name, ch);
           }}
+          onNavigate={(targetBook, targetChapter) => {
+            setSelectedBook(targetBook);
+            setSelectedChapter(targetChapter);
+            setLastRead(targetBook.id, targetBook.name, targetChapter);
+          }}
+          onOpenTranslationPicker={() => setIsTranslationPickerOpen(true)}
         />
       )}
 

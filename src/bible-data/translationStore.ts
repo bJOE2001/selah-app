@@ -23,6 +23,11 @@ export const useTranslationStore = create<TranslationState>()(
     {
       name: 'selah-translation-storage',
       storage: createJSONStorage(() => AsyncStorage),
+      onRehydrateStorage: () => (state) => {
+        if (state?.selectedTranslation) {
+          state.selectedTranslation = getTranslation(state.selectedTranslation.id || 'kjv');
+        }
+      },
     }
   )
 );

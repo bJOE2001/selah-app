@@ -220,7 +220,7 @@ export function TranslationPickerModal({
             <Ionicons name="search" size={16} color={colors.inkPlaceholder} />
             <TextInput
               style={[styles.searchInput, { color: colors.inkPrimary }]}
-              placeholder="Search version (e.g. NLT, ESV, NIV, WEB)..."
+              placeholder="Search version (e.g. BSB, WEB, KJV, ASV)..."
               placeholderTextColor={colors.inkPlaceholder}
               value={searchQuery}
               onChangeText={setSearchQuery}

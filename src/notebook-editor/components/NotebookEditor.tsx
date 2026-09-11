@@ -81,26 +81,41 @@ export function NotebookEditor({ onSaveSuccess }: NotebookEditorProps) {
   const currentScrollY = useRef<number>(0);
   const isKeyboardOpenRef = useRef<boolean>(false);
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState<number>(0);
 
   const saveMutation = useSaveDevotional();
 
   /**
    * Smoothly keeps the active typing cursor in view with generous breathing room above the keyboard.
    */
-  const scrollToCursor = (cursorIndex: number, force: boolean = false) => {
+  const scrollToCursor = (
+    cursorIndex: number,
+    force: boolean = false,
+    activeKeyboardHeight?: number
+  ) => {
     const cursorY = getCursorY(notesRef.current, cursorIndex);
-    const viewportH = viewportHeightRef.current;
+    const kHeight =
+      activeKeyboardHeight !== undefined
+        ? activeKeyboardHeight
+        : (isKeyboardOpenRef.current ? keyboardHeight : 0);
+
+    // On Android edge-to-edge / standalone builds, the soft keyboard sits on top of the window.
+    // The true visible viewport height above the keyboard is:
+    const effectiveViewportH = Math.max(
+      150,
+      viewportHeightRef.current - (Platform.OS === 'android' ? kHeight : 0)
+    );
     const currentY = currentScrollY.current;
 
     // Desired safe margin from bottom edge of visible area:
-    // When keyboard is open, keep cursor 140px above the bottom so next lines are also visible.
-    const bottomComfortMargin = isKeyboardOpenRef.current ? 140 : 60;
+    // When keyboard is open, keep cursor 120px above the top of the keyboard so next lines are also visible.
+    const bottomComfortMargin = isKeyboardOpenRef.current ? 120 : 60;
     const topMargin = 24;
 
     const cursorRelativeY = cursorY - currentY;
 
-    if (force || cursorRelativeY > viewportH - bottomComfortMargin) {
-      const targetY = Math.max(0, cursorY - viewportH + bottomComfortMargin);
+    if (force || cursorRelativeY > effectiveViewportH - bottomComfortMargin) {
+      const targetY = Math.max(0, cursorY - effectiveViewportH + bottomComfortMargin);
       scrollRef.current?.scrollTo({ y: targetY, animated: true });
     } else if (cursorRelativeY < topMargin) {
       const targetY = Math.max(0, cursorY - topMargin);
@@ -111,12 +126,14 @@ export function NotebookEditor({ onSaveSuccess }: NotebookEditorProps) {
   useEffect(() => {
     const showSub = Keyboard.addListener(
       Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
-      () => {
+      (e) => {
+        const kHeight = e?.endCoordinates?.height || 320;
         isKeyboardOpenRef.current = true;
         setIsKeyboardOpen(true);
+        setKeyboardHeight(kHeight);
         setTimeout(() => {
-          scrollToCursor(selectionRef.current.start, true);
-        }, 120);
+          scrollToCursor(selectionRef.current.start, true, kHeight);
+        }, 100);
       }
     );
 
@@ -125,6 +142,7 @@ export function NotebookEditor({ onSaveSuccess }: NotebookEditorProps) {
       () => {
         isKeyboardOpenRef.current = false;
         setIsKeyboardOpen(false);
+        setKeyboardHeight(0);
       }
     );
 
@@ -312,7 +330,7 @@ export function NotebookEditor({ onSaveSuccess }: NotebookEditorProps) {
           style={styles.scrollView}
           contentContainerStyle={[
             styles.scrollContent,
-            { paddingBottom: isKeyboardOpen ? 260 : 120 },
+            { paddingBottom: isKeyboardOpen ? Math.max(280, keyboardHeight + 80) : 120 },
           ]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"

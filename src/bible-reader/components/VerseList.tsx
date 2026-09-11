@@ -12,6 +12,8 @@ import * as Speech from 'expo-speech';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Verse, Book } from '../../bible-data/types';
+import { CANONICAL_BOOKS } from '../../bible-data/constants';
+import { useTranslationStore } from '../../bible-data/translationStore';
 import { useChapterHighlights, HIGHLIGHT_COLORS, getHighlightStyle } from '../../bible-data/highlights';
 import { useSettingsStore } from '../../settings/store';
 import { useTheme, toast } from '../../design-system';
@@ -23,6 +25,39 @@ export interface VerseListProps {
   chapter: number;
   verses: Verse[];
   onChapterChange?: (chapter: number) => void;
+  onNavigate?: (book: Book, chapter: number) => void;
+  onOpenTranslationPicker?: () => void;
+}
+
+/**
+ * Format book name for chapter navigation cards:
+ * Uses full names for short/single books (e.g., "John", "Romans", "Genesis"),
+ * and standard clean abbreviations for long titles (e.g., "1 Thess", "2 Chron").
+ */
+function getFriendlyBookLabel(name: string): string {
+  const FRIENDLY_MAP: Record<string, string> = {
+    '1 Chronicles': '1 Chron',
+    '2 Chronicles': '2 Chron',
+    '1 Corinthians': '1 Cor',
+    '2 Corinthians': '2 Cor',
+    '1 Thessalonians': '1 Thess',
+    '2 Thessalonians': '2 Thess',
+    '1 Samuel': '1 Sam',
+    '2 Samuel': '2 Sam',
+    '1 Kings': '1 Kings',
+    '2 Kings': '2 Kings',
+    '1 Timothy': '1 Tim',
+    '2 Timothy': '2 Tim',
+    '1 Peter': '1 Pet',
+    '2 Peter': '2 Pet',
+    '1 John': '1 John',
+    '2 John': '2 John',
+    '3 John': '3 John',
+    'Song of Solomon': 'Song of Sol',
+    'Philippians': 'Phil',
+    'Colossians': 'Col',
+  };
+  return FRIENDLY_MAP[name] || name;
 }
 
 export function VerseList({
@@ -30,11 +65,69 @@ export function VerseList({
   chapter,
   verses,
   onChapterChange,
+  onNavigate,
+  onOpenTranslationPicker,
 }: VerseListProps) {
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
   const fontSize = useSettingsStore((s) => s.fontSize);
   const setFontSize = useSettingsStore((s) => s.setFontSize);
+  const selectedTranslation = useTranslationStore((s) => s.selectedTranslation);
+
+  // Previous and Next navigation targets across all 66 canonical books
+  const prevTarget = useMemo<{ book: Book; chapter: number; label: string } | null>(() => {
+    if (chapter > 1) {
+      return {
+        book,
+        chapter: chapter - 1,
+        label: `${getFriendlyBookLabel(book.name)} ${chapter - 1}`,
+      };
+    }
+    if (book.id > 1) {
+      const prevBook = CANONICAL_BOOKS.find((b) => b.id === book.id - 1);
+      if (prevBook) {
+        return {
+          book: prevBook,
+          chapter: prevBook.chapter_count,
+          label: `${getFriendlyBookLabel(prevBook.name)} ${prevBook.chapter_count}`,
+        };
+      }
+    }
+    return null;
+  }, [book, chapter]);
+
+  const nextTarget = useMemo<{ book: Book; chapter: number; label: string } | null>(() => {
+    if (chapter < book.chapter_count) {
+      return {
+        book,
+        chapter: chapter + 1,
+        label: `${getFriendlyBookLabel(book.name)} ${chapter + 1}`,
+      };
+    }
+    if (book.id < 66) {
+      const nextBook = CANONICAL_BOOKS.find((b) => b.id === book.id + 1);
+      if (nextBook) {
+        return {
+          book: nextBook,
+          chapter: 1,
+          label: `${getFriendlyBookLabel(nextBook.name)} 1`,
+        };
+      }
+    }
+    return null;
+  }, [book, chapter]);
+
+  const handleNavigate = (target: { book: Book; chapter: number }) => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {}
+    if (onNavigate) {
+      onNavigate(target.book, target.chapter);
+    } else if (onChapterChange) {
+      onChapterChange(target.chapter);
+    }
+  };
+
   const [selectedVerseIds, setSelectedVerseIds] = useState<number[]>([]);
   const [isSpeaking, setIsSpeaking] = useState(false);
 
@@ -301,43 +394,120 @@ export function VerseList({
           );
         }}
         ListFooterComponent={
-          onChapterChange ? (
-            <View style={[styles.chapterNavFooter, { borderTopColor: colors.paperLine }]}>
-              {chapter > 1 ? (
-                <Pressable
-                  onPress={() => {
-                    try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
-                    onChapterChange(chapter - 1);
-                  }}
-                  style={styles.chapterNavBtn}
-                  hitSlop={8}
-                >
-                  <Ionicons name="chevron-back" size={15} color={colors.brandGreen} />
-                  <Text style={[styles.chapterNavBtnText, { color: colors.brandGreen }]}>
-                    Chapter {chapter - 1}
-                  </Text>
-                </Pressable>
-              ) : (
-                <View />
-              )}
+          (onNavigate || onChapterChange) ? (
+            <View style={styles.chapterNavFooter}>
+              {/* Tactile Dual Pill Cards for Previous / Next Chapter */}
+              <View style={styles.chapterCardsRow}>
+                {prevTarget ? (
+                  <Pressable
+                    onPress={() => handleNavigate(prevTarget)}
+                    style={({ pressed }) => [
+                      styles.chapterCardBtn,
+                      styles.chapterCardLeft,
+                      {
+                        backgroundColor: colors.cardBg,
+                        borderColor: colors.paperLine,
+                      },
+                      pressed && { opacity: 0.75, transform: [{ scale: 0.98 }] },
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Previous chapter: ${prevTarget.label}`}
+                  >
+                    <Ionicons name="chevron-back" size={18} color={colors.brandGreen} />
+                    <View style={styles.chapterCardTextCol}>
+                      <Text style={[styles.chapterCardSublabel, { color: colors.inkMuted }]}>
+                        PREVIOUS
+                      </Text>
+                      <Text
+                        style={[styles.chapterCardReference, { color: colors.inkPrimary }]}
+                        numberOfLines={1}
+                      >
+                        {prevTarget.label}
+                      </Text>
+                    </View>
+                  </Pressable>
+                ) : (
+                  <View style={{ flex: 1 }} />
+                )}
 
-              {chapter < book.chapter_count ? (
-                <Pressable
-                  onPress={() => {
-                    try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
-                    onChapterChange(chapter + 1);
-                  }}
-                  style={styles.chapterNavBtn}
-                  hitSlop={8}
-                >
-                  <Text style={[styles.chapterNavBtnText, { color: colors.brandGreen }]}>
-                    Chapter {chapter + 1}
+                {nextTarget ? (
+                  <Pressable
+                    onPress={() => handleNavigate(nextTarget)}
+                    style={({ pressed }) => [
+                      styles.chapterCardBtn,
+                      styles.chapterCardRight,
+                      {
+                        backgroundColor: colors.cardBg,
+                        borderColor: colors.paperLine,
+                      },
+                      pressed && { opacity: 0.75, transform: [{ scale: 0.98 }] },
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Next chapter: ${nextTarget.label}`}
+                  >
+                    <View style={styles.chapterCardTextColRight}>
+                      <Text style={[styles.chapterCardSublabel, { color: colors.inkMuted }]}>
+                        NEXT
+                      </Text>
+                      <Text
+                        style={[styles.chapterCardReference, { color: colors.inkPrimary }]}
+                        numberOfLines={1}
+                      >
+                        {nextTarget.label}
+                      </Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={18} color={colors.brandGreen} />
+                  </Pressable>
+                ) : (
+                  <View style={{ flex: 1 }} />
+                )}
+              </View>
+
+              {/* Decorative Divider */}
+              <View style={styles.colophonDivider}>
+                <View style={[styles.colophonLine, { backgroundColor: colors.paperLine }]} />
+                <Ionicons
+                  name="leaf-outline"
+                  size={12}
+                  color={colors.inkMuted}
+                  style={{ marginHorizontal: 10, opacity: 0.6 }}
+                />
+                <View style={[styles.colophonLine, { backgroundColor: colors.paperLine }]} />
+              </View>
+
+              {/* Interactive Editorial Colophon (Translation Credits) */}
+              <Pressable
+                onPress={() => {
+                  try {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  } catch {}
+                  onOpenTranslationPicker?.();
+                }}
+                style={({ pressed }) => [
+                  styles.colophonContainer,
+                  {
+                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)',
+                    borderColor: colors.paperLine,
+                  },
+                  pressed && {
+                    opacity: 0.75,
+                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
+                  },
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel={`Active translation: ${selectedTranslation.name}. Tap to switch version.`}
+              >
+                <View style={styles.colophonHeaderRow}>
+                  <Ionicons name="book-outline" size={14} color={colors.brandGreen} />
+                  <Text style={[styles.colophonVersionText, { color: colors.inkPrimary }]}>
+                    {selectedTranslation.name}
+                    {selectedTranslation.year ? ` (${selectedTranslation.year})` : ''}
                   </Text>
-                  <Ionicons name="chevron-forward" size={15} color={colors.brandGreen} />
-                </Pressable>
-              ) : (
-                <View />
-              )}
+                </View>
+                <Text style={[styles.colophonMetaText, { color: colors.inkMuted }]}>
+                  100% Public Domain Scripture • Tap to switch version
+                </Text>
+              </Pressable>
             </View>
           ) : undefined
         }
@@ -511,25 +681,89 @@ const styles = StyleSheet.create({
     letterSpacing: 0.1,
   },
   chapterNavFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderTopWidth: StyleSheet.hairlineWidth,
     marginTop: SPACING.xl,
-    paddingTop: SPACING.lg,
+    paddingTop: SPACING.base,
     marginBottom: SPACING.lg,
   },
-  chapterNavBtn: {
+  chapterCardsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  chapterCardBtn: {
+    flex: 1,
+    minHeight: 52,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    ...SHADOWS.subtle,
+  },
+  chapterCardLeft: {
+    justifyContent: 'flex-start',
+  },
+  chapterCardRight: {
+    justifyContent: 'flex-end',
+  },
+  chapterCardTextCol: {
+    marginLeft: 8,
+    marginRight: 4,
+  },
+  chapterCardTextColRight: {
+    marginRight: 8,
+    marginLeft: 4,
+    alignItems: 'flex-end',
+  },
+  chapterCardSublabel: {
+    fontFamily: FONTS.caption,
+    fontSize: 9,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    marginBottom: 2,
+  },
+  chapterCardReference: {
+    fontFamily: FONTS.sectionHeader,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  colophonDivider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: SPACING.lg,
+    marginBottom: SPACING.sm,
+  },
+  colophonLine: {
+    flex: 1,
+    height: StyleSheet.hairlineWidth,
+  },
+  colophonContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    marginTop: SPACING.xs,
+  },
+  colophonHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingVertical: 8,
-    paddingHorizontal: 4,
+    marginBottom: 4,
   },
-  chapterNavBtnText: {
+  colophonVersionText: {
     fontFamily: FONTS.sectionHeader,
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  colophonMetaText: {
+    fontFamily: FONTS.caption,
+    fontSize: 11,
+    letterSpacing: 0.2,
   },
 
   // Floating Bar

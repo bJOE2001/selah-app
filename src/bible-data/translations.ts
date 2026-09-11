@@ -12,24 +12,13 @@ export interface BibleTranslation {
   description: string;
   isBuiltInOffline: boolean;
   apiIdentifier?: string;
+  downloadUrl?: string;
+  fallbackUrl?: string;
   approximateSizeMB?: string;
 }
 
 export const BIBLE_TRANSLATIONS: BibleTranslation[] = [
   // Popular English
-  {
-    id: "nlt",
-    code: "NLT",
-    name: "New Living Translation",
-    category: "Popular English",
-    language: "English",
-    year: 1996,
-    description:
-      "Clear, warm, dynamic thought-for-thought English translation loved for devotion and clarity.",
-    isBuiltInOffline: false,
-    apiIdentifier: "NLT",
-    approximateSizeMB: "3.8 MB",
-  },
   {
     id: "kjv",
     code: "KJV",
@@ -44,45 +33,6 @@ export const BIBLE_TRANSLATIONS: BibleTranslation[] = [
     approximateSizeMB: "Bundled",
   },
   {
-    id: "niv",
-    code: "NIV",
-    name: "New International Version",
-    category: "Popular English",
-    language: "English",
-    year: 2011,
-    description:
-      "The world's most popular modern English Bible balancing readability and accuracy.",
-    isBuiltInOffline: false,
-    apiIdentifier: "NIV2011",
-    approximateSizeMB: "3.8 MB",
-  },
-  {
-    id: "esv",
-    code: "ESV",
-    name: "English Standard Version",
-    category: "Popular English",
-    language: "English",
-    year: 2001,
-    description:
-      "Essentially literal translation emphasizing word-for-word accuracy and literary beauty.",
-    isBuiltInOffline: false,
-    apiIdentifier: "ESV",
-    approximateSizeMB: "3.8 MB",
-  },
-  {
-    id: "nkjv",
-    code: "NKJV",
-    name: "New King James Version",
-    category: "Popular English",
-    language: "English",
-    year: 1982,
-    description:
-      "Modern update of the classic KJV preserving traditional reverence with contemporary English.",
-    isBuiltInOffline: false,
-    apiIdentifier: "NKJV",
-    approximateSizeMB: "3.8 MB",
-  },
-  {
     id: "bsb",
     code: "BSB",
     name: "Berean Standard Bible",
@@ -90,62 +40,10 @@ export const BIBLE_TRANSLATIONS: BibleTranslation[] = [
     language: "English",
     year: 2016,
     description:
-      "Modern, beautifully transparent translation based on the best Greek and Hebrew sources.",
+      "Modern, fluent, highly readable English translation based on original Greek and Hebrew. Dedicated to the public domain.",
     isBuiltInOffline: false,
     apiIdentifier: "BSB",
     approximateSizeMB: "3.6 MB",
-  },
-  {
-    id: "csb",
-    code: "CSB",
-    name: "Christian Standard Bible",
-    category: "Popular English",
-    language: "English",
-    year: 2017,
-    description:
-      "Optimal blend of accuracy and readability, faithful to original biblical manuscripts.",
-    isBuiltInOffline: false,
-    apiIdentifier: "CSB17",
-    approximateSizeMB: "3.8 MB",
-  },
-  {
-    id: "amp",
-    code: "AMP",
-    name: "Amplified Bible",
-    category: "Popular English",
-    language: "English",
-    year: 2015,
-    description:
-      "Uses synonyms and explanations to reveal subtle shades of meaning in the text.",
-    isBuiltInOffline: false,
-    apiIdentifier: "AMP",
-    approximateSizeMB: "4.0 MB",
-  },
-  {
-    id: "msg",
-    code: "MSG",
-    name: "The Message",
-    category: "Popular English",
-    language: "English",
-    year: 2002,
-    description:
-      "A contemporary paraphrase that presents the gospel in vivid, expressive English.",
-    isBuiltInOffline: false,
-    apiIdentifier: "MSG",
-    approximateSizeMB: "3.7 MB",
-  },
-  {
-    id: "net",
-    code: "NET",
-    name: "New English Translation",
-    category: "Popular English",
-    language: "English",
-    year: 2007,
-    description:
-      "Modern English translation with high fidelity to original scholarship.",
-    isBuiltInOffline: false,
-    apiIdentifier: "NET",
-    approximateSizeMB: "3.9 MB",
   },
   {
     id: "web",
@@ -155,26 +53,13 @@ export const BIBLE_TRANSLATIONS: BibleTranslation[] = [
     language: "English",
     year: 2000,
     description:
-      "Modern, highly readable, and accurate English translation in the public domain.",
+      "Clean, modern 21st-century English translation in the public domain. Easy to understand.",
     isBuiltInOffline: false,
     apiIdentifier: "WEB",
     approximateSizeMB: "3.8 MB",
   },
 
   // Literal & Study
-  {
-    id: "nasb",
-    code: "NASB",
-    name: "New American Standard Bible",
-    category: "Literal & Study",
-    language: "English",
-    year: 1995,
-    description:
-      "Renowned worldwide as the gold standard of literal word-for-word English translations.",
-    isBuiltInOffline: false,
-    apiIdentifier: "NASB",
-    approximateSizeMB: "3.8 MB",
-  },
   {
     id: "asv",
     code: "ASV",
@@ -183,7 +68,7 @@ export const BIBLE_TRANSLATIONS: BibleTranslation[] = [
     language: "English",
     year: 1901,
     description:
-      "Renowned for strict literal precision, scholarship, and biblical study accuracy.",
+      "Renowned for strict literal precision, scholarship, and biblical study accuracy. In the public domain.",
     isBuiltInOffline: false,
     apiIdentifier: "ASV",
     approximateSizeMB: "3.7 MB",
@@ -196,7 +81,7 @@ export const BIBLE_TRANSLATIONS: BibleTranslation[] = [
     language: "English",
     year: 1898,
     description:
-      "Strict, word-for-word translation preserving original Hebrew and Greek tenses.",
+      "Strict word-for-word translation preserving original Hebrew and Greek verb tenses. In the public domain.",
     isBuiltInOffline: false,
     apiIdentifier: "YLT",
     approximateSizeMB: "3.7 MB",
@@ -210,7 +95,8 @@ export const BIBLE_TRANSLATIONS: BibleTranslation[] = [
     category: "Historical & Classic",
     language: "English",
     year: 1899,
-    description: "Traditional Catholic translation from the Latin Vulgate.",
+    description:
+      "Traditional Catholic translation from the Latin Vulgate in the public domain.",
     isBuiltInOffline: false,
     apiIdentifier: "DRB",
     approximateSizeMB: "3.8 MB",
@@ -223,7 +109,7 @@ export const BIBLE_TRANSLATIONS: BibleTranslation[] = [
     language: "Latin",
     year: 1592,
     description:
-      "Historical Latin scripture promulgated by the Council of Trent.",
+      "Historical Latin scripture promulgated by the Council of Trent in the public domain.",
     isBuiltInOffline: false,
     apiIdentifier: "VULG",
     approximateSizeMB: "3.6 MB",
@@ -231,16 +117,36 @@ export const BIBLE_TRANSLATIONS: BibleTranslation[] = [
 
   // International
   {
-    id: "rv1960",
-    code: "RVR60",
-    name: "Reina-Valera 1960",
+    id: "adb",
+    code: "ADB",
+    name: "Ang Dating Biblia (1905)",
     category: "International",
-    language: "Spanish",
-    year: 1960,
-    description: "The most widely used and loved Spanish Bible translation worldwide.",
+    language: "Tagalog / Filipino",
+    year: 1905,
+    description:
+      "The classic, beloved Protestant Tagalog Bible translation. 100% in the public domain.",
     isBuiltInOffline: false,
-    apiIdentifier: "RV1960",
-    approximateSizeMB: "3.7 MB",
+    downloadUrl:
+      "https://cdn.jsdelivr.net/gh/scrollmapper/bible_databases@master/formats/json/TagAngBiblia.json",
+    fallbackUrl:
+      "https://raw.githubusercontent.com/scrollmapper/bible_databases/master/formats/json/TagAngBiblia.json",
+    approximateSizeMB: "4.4 MB",
+  },
+  {
+    id: "cebb",
+    code: "CEBB",
+    name: "Ang Santa Biblia (1917 Bugna)",
+    category: "International",
+    language: "Cebuano / Bisaya",
+    year: 1917,
+    description:
+      "The standard classic Cebuano/Bisaya Bible translation. 100% in the public domain.",
+    isBuiltInOffline: false,
+    downloadUrl:
+      "https://cdn.jsdelivr.net/gh/scrollmapper/bible_databases@master/formats/json/CebPinadayag.json",
+    fallbackUrl:
+      "https://raw.githubusercontent.com/scrollmapper/bible_databases/master/formats/json/CebPinadayag.json",
+    approximateSizeMB: "4.6 MB",
   },
   {
     id: "cuv",
@@ -249,35 +155,11 @@ export const BIBLE_TRANSLATIONS: BibleTranslation[] = [
     category: "International",
     language: "Chinese",
     year: 1919,
-    description: "The standard and most beloved Chinese Bible translation.",
+    description:
+      "The standard and most beloved Chinese Bible translation in the public domain.",
     isBuiltInOffline: false,
     apiIdentifier: "CUV",
     approximateSizeMB: "3.5 MB",
-  },
-  {
-    id: "almeida",
-    code: "ARA",
-    name: "Almeida Revista e Atualizada",
-    category: "International",
-    language: "Portuguese",
-    year: 1993,
-    description:
-      "Classic Portuguese translation widely used across Brazil and Portugal.",
-    isBuiltInOffline: false,
-    apiIdentifier: "ARA",
-    approximateSizeMB: "3.6 MB",
-  },
-  {
-    id: "rccv",
-    code: "VDCL",
-    name: "Romanian Cornilescu",
-    category: "International",
-    language: "Romanian",
-    year: 1931,
-    description: "The standard modern Romanian Protestant Bible translation.",
-    isBuiltInOffline: false,
-    apiIdentifier: "VDCL",
-    approximateSizeMB: "3.6 MB",
   },
 ];
 

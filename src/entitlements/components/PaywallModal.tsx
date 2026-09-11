@@ -70,7 +70,7 @@ const PREMIUM_PERKS = [
   {
     icon: 'book-outline',
     title: 'Luxury Leather & Vintage Covers',
-    desc: 'Unlock all handcrafted leather, gold foil embossing, and vintage journal designs.',
+    desc: 'Unlock all premium leather, gold foil embossing, and vintage journal designs.',
   },
 ];
 

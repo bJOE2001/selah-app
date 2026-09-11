@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { BibleTranslation } from './translations';
+import { BibleTranslation, BIBLE_TRANSLATIONS } from './translations';
 import {
   DownloadedTranslationInfo,
   getDownloadedTranslationsFromDb,
@@ -36,10 +36,21 @@ export const useDownloadStore = create<DownloadStoreState>((set, get) => ({
   initDownloads: async () => {
     try {
       const list = await getDownloadedTranslationsFromDb();
+      const validIds = new Set(BIBLE_TRANSLATIONS.map((t) => t.id.toLowerCase()));
       const map: Record<string, DownloadedTranslationInfo> = {};
-      list.forEach((item) => {
-        map[item.id.toLowerCase()] = item;
-      });
+
+      for (const item of list) {
+        const normId = item.id.toLowerCase();
+        if (!validIds.has(normId)) {
+          // Silently purge deprecated/removed translation to free device storage
+          executeDelete(normId).catch((e) =>
+            console.warn('Purge failed for deprecated translation', normId, e)
+          );
+        } else {
+          map[normId] = item;
+        }
+      }
+
       set({ downloadedTranslations: map, isInitialized: true });
     } catch (err) {
       console.warn('Failed to init downloaded translations:', err);
