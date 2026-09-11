@@ -20,6 +20,8 @@ expo-env.d.ts
 
 # Metro
 .metro-health-check*
+*-bundle.js
+*-bundle.js.meta
 
 # debug
 npm-debug.*
