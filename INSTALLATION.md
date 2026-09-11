@@ -177,7 +177,6 @@ selah-app/
 │   ├── notebook-editor/        # Devotional journaling editor
 │   ├── privacy-lock/           # Biometrics & PIN authentication layer
 │   ├── settings/               # User settings and preferences
-│   ├── share-card/             # Aesthetic exportable image cards (ViewShot)
 │   └── utils/                  # Shared helper functions
 ├── scripts/                    # Database seeding and compilation scripts
 ├── app.json                    # Expo configuration & plugins
@@ -200,7 +199,6 @@ selah-app/
 | **Animations** | [React Native Reanimated](https://docs.swmansion.com/react-native-reanimated/) |
 | **Typography** | Playfair Display, Lora, Caveat (`@expo-google-fonts/*`) |
 | **Security & Biometrics**| [Expo Local Authentication](https://docs.expo.dev/versions/latest/sdk/local-authentication/) |
-| **Image Generation** | [React Native View Shot](https://github.com/gre/react-native-view-shot) |
 
 ---
 

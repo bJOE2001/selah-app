@@ -2,7 +2,7 @@
 
 > *Pause, Reflect & Praise* — An aesthetic devotional journaling and Scripture reader app crafted with a classic paper notebook aesthetic and warm companion mascot.
 
-**Selah: Bible & Devotional** is a mobile application built with **React Native**, **Expo SDK 54**, and **Expo SQLite**, designed for thoughtful Scripture meditation, structured devotional reflection, habit tracking, and aesthetic shareable cards.
+**Selah: Bible & Devotional** is a mobile application built with **React Native**, **Expo SDK 54**, and **Expo SQLite**, designed for thoughtful Scripture meditation, structured devotional reflection, and habit tracking.
 
 ---
 
@@ -11,7 +11,6 @@
 - **📖 Scripture Reader**: Complete King James Version (KJV) Bible powered by local SQLite database with fast book/chapter/verse navigation and highlights.
 - **✍️ Devotional Journaling**: Guided reflection workflow.
 - **📅 Daily Dashboard & Streaks**: Habit tracking, today's actionable steps, and devotion streak statistics.
-- **🎨 Shareable Cards**: High-res aesthetic quote & devotional image export via `react-native-view-shot`.
 - **🔒 Privacy Gate**: Biometric (Face ID / Fingerprint) & PIN security powered by `expo-local-authentication`.
 - **📜 Classic Notebook Theme**: Rich typography featuring *Playfair Display*, *Lora*, and *Caveat* with warm paper textures and dark/light modes.
 

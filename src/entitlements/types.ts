@@ -53,7 +53,6 @@ export type PremiumFeature =
   | 'multiDeviceSync'
   | 'luxuryCovers'
   | 'ambientSoundscapes'
-  | 'watermarkFreeCards'
   | 'patronBadge';
 
 /**
@@ -68,7 +67,6 @@ export const TIER_FEATURES: Record<SubscriptionTier, PremiumFeature[]> = {
     'multiDeviceSync',
     'luxuryCovers',
     'ambientSoundscapes',
-    'watermarkFreeCards',
   ],
   grace_annual: [
     'unlimitedJournalPages',
@@ -76,7 +74,6 @@ export const TIER_FEATURES: Record<SubscriptionTier, PremiumFeature[]> = {
     'multiDeviceSync',
     'luxuryCovers',
     'ambientSoundscapes',
-    'watermarkFreeCards',
   ],
   patron_lifetime: [
     'unlimitedJournalPages',
@@ -84,7 +81,6 @@ export const TIER_FEATURES: Record<SubscriptionTier, PremiumFeature[]> = {
     'multiDeviceSync',
     'luxuryCovers',
     'ambientSoundscapes',
-    'watermarkFreeCards',
     'patronBadge',
   ],
 };
