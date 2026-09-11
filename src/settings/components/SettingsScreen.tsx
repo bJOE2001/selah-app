@@ -273,7 +273,7 @@ export function SettingsScreen() {
 
       const exportData = {
         app: 'Selah: Bible & Devotional',
-        version: '1.0.1',
+        version: Constants.expoConfig?.version || '1.0.2',
         exportedAt: new Date().toISOString(),
         totalEntries: fullEntries.length,
         entries: fullEntries,

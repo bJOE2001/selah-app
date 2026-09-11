@@ -2,18 +2,19 @@
   "expo": {
     "name": "Selah",
     "slug": "selah-app",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/images/app-icon.jpg",
     "scheme": "selah",
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.selah.devotional"
+      "bundleIdentifier": "com.selah.devotional",
+      "buildNumber": "4"
     },
     "android": {
       "package": "com.selah.devotional",
-      "versionCode": 3,
+      "versionCode": 4,
       "adaptiveIcon": {
         "backgroundColor": "#377333",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
