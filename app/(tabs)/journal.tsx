@@ -4,17 +4,26 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { useRecentDevotionals } from '../../src/devotional-core/hooks';
+import { useRecentDevotionals, useDevotionalCount } from '../../src/devotional-core/hooks';
 import { EntryTimeline, NotebookBookView } from '../../src/journal-history';
 import { useTheme, FONTS, RADIUS, SHADOWS, SPACING } from '../../src/design-system';
+import { useIsPremium, PaywallModal } from '../../src/entitlements';
+
 export default function JournalTabScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
   const { data: entries } = useRecentDevotionals(100);
+  const { data: totalDevotionalCount = 0 } = useDevotionalCount();
+  const isPremium = useIsPremium();
   const [viewMode, setViewMode] = useState<'notebook' | 'timeline'>('notebook');
+  const [isPaywallOpen, setIsPaywallOpen] = useState(false);
 
   const handleStartNew = () => {
+    if (!isPremium && totalDevotionalCount >= 30) {
+      setIsPaywallOpen(true);
+      return;
+    }
     router.push('/devotional/new');
   };
 
@@ -141,6 +150,13 @@ export default function JournalTabScreen() {
           />
         )}
       </View>
+
+      {/* Selah Grace Paywall */}
+      <PaywallModal
+        visible={isPaywallOpen}
+        onClose={() => setIsPaywallOpen(false)}
+        triggerFeature="Unlimited Devotional Pages"
+      />
     </View>
   );
 }

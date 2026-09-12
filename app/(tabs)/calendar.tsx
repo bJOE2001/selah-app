@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Calendar } from 'react-native-calendars';
-import { useRecentDevotionals } from '../../src/devotional-core/hooks';
+import { useRecentDevotionals, useDevotionalCount } from '../../src/devotional-core/hooks';
 import { EntryCard } from '../../src/journal-history/components/EntryCard';
 import { useTheme } from '../../src/design-system';
 import { FONTS } from '../../src/design-system/tokens/typography';
@@ -20,16 +20,21 @@ export default function CalendarTabScreen() {
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
   const { data: entries } = useRecentDevotionals(150);
+  const { data: totalDevotionalCount = 0 } = useDevotionalCount();
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [activeFilter, setActiveFilter] = useState<'all' | 'bookmarked'>('all');
   const [isPaywallOpen, setIsPaywallOpen] = useState(false);
 
   const isPremium = useIsPremium();
   const totalEntriesCount = (entries || []).length;
-  const isPageLimitReached = false;
+  const isPageLimitReached = !isPremium && totalDevotionalCount >= 30;
 
   const handleStartNew = () => {
     try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+    if (isPageLimitReached) {
+      setIsPaywallOpen(true);
+      return;
+    }
     router.push('/devotional/new');
   };
 

@@ -136,8 +136,8 @@ function TypewriterDialogue({
   const [displayedLength, setDisplayedLength] = useState(isReduceMotion ? dialogue.length : 0);
   const [isTyping, setIsTyping] = useState(false);
   const [cursorVisible, setCursorVisible] = useState(false);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const cursorIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const cursorIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     if (!isActive) {

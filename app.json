@@ -65,7 +65,6 @@
       "expo-sharing",
       "expo-sqlite",
       "expo-status-bar",
-      "expo-video",
       "expo-web-browser"
     ],
     "experiments": {

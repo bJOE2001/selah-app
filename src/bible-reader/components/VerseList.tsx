@@ -717,7 +717,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   chapterCardSublabel: {
-    fontFamily: FONTS.caption,
+    fontFamily: FONTS.bodyBold,
     fontSize: 9,
     fontWeight: '700',
     letterSpacing: 0.8,
@@ -761,7 +761,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   colophonMetaText: {
-    fontFamily: FONTS.caption,
+    fontFamily: FONTS.body,
     fontSize: 11,
     letterSpacing: 0.2,
   },

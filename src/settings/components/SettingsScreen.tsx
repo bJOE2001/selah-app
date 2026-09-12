@@ -22,29 +22,22 @@ import Constants from 'expo-constants';
 import { useTranslationStore } from '../../bible-data/translationStore';
 import { useDownloadStore } from '../../bible-data/downloadStore';
 import { TranslationPickerModal } from '../../bible-reader/components/TranslationPickerModal';
-import { EditJournalCoverModal } from '../../journal-history';
+import { EditJournalCoverModal, exportJournalToJson, importJournalFromJson } from '../../journal-history';
 import { DevotionalTimePickerModal } from './DevotionalTimePickerModal';
 import { getUserDatabase } from '../../bible-data/db';
 import { useRecentDevotionals } from '../../devotional-core/hooks';
+import { useQueryClient } from '@tanstack/react-query';
 import { useSettingsStore, ThemeMode } from '../store';
 import { useTheme, promptModal, toast, JournalToggle, ThemeSegmentedControl } from '../../design-system';
 import { syncMorningReminder, syncEveningReminder } from '../../notifications';
 import { FONTS } from '../../design-system/tokens/typography';
 import { SPACING, RADIUS, SHADOWS } from '../../design-system/tokens/spacing';
 import {
-  useEntitlementStore,
   useIsPremium,
   useCurrentTier,
   restorePurchases,
   PaywallModal,
 } from '../../entitlements';
-import {
-  useCloudAuthStore,
-  syncToCloud,
-  restoreFromCloud,
-  signOutCloud,
-  CloudVaultAuthModal,
-} from '../../cloud-vault';
 
 /* ═══════════════════════════════════════════════════════════════════════════
    FontSizeSlider — Touch-draggable continuous slider (12px – 28px)
@@ -174,8 +167,10 @@ export function SettingsScreen() {
   } = useSettingsStore();
 
   // Devotionals stats
+  const queryClient = useQueryClient();
   const { data: entries } = useRecentDevotionals(200);
   const [isExporting, setIsExporting] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
   const [isClearingDownloads, setIsClearingDownloads] = useState(false);
 
   // Entitlements & Subscription
@@ -184,66 +179,18 @@ export function SettingsScreen() {
   const [isPaywallOpen, setIsPaywallOpen] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
 
-  // Cloud Vault State
-  const cloudUser = useCloudAuthStore((s) => s.user);
-  const lastSyncTime = useCloudAuthStore((s) => s.lastSyncTime);
-  const isSyncing = useCloudAuthStore((s) => s.isSyncing);
-  const [isCloudAuthOpen, setIsCloudAuthOpen] = useState(false);
-
-  const handleSyncCloud = async () => {
-    if (!isPremium) {
-      setIsPaywallOpen(true);
-      return;
-    }
-    if (!cloudUser) {
-      setIsCloudAuthOpen(true);
-      return;
-    }
-
-    const res = await syncToCloud();
-    if (res.success) {
-      toast.success('Cloud Vault Synced', `${res.syncedCount} devotional entries backed up securely.`);
-    } else {
-      toast.error('Sync Notice', res.error || 'Unable to sync with Cloud Vault.');
-    }
-  };
-
-  const handleRestoreCloud = async () => {
-    if (!isPremium) {
-      setIsPaywallOpen(true);
-      return;
-    }
-    if (!cloudUser) {
-      setIsCloudAuthOpen(true);
-      return;
-    }
-
-    promptModal.confirm({
-      title: 'Restore from Cloud Vault?',
-      message: 'This will download and merge your encrypted journal backups into this device.',
-      confirmText: 'Restore Entries',
-      cancelText: 'Cancel',
-      onConfirm: async () => {
-        const res = await restoreFromCloud();
-        if (res.success) {
-          toast.success('Restore Complete', `Restored ${res.syncedCount} entries from Cloud Vault.`);
-        } else {
-          toast.error('Restore Notice', res.error || 'Failed to restore entries.');
-        }
-      },
-    });
-  };
-
   const handleRestorePurchases = async () => {
     setIsRestoring(true);
     try {
-      const success = await restorePurchases();
-      if (success) {
-        toast.success('Purchases Restored', 'Your previous subscription has been activated.');
+      const result = await restorePurchases();
+      if (result.success) {
+        toast.success('Purchases Restored', 'Your Selah Grace lifetime access has been restored.');
+      } else if (result.error) {
+        promptModal.info('Restore Status', result.error);
       } else {
         promptModal.info(
-          'No Purchases Found',
-          'No active subscriptions were found for this store account.'
+          'No Prior Purchase Found',
+          'No active Selah Grace purchases were found for this store account.'
         );
       }
     } catch (e: any) {
@@ -259,49 +206,48 @@ export function SettingsScreen() {
 
   // Handle Export Journal
   const handleExportJournal = async () => {
-    if (!entries || entries.length === 0) {
-      promptModal.info('No Entries Found', 'You have not written any devotional entries yet.');
-      return;
-    }
-
+    setIsExporting(true);
     try {
-      setIsExporting(true);
-      const db = await getUserDatabase();
-      const fullEntries = await db.getAllAsync<any>(
-        'SELECT * FROM devotionals ORDER BY created_at DESC;'
-      );
-
-      const exportData = {
-        app: 'Selah: Bible & Devotional',
-        version: Constants.expoConfig?.version || '1.0.2',
-        exportedAt: new Date().toISOString(),
-        totalEntries: fullEntries.length,
-        entries: fullEntries,
-      };
-
-      const jsonString = JSON.stringify(exportData, null, 2);
-      const fileUri = `${FileSystem.cacheDirectory}selah_devotional_backup_${Date.now()}.json`;
-
-      await FileSystem.writeAsStringAsync(fileUri, jsonString, {
-        encoding: FileSystem.EncodingType.UTF8,
-      });
-
-      const isAvailable = await Sharing.isAvailableAsync();
-      if (isAvailable) {
-        await Sharing.shareAsync(fileUri, {
-          mimeType: 'application/json',
-          dialogTitle: 'Export Devotional Journal Backup',
-        });
-        toast.success('Export Ready', 'Your devotional backup has been generated.');
-      } else {
-        toast.success('Export Complete', `Saved to ${fileUri}`);
+      const result = await exportJournalToJson();
+      if (result.success) {
+        toast.success('Journal Exported', result.message || 'Backup file generated.');
+      } else if (!result.canceled) {
+        promptModal.error('Export Failed', result.message || 'Could not export journal entries.');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Export failed:', error);
-      toast.error('Export Failed', 'Could not generate devotional backup file.');
+      toast.error('Export Failed', error?.message || 'Could not generate devotional backup file.');
     } finally {
       setIsExporting(false);
     }
+  };
+
+  // Handle Import Journal
+  const handleImportJournal = async () => {
+    promptModal.confirm({
+      title: 'Import Journal Backup?',
+      message:
+        'This will non-destructively merge entries from your backup file into your journal. Existing entries will never be overwritten or deleted.',
+      confirmText: 'Choose Backup File',
+      cancelText: 'Cancel',
+      onConfirm: async () => {
+        setIsImporting(true);
+        try {
+          const result = await importJournalFromJson();
+          if (result.success) {
+            await queryClient.invalidateQueries({ queryKey: ['devotionals'] });
+            await queryClient.invalidateQueries({ queryKey: ['devotional'] });
+            toast.success('Journal Restored', result.message);
+          } else if (!result.canceled) {
+            promptModal.error('Import Failed', result.message);
+          }
+        } catch (error: any) {
+          promptModal.error('Import Error', error?.message || 'Could not import journal backup.');
+        } finally {
+          setIsImporting(false);
+        }
+      },
+    });
   };
 
 
@@ -445,11 +391,7 @@ export function SettingsScreen() {
               <View style={styles.graceTextCol}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                   <Text style={[styles.gracePlanTitle, { color: colors.inkPrimary }]}>
-                    {isPremium
-                      ? currentTier === 'patron_lifetime'
-                        ? 'Lifetime Pass'
-                        : 'Selah Grace Active'
-                      : 'Free Plan (Guest)'}
+                    {isPremium ? 'Selah Grace (Lifetime)' : 'Selah Standard (Free)'}
                   </Text>
                   {isPremium && (
                     <View style={[styles.activeStatusPill, { backgroundColor: '#E8F5E9' }]}>
@@ -459,8 +401,8 @@ export function SettingsScreen() {
                 </View>
                 <Text style={[styles.gracePlanSubtitle, { color: colors.inkSecondary }]}>
                   {isPremium
-                    ? 'Automatic Cloud Backup & Luxury Journal Covers unlocked.'
-                    : 'Offline KJV Bible & local notes. Upgrade for Cloud Backup & Luxury Covers.'}
+                    ? 'Unlimited devotional entries, sacred emblems, and luxury notebook styling.'
+                    : 'Offline Bible & local journal. Unlock Selah Grace for unlimited entries.'}
                 </Text>
               </View>
             </View>
@@ -473,7 +415,7 @@ export function SettingsScreen() {
                   style={[styles.graceUpgradeBtn, { backgroundColor: '#8B3A2B' }]}
                 >
                   <Ionicons name="sparkles" size={15} color="#FFFFFF" />
-                  <Text style={styles.graceUpgradeBtnText}>Upgrade to Selah Grace</Text>
+                  <Text style={styles.graceUpgradeBtnText}>Unlock Selah Grace</Text>
                 </Pressable>
               </View>
             ) : null}
@@ -497,7 +439,7 @@ export function SettingsScreen() {
                 <View style={styles.rowTextCol}>
                   <Text style={[styles.rowTitle, { color: colors.inkPrimary }]}>Restore Purchases</Text>
                   <Text style={[styles.rowSubtitle, { color: colors.inkSecondary }]}>
-                    Restore previously purchased subscriptions
+                    Restore your Selah Grace lifetime purchase
                   </Text>
                 </View>
               </View>
@@ -506,136 +448,7 @@ export function SettingsScreen() {
           </View>
         </View>
 
-        {/* ═══════════ SECTION: ENCRYPTED CLOUD VAULT ═══════════ */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Ionicons name="cloud-done-outline" size={16} color={colors.brandGreen} />
-            <Text style={[styles.sectionTitle, { color: colors.inkMuted }]}>ENCRYPTED CLOUD VAULT</Text>
-          </View>
 
-          <View style={[styles.card, { backgroundColor: colors.cardBg, borderColor: colors.paperLine }]}>
-            {cloudUser ? (
-              <>
-                <View style={styles.rowItem}>
-                  <View style={styles.rowLeft}>
-                    <View style={[styles.iconBox, { backgroundColor: '#E8F5E9' }]}>
-                      <Ionicons name="person-circle-outline" size={19} color="#2E7D32" />
-                    </View>
-                    <View style={styles.rowTextCol}>
-                      <Text style={[styles.rowTitle, { color: colors.inkPrimary }]}>
-                        {cloudUser.email || 'Cloud Account Connected'}
-                      </Text>
-                      <Text style={[styles.rowSubtitle, { color: colors.inkSecondary }]}>
-                        {lastSyncTime
-                          ? `Last synced: ${new Date(lastSyncTime).toLocaleDateString()} at ${new Date(lastSyncTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
-                          : 'Not synced yet'}
-                      </Text>
-                    </View>
-                  </View>
-                  <Pressable
-                    onPress={() => {
-                      promptModal.confirm({
-                        title: 'Sign Out of Vault?',
-                        message: 'Local devotional entries will remain safe on your device.',
-                        confirmText: 'Sign Out',
-                        cancelText: 'Cancel',
-                        onConfirm: () => {
-                          signOutCloud();
-                          toast.info('Signed Out', 'Cloud Vault disconnected.');
-                        },
-                      });
-                    }}
-                    hitSlop={6}
-                  >
-                    <Text style={{ fontFamily: FONTS.bodyBold, fontSize: 12, color: colors.tapeRhema }}>
-                      Sign Out
-                    </Text>
-                  </Pressable>
-                </View>
-
-                <View style={[styles.divider, { backgroundColor: colors.paperLine }]} />
-
-                {/* Sync Now Button */}
-                <Pressable
-                  onPress={handleSyncCloud}
-                  disabled={isSyncing}
-                  style={styles.rowItem}
-                >
-                  <View style={styles.rowLeft}>
-                    <View style={[styles.iconBox, { backgroundColor: isDark ? '#2A2520' : '#F5EFE6' }]}>
-                      {isSyncing ? (
-                        <ActivityIndicator size="small" color={colors.brandGreen} />
-                      ) : (
-                        <Ionicons name="cloud-upload-outline" size={17} color={colors.brandGreen} />
-                      )}
-                    </View>
-                    <View style={styles.rowTextCol}>
-                      <Text style={[styles.rowTitle, { color: colors.inkPrimary }]}>Sync Now</Text>
-                      <Text style={[styles.rowSubtitle, { color: colors.inkSecondary }]}>
-                        Encrypt and upload latest journal entries
-                      </Text>
-                    </View>
-                  </View>
-                  <Ionicons name="chevron-forward" size={16} color={colors.inkMuted} />
-                </Pressable>
-
-                <View style={[styles.divider, { backgroundColor: colors.paperLine }]} />
-
-                {/* Restore From Cloud Button */}
-                <Pressable
-                  onPress={handleRestoreCloud}
-                  disabled={isSyncing}
-                  style={styles.rowItem}
-                >
-                  <View style={styles.rowLeft}>
-                    <View style={[styles.iconBox, { backgroundColor: isDark ? '#2A2520' : '#F5EFE6' }]}>
-                      <Ionicons name="cloud-download-outline" size={17} color={colors.brandGreen} />
-                    </View>
-                    <View style={styles.rowTextCol}>
-                      <Text style={[styles.rowTitle, { color: colors.inkPrimary }]}>Restore from Cloud</Text>
-                      <Text style={[styles.rowSubtitle, { color: colors.inkSecondary }]}>
-                        Download your encrypted backup to this device
-                      </Text>
-                    </View>
-                  </View>
-                  <Ionicons name="chevron-forward" size={16} color={colors.inkMuted} />
-                </Pressable>
-              </>
-            ) : (
-              <Pressable
-                onPress={() => {
-                  if (!isPremium) {
-                    setIsPaywallOpen(true);
-                  } else {
-                    setIsCloudAuthOpen(true);
-                  }
-                }}
-                style={styles.rowItem}
-              >
-                <View style={styles.rowLeft}>
-                  <View style={[styles.iconBox, { backgroundColor: isPremium ? '#E8F5E9' : isDark ? '#2D2314' : '#F5E6CC' }]}>
-                    <Ionicons
-                      name={isPremium ? 'cloud-upload-outline' : 'lock-closed'}
-                      size={17}
-                      color={isPremium ? '#2E7D32' : '#C59B27'}
-                    />
-                  </View>
-                  <View style={styles.rowTextCol}>
-                    <Text style={[styles.rowTitle, { color: colors.inkPrimary }]}>
-                      {isPremium ? 'Connect Cloud Vault' : 'Encrypted Cloud Vault (Grace)'}
-                    </Text>
-                    <Text style={[styles.rowSubtitle, { color: colors.inkSecondary }]}>
-                      {isPremium
-                        ? 'Sign in to enable zero-knowledge multi-device sync'
-                        : 'Zero-knowledge encrypted cloud backup & restore'}
-                    </Text>
-                  </View>
-                </View>
-                <Ionicons name="chevron-forward" size={16} color={colors.inkMuted} />
-              </Pressable>
-            )}
-          </View>
-        </View>
 
         {/* ═══════════ SECTION 1: APPEARANCE & THEME ═══════════ */}
         <View style={styles.section}>
@@ -893,7 +706,7 @@ export function SettingsScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Ionicons name="server" size={16} color={colors.brandGreen} />
-            <Text style={[styles.sectionTitle, { color: colors.inkMuted }]}>DATA & STORAGE</Text>
+            <Text style={[styles.sectionTitle, { color: colors.inkMuted }]}>JOURNAL DATA & STORAGE</Text>
           </View>
 
           <View style={[styles.card, { backgroundColor: colors.cardBg, borderColor: colors.paperLine }]}>
@@ -955,9 +768,35 @@ export function SettingsScreen() {
                   )}
                 </View>
                 <View style={styles.rowTextCol}>
-                  <Text style={[styles.rowTitle, { color: colors.inkPrimary }]}>Export Journal Backup</Text>
+                  <Text style={[styles.rowTitle, { color: colors.inkPrimary }]}>Export Journal Backup (JSON)</Text>
                   <Text style={[styles.rowSubtitle, { color: colors.inkSecondary }]}>
-                    Save all devotions as JSON file
+                    Save all reflections locally or share backup file
+                  </Text>
+                </View>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={colors.inkMuted} />
+            </Pressable>
+
+            <View style={[styles.divider, { backgroundColor: colors.paperLine }]} />
+
+            {/* Import Journal */}
+            <Pressable
+              onPress={handleImportJournal}
+              disabled={isImporting}
+              style={styles.rowItem}
+            >
+              <View style={styles.rowLeft}>
+                <View style={[styles.iconBox, { backgroundColor: isDark ? '#2A2520' : '#F5EFE6' }]}>
+                  {isImporting ? (
+                    <ActivityIndicator size="small" color={colors.brandGreen} />
+                  ) : (
+                    <Ionicons name="cloud-upload-outline" size={17} color={colors.inkPrimary} />
+                  )}
+                </View>
+                <View style={styles.rowTextCol}>
+                  <Text style={[styles.rowTitle, { color: colors.inkPrimary }]}>Import Journal Backup (JSON)</Text>
+                  <Text style={[styles.rowSubtitle, { color: colors.inkSecondary }]}>
+                    Safely restore entries without overwriting existing data
                   </Text>
                 </View>
               </View>
@@ -1067,7 +906,7 @@ export function SettingsScreen() {
             <View style={styles.aboutBadgesGrid}>
               <View style={[styles.aboutBadgeItem, { backgroundColor: isDark ? '#26211C' : '#F5F0EA', borderColor: colors.paperLine }]}>
                 <Ionicons name="cloud-offline-outline" size={14} color={colors.brandGreen} />
-                <Text style={[styles.aboutBadgeText, { color: colors.inkPrimary }]}>100% Offline</Text>
+                <Text style={[styles.aboutBadgeText, { color: colors.inkPrimary }]}>Local-First</Text>
               </View>
 
               <View style={[styles.aboutBadgeItem, { backgroundColor: isDark ? '#26211C' : '#F5F0EA', borderColor: colors.paperLine }]}>
@@ -1083,7 +922,7 @@ export function SettingsScreen() {
               onPress={() => {
                 promptModal.info(
                   'Privacy Policy',
-                  'Selah is built on a Zero-Knowledge & Local-First philosophy:\n\n1. All scripture readings and local notes remain on your device by default.\n2. When using Cloud Vault, your devotions are encrypted with AES-256 before leaving your device.\n3. We never sell, track, or harvest personal devotional data.\n\nFor questions, contact support@selah.app'
+                  'Selah is designed as a local-first application:\n\n1. All scripture readings and journal reflections are stored locally on your device.\n2. Core Bible and devotional features work offline, while store services require network availability.\n3. We never sell, track, or harvest personal devotional data.\n\nFor questions, contact support@selah.app'
                 );
               }}
               style={styles.rowItem}
@@ -1095,7 +934,7 @@ export function SettingsScreen() {
                 <View style={styles.rowTextCol}>
                   <Text style={[styles.rowTitle, { color: colors.inkPrimary }]}>Privacy Policy</Text>
                   <Text style={[styles.rowSubtitle, { color: colors.inkSecondary }]}>
-                    Zero-knowledge encryption & data ownership
+                    Local-first privacy & data ownership
                   </Text>
                 </View>
               </View>
@@ -1108,7 +947,7 @@ export function SettingsScreen() {
               onPress={() => {
                 promptModal.info(
                   'Terms of Service',
-                  'Selah Grace Subscriptions & Purchases:\n\n1. Subscriptions auto-renew unless cancelled at least 24 hours before the period ends.\n2. Subscriptions can be managed or cancelled in Google Play / App Store account settings.\n3. Lifetime purchases grant perpetual access to all current and future Grace features.'
+                  'Selah Grace Purchases:\n\n1. Selah Grace is a one-time lifetime purchase with no recurring subscriptions.\n2. Lifetime access grants perpetual access to all current and future Selah Grace features.\n3. Purchases can be restored anytime on your devices using the Restore Purchases button.'
                 );
               }}
               style={styles.rowItem}
@@ -1120,7 +959,7 @@ export function SettingsScreen() {
                 <View style={styles.rowTextCol}>
                   <Text style={[styles.rowTitle, { color: colors.inkPrimary }]}>Terms of Service</Text>
                   <Text style={[styles.rowSubtitle, { color: colors.inkSecondary }]}>
-                    Subscription terms & store billing
+                    One-time lifetime purchase terms
                   </Text>
                 </View>
               </View>
@@ -1190,11 +1029,7 @@ export function SettingsScreen() {
         onClose={() => setIsPaywallOpen(false)}
       />
 
-      {/* Encrypted Cloud Vault Auth Modal */}
-      <CloudVaultAuthModal
-        visible={isCloudAuthOpen}
-        onClose={() => setIsCloudAuthOpen(false)}
-      />
+
 
     </View>
   );

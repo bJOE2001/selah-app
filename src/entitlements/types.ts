@@ -1,86 +1,62 @@
-/**
+﻿/**
  * Entitlement Types
  *
- * Central type definitions for the premium/free entitlement system.
- * All feature-gating across Selah reads from these types.
+ * Central type definitions for the Selah Grace lifetime purchase entitlement system.
  */
 
-/** Subscription tier identifiers matching RevenueCat product IDs */
-export type SubscriptionTier = 'free' | 'grace_monthly' | 'grace_annual' | 'patron_lifetime';
+import { PremiumFeature } from './featureGates';
+export { PremiumFeature };
 
-/** Where the entitlement status came from */
+/** RevenueCat Entitlement Identifier */
+export const SELAH_GRACE_ENTITLEMENT = 'selah_grace';
+
+/** Store Product Identifier for lifetime one-time purchase */
+export const SELAH_GRACE_PRODUCT_ID = 'selah_grace_lifetime';
+
+/** Subscription / Purchase tier identifier */
+export type SubscriptionTier = 'free' | 'selah_grace';
+
+/** Source of the entitlement */
 export type EntitlementSource =
   | 'revenueCat'   // Live entitlement from RevenueCat SDK
   | 'restored'     // Restored purchase via RevenueCat
-  | 'devOverride'  // Development-only override for testing
-  | 'none';        // No active entitlement (free user)
+  | 'devOverride'  // Development-only override for testing (__DEV__ only)
+  | 'none';        // Free user
 
 /** Structured entitlement info */
 export interface EntitlementInfo {
-  /** Whether the user currently has premium access */
+  /** Whether the user has unlocked Selah Grace */
+  isSelahGrace: boolean;
+
+  /** Alias for backward compatibility with existing UI components */
   isPremium: boolean;
 
-  /** The active subscription tier */
+  /** The active tier */
   tier: SubscriptionTier;
 
   /** Where the entitlement info originated */
   source: EntitlementSource;
 
-  /** ISO date string of when the current entitlement expires (null for lifetime or free) */
-  expiresAt: string | null;
-
-  /** Whether the subscription will auto-renew */
-  willRenew: boolean;
+  /** ISO date string of when the lifetime entitlement was activated */
+  purchasedAt: string | null;
 }
 
-/** Default entitlement for free/guest users */
+/** Default entitlement for free users */
 export const DEFAULT_ENTITLEMENT: EntitlementInfo = {
+  isSelahGrace: false,
   isPremium: false,
   tier: 'free',
   source: 'none',
-  expiresAt: null,
-  willRenew: false,
+  purchasedAt: null,
 };
 
-
 /**
- * Feature flags gated behind premium.
- * Used for granular feature checks across the app.
+ * Clean, decoupled store product information for UI rendering.
+ * Does NOT expose internal RevenueCat SDK packages to the UI layer.
  */
-export type PremiumFeature =
-  | 'unlimitedJournalPages'
-  | 'cloudVault'
-  | 'multiDeviceSync'
-  | 'luxuryCovers'
-  | 'ambientSoundscapes'
-  | 'patronBadge';
-
-/**
- * Map of which features each tier unlocks.
- * 'patron_lifetime' gets everything 'grace' gets plus the badge.
- */
-export const TIER_FEATURES: Record<SubscriptionTier, PremiumFeature[]> = {
-  free: [],
-  grace_monthly: [
-    'unlimitedJournalPages',
-    'cloudVault',
-    'multiDeviceSync',
-    'luxuryCovers',
-    'ambientSoundscapes',
-  ],
-  grace_annual: [
-    'unlimitedJournalPages',
-    'cloudVault',
-    'multiDeviceSync',
-    'luxuryCovers',
-    'ambientSoundscapes',
-  ],
-  patron_lifetime: [
-    'unlimitedJournalPages',
-    'cloudVault',
-    'multiDeviceSync',
-    'luxuryCovers',
-    'ambientSoundscapes',
-    'patronBadge',
-  ],
-};
+export interface StoreProductInfo {
+  productId: string;
+  priceString: string;
+  title: string;
+  description: string;
+}

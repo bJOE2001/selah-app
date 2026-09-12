@@ -1,5 +1,7 @@
-// Entitlements — Premium/Free feature gating
+// Entitlements — Selah Grace feature gating & lifetime purchase
 export * from './types';
-export * from './store';
+export * from './featureGates';
+export * from './entitlementStore';
+export * from './entitlementHooks';
 export * from './revenueCatService';
 export * from './components/PaywallModal';

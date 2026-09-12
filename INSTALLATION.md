@@ -2,7 +2,7 @@
 
 > *Pause, Reflect & Praise*
 
-Welcome to **Selah: Bible & Devotional**, an aesthetic devotional journaling and Scripture reader app built with **React Native**, **Expo SDK 54**, **Expo Router**, **TypeScript**, and **Expo SQLite**.
+Welcome to **Selah: Bible & Devotional**, an aesthetic devotional journaling and Scripture reader app built with **React Native**, **Expo SDK 57**, **Expo Router**, **TypeScript**, and **Expo SQLite**.
 
 This guide walks you through setting up, configuring, and running the project from scratch on your local development machine.
 
@@ -175,7 +175,6 @@ selah-app/
 │   ├── devotional-core/        # Devotional models, CRUD layer & Zustand state
 │   ├── journal-history/        # Timeline, search, calendar & filtering
 │   ├── notebook-editor/        # Devotional journaling editor
-│   ├── privacy-lock/           # Biometrics & PIN authentication layer
 │   ├── settings/               # User settings and preferences
 │   └── utils/                  # Shared helper functions
 ├── scripts/                    # Database seeding and compilation scripts
@@ -191,14 +190,13 @@ selah-app/
 
 | Category | Technology |
 |---|---|
-| **Framework** | [React Native 0.81](https://reactnative.dev/) / [Expo SDK 54](https://docs.expo.dev/) |
+| **Framework** | [React Native 0.86](https://reactnative.dev/) / [Expo SDK 57](https://docs.expo.dev/) |
 | **Routing** | [Expo Router v6](https://docs.expo.dev/router/introduction/) |
 | **Language** | [TypeScript](https://www.typescriptlang.org/) |
 | **Local Database** | [Expo SQLite](https://docs.expo.dev/versions/latest/sdk/sqlite/) |
 | **State Management** | [Zustand](https://github.com/pmndrs/zustand) & [TanStack Query v5](https://tanstack.com/query) |
 | **Animations** | [React Native Reanimated](https://docs.swmansion.com/react-native-reanimated/) |
 | **Typography** | Playfair Display, Lora, Caveat (`@expo-google-fonts/*`) |
-| **Security & Biometrics**| [Expo Local Authentication](https://docs.expo.dev/versions/latest/sdk/local-authentication/) |
 
 ---
 
@@ -228,11 +226,7 @@ The app copies `assets/db/KJV.db` to the device's sandbox on first boot. If the 
 1. Uninstall the app from Expo Go / Emulator.
 2. Re-run `npx expo start -c` and open the app fresh.
 
-### 3. Biometric / Privacy Lock on Simulators
-- **iOS Simulator:** In the top menu, go to **Features** ➔ **Face ID** / **Touch ID** ➔ **Enrolled**, then trigger **Matching Touch** / **Face**.
-- **Android Emulator:** Set up a fingerprint or PIN under **Settings** ➔ **Security** inside the emulator.
-
-### 4. Native Dependency Compilation Issues
+### 3. Native Dependency Compilation Issues
 The project uses pure JavaScript/TypeScript packages for cross-platform compatibility and Node.js 22 built-in `node:sqlite` for backend seeding scripts. If you ever experience native build script issues during installation, use:
 ```bash
 npm install --ignore-scripts

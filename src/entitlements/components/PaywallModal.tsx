@@ -7,21 +7,21 @@ import {
   Pressable,
   ScrollView,
   ActivityIndicator,
-  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme, toast, promptModal } from '../../design-system';
 import { FONTS } from '../../design-system/tokens/typography';
 import { SPACING, RADIUS, SHADOWS } from '../../design-system/tokens/spacing';
-import { SubscriptionTier } from '../types';
 import {
   getOfferings,
-  purchasePackage,
+  purchaseSelahGrace,
   restorePurchases,
-  PaywallPackage,
+  StoreProductInfo,
+  isExpoGo,
 } from '../revenueCatService';
-import { useEntitlementStore } from '../store';
+import { useEntitlementStore } from '../entitlementStore';
+import { useSelahGrace } from '../entitlementHooks';
 
 export interface PaywallModalProps {
   visible: boolean;
@@ -29,131 +29,86 @@ export interface PaywallModalProps {
   triggerFeature?: string;
 }
 
-interface TierDisplayOption {
-  tier: SubscriptionTier;
-  badge?: string;
-  title: string;
-  priceDisplay: string;
-  subtext: string;
-  rcPackage?: PaywallPackage;
-}
-
-const FALLBACK_TIERS: TierDisplayOption[] = [
+const SELAH_GRACE_PERKS = [
   {
-    tier: 'grace_annual',
-    badge: 'MOST POPULAR • SAVE 44%',
-    title: 'Annual Pass',
-    priceDisplay: '$19.99 / year',
-    subtext: 'Includes 7-day free trial ($1.66/mo)',
-  },
-  {
-    tier: 'grace_monthly',
-    title: 'Monthly Pass',
-    priceDisplay: '$2.99 / month',
-    subtext: 'Billed monthly, cancel anytime',
-  },
-  {
-    tier: 'patron_lifetime',
-    badge: 'LIFETIME OWNERSHIP',
-    title: 'Lifetime Pass',
-    priceDisplay: '$49.99',
-    subtext: 'One-time payment, forever yours',
-  },
-];
-
-const PREMIUM_PERKS = [
-  {
-    icon: 'cloud-done-outline',
-    title: 'Automatic Cloud Backup',
-    desc: 'Never lose a single entry. Your journal is safely backed up and synced across all your devices.',
+    icon: 'infinite-outline',
+    title: 'Unlimited Devotional Entries',
+    desc: 'Never run out of room for prayer and daily reflection. Write freely without page limits.',
   },
   {
     icon: 'book-outline',
-    title: 'Luxury Leather & Vintage Covers',
-    desc: 'Unlock all premium leather, gold foil embossing, and vintage journal designs.',
+    title: 'Premium Notebook Designs & Materials',
+    desc: 'Handcrafted leather grains, archival parchment, and elegant notebook styling.',
+  },
+  {
+    icon: 'sparkles-outline',
+    title: 'Sacred Cover Emblems',
+    desc: 'Adorn your journal with gold-foil stamped crosses, doves, and sacred scripture seals.',
+  },
+  {
+    icon: 'color-palette-outline',
+    title: 'Themes & Personalization',
+    desc: 'Access curated typography pairings and tranquil devotional color themes.',
+  },
+  {
+    icon: 'leaf-outline',
+    title: 'Future Selah Grace Features',
+    desc: 'All upcoming craft improvements and grace additions are included forever.',
   },
 ];
 
 export function PaywallModal({ visible, onClose, triggerFeature }: PaywallModalProps) {
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
-  const [selectedTier, setSelectedTier] = useState<SubscriptionTier>('grace_annual');
-  const [packages, setPackages] = useState<PaywallPackage[]>([]);
-  const [isLoadingOfferings, setIsLoadingOfferings] = useState(false);
+  const [productInfo, setProductInfo] = useState<StoreProductInfo | null>(null);
+  const [isLoadingProduct, setIsLoadingProduct] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const isPremium = useEntitlementStore((s) => s.isPremium());
+  const isGraceUnlocked = useSelahGrace();
 
   useEffect(() => {
     if (visible) {
-      loadOfferings();
+      loadProduct();
     }
   }, [visible]);
 
-  const loadOfferings = async () => {
-    setIsLoadingOfferings(true);
+  const loadProduct = async () => {
+    setIsLoadingProduct(true);
     try {
-      const fetchedPackages = await getOfferings();
-      if (fetchedPackages.length > 0) {
-        setPackages(fetchedPackages);
+      const info = await getOfferings();
+      if (info) {
+        setProductInfo(info);
       }
     } catch (e) {
-      console.warn('Paywall offering load notice:', e);
+      if (__DEV__) {
+        console.warn('Offering load notice:', e);
+      }
     } finally {
-      setIsLoadingOfferings(false);
+      setIsLoadingProduct(false);
     }
   };
-
-  // Combine fetched RevenueCat packages with fallback metadata
-  const displayedTiers: TierDisplayOption[] = FALLBACK_TIERS.map((fallback) => {
-    const matchedPkg = packages.find((p) => p.tier === fallback.tier);
-    if (matchedPkg && matchedPkg.priceString) {
-      return {
-        ...fallback,
-        priceDisplay:
-          fallback.tier === 'grace_annual'
-            ? `${matchedPkg.priceString} / year`
-            : fallback.tier === 'grace_monthly'
-            ? `${matchedPkg.priceString} / month`
-            : matchedPkg.priceString,
-        rcPackage: matchedPkg,
-      };
-    }
-    return fallback;
-  });
 
   const handlePurchase = async () => {
     setIsProcessing(true);
     try {
-      const selectedOption = displayedTiers.find((t) => t.tier === selectedTier);
-
-      if (selectedOption?.rcPackage) {
-        // Live RevenueCat purchase flow
-        const success = await purchasePackage(selectedOption.rcPackage);
-        if (success) {
-          toast.success('Welcome to Selah Grace!', 'Your premium features are now active.');
-          onClose();
-        }
-      } else {
-        // Fallback sandbox / dev notice if RevenueCat offerings are not configured yet
-        if (__DEV__) {
-          useEntitlementStore.getState().setEntitlement({
-            isPremium: true,
-            tier: selectedTier,
-            source: 'devOverride',
-            expiresAt: null,
-            willRenew: true,
-          });
-          toast.success('[DEV] Premium Activated', 'Mock subscription activated for testing.');
+      const result = await purchaseSelahGrace();
+      if (result.success) {
+        toast.success('Welcome to Selah Grace', 'Your lifetime access is now active.');
+        onClose();
+      } else if (result.userCancelled) {
+        // User cancelled in store dialog — no intrusive alert needed
+      } else if (result.error) {
+        if (__DEV__ && isExpoGo) {
+          // In Expo Go sandbox, provide dev activation
+          useEntitlementStore.getState().setDevOverride(true);
+          toast.success('[DEV] Selah Grace Active', 'Activated via developer override in Expo Go.');
           onClose();
         } else {
-          toast.info('Connecting to Store', 'Store billing is initializing. Please try again in a moment.');
+          promptModal.error('Purchase Could Not Complete', result.error);
         }
       }
     } catch (err: any) {
-      if (!err?.userCancelled) {
-        promptModal.error('Purchase Failed', err?.message || 'Unable to complete transaction. Please check your payment method.');
-      }
+      promptModal.error('Purchase Failed', err?.message || 'Unable to complete transaction.');
     } finally {
       setIsProcessing(false);
     }
@@ -162,12 +117,17 @@ export function PaywallModal({ visible, onClose, triggerFeature }: PaywallModalP
   const handleRestore = async () => {
     setIsProcessing(true);
     try {
-      const restored = await restorePurchases();
-      if (restored) {
-        toast.success('Purchases Restored', 'Your previous subscription has been restored.');
+      const result = await restorePurchases();
+      if (result.success) {
+        toast.success('Purchases Restored', 'Your Selah Grace lifetime access has been restored.');
         onClose();
+      } else if (result.error) {
+        promptModal.info('Restore Status', result.error);
       } else {
-        promptModal.info('No Active Subscription', 'We could not find any active Selah subscriptions for your store account.');
+        promptModal.info(
+          'No Prior Purchase Found',
+          'We could not find an active Selah Grace purchase for your App Store / Google Play account.'
+        );
       }
     } catch (err: any) {
       promptModal.error('Restore Error', err?.message || 'Unable to restore purchases at this time.');
@@ -177,6 +137,8 @@ export function PaywallModal({ visible, onClose, triggerFeature }: PaywallModalP
   };
 
   if (!visible) return null;
+
+  const priceLabel = productInfo?.priceString ? productInfo.priceString : null;
 
   return (
     <Modal
@@ -195,7 +157,7 @@ export function PaywallModal({ visible, onClose, triggerFeature }: PaywallModalP
           },
         ]}
       >
-        {/* Top Header Bar */}
+        {/* Top Navigation Bar */}
         <View style={styles.topBar}>
           <Pressable
             onPress={onClose}
@@ -204,6 +166,7 @@ export function PaywallModal({ visible, onClose, triggerFeature }: PaywallModalP
               { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' },
             ]}
             hitSlop={12}
+            accessibilityLabel="Close"
           >
             <Ionicons name="close" size={22} color={colors.inkPrimary} />
           </Pressable>
@@ -219,7 +182,7 @@ export function PaywallModal({ visible, onClose, triggerFeature }: PaywallModalP
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* Header Title Section */}
+          {/* Header Section */}
           <View style={styles.heroHeader}>
             <View style={[styles.iconBadge, { backgroundColor: isDark ? '#2D2314' : '#F5E6CC' }]}>
               <Ionicons name="ribbon-outline" size={32} color="#C59B27" />
@@ -228,82 +191,72 @@ export function PaywallModal({ visible, onClose, triggerFeature }: PaywallModalP
               Selah Grace
             </Text>
             <Text style={[styles.heroSubtitle, { color: colors.inkSecondary }]}>
-              Deepen your spiritual walk with luxury notebook craftsmanship, daily devotions, and automatic cloud backups.
+              A little more room for what matters.
             </Text>
+            <Text style={[styles.heroBody, { color: colors.inkMuted }]}>
+              Unlock the complete Selah journaling experience.
+            </Text>
+
             {triggerFeature && (
-              <View style={[styles.triggerBadge, { backgroundColor: isDark ? 'rgba(197, 155, 39, 0.15)' : 'rgba(197, 155, 39, 0.12)' }]}>
-                <Ionicons name="lock-closed" size={14} color="#C59B27" style={{ marginRight: 6 }} />
+              <View
+                style={[
+                  styles.triggerBadge,
+                  {
+                    backgroundColor: isDark
+                      ? 'rgba(197, 155, 39, 0.15)'
+                      : 'rgba(197, 155, 39, 0.12)',
+                  },
+                ]}
+              >
+                <Ionicons name="lock-closed" size={13} color="#C59B27" style={{ marginRight: 6 }} />
                 <Text style={styles.triggerText}>
-                  Unlock {triggerFeature} & all premium features
+                  Unlock {triggerFeature} & all Selah Grace features
                 </Text>
               </View>
             )}
           </View>
 
-          {/* Pricing Options Cards */}
-          <View style={styles.tiersContainer}>
-            {displayedTiers.map((tier) => {
-              const isSelected = selectedTier === tier.tier;
-              return (
-                <Pressable
-                  key={tier.tier}
-                  onPress={() => setSelectedTier(tier.tier)}
-                  style={[
-                    styles.tierCard,
-                    {
-                      backgroundColor: isDark ? '#1C1914' : '#FFFFFF',
-                      borderColor: isSelected ? '#C59B27' : isDark ? '#2E2820' : '#EAE3D5',
-                      borderWidth: isSelected ? 2 : 1,
-                    },
-                    isSelected && styles.tierCardSelected,
-                  ]}
-                >
-                  {tier.badge && (
-                    <View
-                      style={[
-                        styles.badgeContainer,
-                        {
-                          backgroundColor:
-                            tier.tier === 'grace_annual' ? '#C59B27' : isDark ? '#3D3425' : '#4A3B2C',
-                        },
-                      ]}
-                    >
-                      <Text style={styles.badgeText}>{tier.badge}</Text>
-                    </View>
-                  )}
+          {/* Single Lifetime Offer Card */}
+          <View
+            style={[
+              styles.offerCard,
+              {
+                backgroundColor: isDark ? '#1C1914' : '#FFFFFF',
+                borderColor: '#C59B27',
+              },
+            ]}
+          >
+            <View style={styles.badgeContainer}>
+              <Text style={styles.badgeText}>LIFETIME ACCESS • ONE-TIME PURCHASE</Text>
+            </View>
 
-                  <View style={styles.tierRow}>
-                    <View style={styles.tierInfo}>
-                      <Text style={[styles.tierTitle, { color: colors.inkPrimary }]}>
-                        {tier.title}
-                      </Text>
-                      <Text style={[styles.tierSubtext, { color: colors.inkSecondary }]}>
-                        {tier.subtext}
-                      </Text>
-                    </View>
-                    <View style={styles.tierPriceCol}>
-                      <Text style={[styles.tierPrice, { color: colors.inkPrimary }]}>
-                        {tier.priceDisplay}
-                      </Text>
-                      <View
-                        style={[
-                          styles.radioCircle,
-                          {
-                            borderColor: isSelected ? '#C59B27' : isDark ? '#554C3F' : '#CCC2B0',
-                            backgroundColor: isSelected ? '#C59B27' : 'transparent',
-                          },
-                        ]}
-                      >
-                        {isSelected && <Ionicons name="checkmark" size={14} color="#FFFFFF" />}
-                      </View>
-                    </View>
-                  </View>
-                </Pressable>
-              );
-            })}
+            <View style={styles.offerRow}>
+              <View style={styles.offerInfo}>
+                <Text style={[styles.offerTitle, { color: colors.inkPrimary }]}>
+                  Selah Grace
+                </Text>
+                <Text style={[styles.offerSubtext, { color: colors.inkSecondary }]}>
+                  Pay once, keep forever. No subscriptions.
+                </Text>
+              </View>
+
+              <View style={styles.offerPriceCol}>
+                {isLoadingProduct ? (
+                  <ActivityIndicator size="small" color="#C59B27" />
+                ) : priceLabel ? (
+                  <Text style={[styles.offerPrice, { color: colors.inkPrimary }]}>
+                    {priceLabel}
+                  </Text>
+                ) : (
+                  <Text style={[styles.offerPriceFallback, { color: colors.inkPrimary }]}>
+                    Lifetime
+                  </Text>
+                )}
+              </View>
+            </View>
           </View>
 
-          {/* Feature List */}
+          {/* Included Features */}
           <View
             style={[
               styles.featuresBox,
@@ -314,12 +267,17 @@ export function PaywallModal({ visible, onClose, triggerFeature }: PaywallModalP
             ]}
           >
             <Text style={[styles.featuresHeader, { color: colors.inkPrimary }]}>
-              Included in Selah Grace:
+              Included with Selah Grace:
             </Text>
 
-            {PREMIUM_PERKS.map((perk, idx) => (
+            {SELAH_GRACE_PERKS.map((perk, idx) => (
               <View key={idx} style={styles.perkRow}>
-                <View style={[styles.perkIconWrap, { backgroundColor: isDark ? '#292218' : '#ECE2CF' }]}>
+                <View
+                  style={[
+                    styles.perkIconWrap,
+                    { backgroundColor: isDark ? '#292218' : '#ECE2CF' },
+                  ]}
+                >
                   <Ionicons name={perk.icon as any} size={18} color="#C59B27" />
                 </View>
                 <View style={styles.perkTextWrap}>
@@ -334,7 +292,7 @@ export function PaywallModal({ visible, onClose, triggerFeature }: PaywallModalP
             ))}
           </View>
 
-          {/* Ad-Free Sanctuary Mission Note */}
+          {/* Ad-Free Sanctuary Commitment */}
           <View
             style={[
               styles.missionCard,
@@ -358,11 +316,11 @@ export function PaywallModal({ visible, onClose, triggerFeature }: PaywallModalP
               </Text>
             </View>
             <Text style={[styles.missionBody, { color: colors.inkSecondary }]}>
-              Selah is crafted independently with no advertisements, trackers, or commercial noise. Your membership directly sustains this sacred, distraction-free space for quiet communion with God.
+              Selah is crafted independently with no advertisements, trackers, or commercial noise. Your one-time contribution directly sustains this sacred, distraction-free space for quiet communion with God.
             </Text>
           </View>
 
-          {/* Testimonial / Quiet Time Note */}
+          {/* Scripture Footer */}
           <View style={styles.scriptureFooter}>
             <Text style={[styles.scriptureQuote, { color: colors.inkSecondary }]}>
               “Thy word is a lamp unto my feet, and a light unto my path.”
@@ -371,6 +329,24 @@ export function PaywallModal({ visible, onClose, triggerFeature }: PaywallModalP
               — Psalm 119:105
             </Text>
           </View>
+
+          {/* Dev Mode Override Toggle */}
+          {__DEV__ && (
+            <View style={styles.devSection}>
+              <Pressable
+                onPress={() => {
+                  const current = useEntitlementStore.getState().devOverride;
+                  useEntitlementStore.getState().setDevOverride(!current);
+                  toast.info('[DEV]', `Selah Grace override: ${!current ? 'ACTIVE' : 'DISABLED'}`);
+                }}
+                style={styles.devButton}
+              >
+                <Text style={styles.devButtonText}>
+                  [DEV] Toggle Selah Grace Override ({isGraceUnlocked ? 'ON' : 'OFF'})
+                </Text>
+              </Pressable>
+            </View>
+          )}
         </ScrollView>
 
         {/* Bottom CTA Action Area */}
@@ -387,22 +363,25 @@ export function PaywallModal({ visible, onClose, triggerFeature }: PaywallModalP
             onPress={handlePurchase}
             disabled={isProcessing}
             style={[styles.ctaButton, { backgroundColor: '#8B3A2B' }]}
+            accessibilityRole="button"
           >
             {isProcessing ? (
               <ActivityIndicator color="#FFFFFF" />
             ) : (
               <Text style={styles.ctaButtonText}>
-                {selectedTier === 'grace_annual'
-                  ? 'Start 7-Day Free Trial'
-                  : selectedTier === 'patron_lifetime'
-                  ? 'Get Lifetime Access'
-                  : 'Subscribe Monthly'}
+                {priceLabel ? `Unlock Selah Grace • ${priceLabel}` : 'Unlock Selah Grace'}
               </Text>
             )}
           </Pressable>
 
+          <Pressable onPress={onClose} style={styles.dismissButton} hitSlop={8}>
+            <Text style={[styles.dismissText, { color: colors.inkMuted }]}>
+              Maybe later
+            </Text>
+          </Pressable>
+
           <Text style={[styles.legalText, { color: colors.inkMuted }]}>
-            Cancel anytime in Google Play / App Store Settings. Payment charged upon purchase.
+            One-time purchase • Lifetime access • No subscriptions
           </Text>
         </View>
       </View>
@@ -454,11 +433,17 @@ const styles = StyleSheet.create({
   },
   heroTitle: {
     fontFamily: FONTS.sectionHeader,
-    fontSize: 26,
+    fontSize: 28,
     textAlign: 'center',
     marginBottom: SPACING.xs,
   },
   heroSubtitle: {
+    fontFamily: FONTS.bodyBold,
+    fontSize: 15,
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  heroBody: {
     fontFamily: FONTS.body,
     fontSize: 14,
     textAlign: 'center',
@@ -478,23 +463,19 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#C59B27',
   },
-  tiersContainer: {
-    gap: 12,
-    marginBottom: SPACING.xl,
-  },
-  tierCard: {
+  offerCard: {
     borderRadius: RADIUS.lg,
     padding: SPACING.md,
+    borderWidth: 2,
+    marginBottom: SPACING.lg,
     position: 'relative',
-    ...SHADOWS.subtle,
-  },
-  tierCardSelected: {
     ...SHADOWS.card,
   },
   badgeContainer: {
     position: 'absolute',
     top: -10,
-    right: 16,
+    left: 16,
+    backgroundColor: '#C59B27',
     paddingHorizontal: 10,
     paddingVertical: 3,
     borderRadius: RADIUS.sm,
@@ -505,40 +486,37 @@ const styles = StyleSheet.create({
     fontSize: 10,
     letterSpacing: 0.5,
   },
-  tierRow: {
+  offerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingTop: 6,
   },
-  tierInfo: {
+  offerInfo: {
     flex: 1,
     paddingRight: SPACING.sm,
   },
-  tierTitle: {
+  offerTitle: {
     fontFamily: FONTS.sectionHeader,
-    fontSize: 17,
+    fontSize: 18,
     marginBottom: 2,
   },
-  tierSubtext: {
+  offerSubtext: {
     fontFamily: FONTS.body,
     fontSize: 12,
   },
-  tierPriceCol: {
+  offerPriceCol: {
     alignItems: 'flex-end',
-    flexDirection: 'row',
-    gap: 10,
-  },
-  tierPrice: {
-    fontFamily: FONTS.bodyBold,
-    fontSize: 15,
-  },
-  radioCircle: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 2,
-    alignItems: 'center',
     justifyContent: 'center',
+    minWidth: 70,
+  },
+  offerPrice: {
+    fontFamily: FONTS.bodyBold,
+    fontSize: 20,
+  },
+  offerPriceFallback: {
+    fontFamily: FONTS.bodyBold,
+    fontSize: 16,
   },
   featuresBox: {
     borderRadius: RADIUS.lg,
@@ -622,6 +600,22 @@ const styles = StyleSheet.create({
     fontSize: 11,
     marginTop: 4,
   },
+  devSection: {
+    marginTop: SPACING.sm,
+    marginBottom: SPACING.sm,
+    alignItems: 'center',
+  },
+  devButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    backgroundColor: 'rgba(0,0,0,0.06)',
+    borderRadius: RADIUS.sm,
+  },
+  devButtonText: {
+    fontFamily: FONTS.body,
+    fontSize: 11,
+    color: '#888',
+  },
   bottomActionArea: {
     paddingHorizontal: SPACING.lg,
     paddingTop: SPACING.md,
@@ -640,11 +634,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     letterSpacing: 0.3,
   },
+  dismissButton: {
+    alignItems: 'center',
+    paddingVertical: 8,
+    marginTop: 4,
+  },
+  dismissText: {
+    fontFamily: FONTS.body,
+    fontSize: 13,
+  },
   legalText: {
     fontFamily: FONTS.body,
     fontSize: 10,
     textAlign: 'center',
-    marginTop: 8,
+    marginTop: 4,
     lineHeight: 14,
   },
 });

@@ -126,3 +126,13 @@ export async function toggleBookmarkDevotional(
   ]);
   return isBookmarked;
 }
+
+/**
+ * Get total number of devotional entries
+ */
+export async function getDevotionalCount(db: SQLiteDatabase): Promise<number> {
+  const row = await db.getFirstAsync<{ count: number }>(
+    "SELECT COUNT(*) as count FROM devotionals;"
+  );
+  return row?.count ?? 0;
+}

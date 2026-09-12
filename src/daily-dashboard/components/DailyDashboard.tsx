@@ -8,7 +8,7 @@ import { DashboardHeader } from './DashboardHeader';
 import { WeeklyStreakTracker } from './WeeklyStreakTracker';
 import { QuickEntry } from './QuickEntry';
 import { EntryCard } from '../../journal-history/components/EntryCard';
-import { useRecentDevotionals } from '../../devotional-core/hooks';
+import { useRecentDevotionals, useDevotionalCount } from '../../devotional-core/hooks';
 import { useDraftStore } from '../../devotional-core/store';
 import { useSettingsStore } from '../../settings/store';
 import { RhemaGuideModal } from '../../devotional-guide';
@@ -26,11 +26,12 @@ export function DailyDashboard() {
   const { colors, isDark } = useTheme();
   const isPremium = useIsPremium();
   const { data: entries } = useRecentDevotionals(20);
+  const { data: totalDevotionalCount = 0 } = useDevotionalCount();
   const { reset } = useDraftStore();
   const { hasSeenRhemaGuide, setHasSeenRhemaGuide } = useSettingsStore();
   const { lastBookId, lastBookName, lastChapter, lastReadAt } = useReadingStore();
   const [isPaywallOpen, setIsPaywallOpen] = useState(false);
-  const [paywallFeature, setPaywallFeature] = useState('Automatic Cloud Backup');
+  const [paywallFeature, setPaywallFeature] = useState('Unlimited Devotional Pages');
   const [isRhemaGuideOpen, setIsRhemaGuideOpen] = useState(false);
 
   // Auto-show Rhema Method Walkthrough on First Launch / Devotion
@@ -152,6 +153,11 @@ export function DailyDashboard() {
         {/* 3. Bento Action Hub: Begin Devotion & Holy Scripture (Dynamic Resume) + Rhema Method Guide */}
         <QuickEntry
           onStartDevotion={() => {
+            if (!isPremium && totalDevotionalCount >= 30) {
+              setPaywallFeature('Unlimited Devotional Pages');
+              setIsPaywallOpen(true);
+              return;
+            }
             reset();
             router.push('/devotional/new');
           }}
@@ -181,7 +187,7 @@ export function DailyDashboard() {
             totalEntries={(entries || []).length}
             streakDays={currentWeekDays.length}
             onUpgrade={() => {
-              setPaywallFeature('Milestone: Automatic Cloud Backup');
+              setPaywallFeature('Milestone: Unlimited Devotional Pages');
               setIsPaywallOpen(true);
             }}
           />

@@ -74,3 +74,13 @@ export function useToggleBookmarkDevotional() {
     },
   });
 }
+
+export function useDevotionalCount() {
+  return useQuery({
+    queryKey: ['devotionals', 'count'],
+    queryFn: async () => {
+      const db = await getUserDatabase();
+      return queries.getDevotionalCount(db);
+    },
+  });
+}

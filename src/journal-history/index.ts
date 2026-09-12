@@ -1,5 +1,4 @@
 export * from './components/EntryCard';
-export * from './components/JournalCalendar';
 export * from './components/EntryTimeline';
 export * from './components/NotebookBookView';
 export * from './components/DogEarFold';
@@ -7,3 +6,4 @@ export * from './components/NotebookPageFrame';
 export * from './components/EditJournalCoverModal';
 export * from './components/BookmarkIndexModal';
 export * from './components/TableOfContentsModal';
+export * from './backupService';
