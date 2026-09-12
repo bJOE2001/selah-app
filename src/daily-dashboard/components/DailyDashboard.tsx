@@ -25,7 +25,7 @@ export function DailyDashboard() {
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
   const isPremium = useIsPremium();
-  const { data: entries } = useRecentDevotionals(20);
+  const { data: entries } = useRecentDevotionals(100);
   const { data: totalDevotionalCount = 0 } = useDevotionalCount();
   const { reset } = useDraftStore();
   const { hasSeenRhemaGuide, setHasSeenRhemaGuide } = useSettingsStore();
@@ -216,15 +216,15 @@ export function DailyDashboard() {
             )}
           </View>
 
-          {(entries || []).length > 0 ? (
-            (entries || []).slice(0, 3).map((entry) => (
+          {entries && entries.length > 0 ? (
+            entries.slice(0, 3).map((entry) => (
               <EntryCard
                 key={entry.id}
                 entry={entry}
                 onPress={() => router.push(`/devotional/${entry.id}` as any)}
               />
             ))
-          ) : (
+          ) : entries && entries.length === 0 ? (
             <View
               style={[
                 styles.emptyCard,
@@ -273,7 +273,7 @@ export function DailyDashboard() {
                 <Text style={styles.emptyButtonText}>Begin Devotion</Text>
               </Pressable>
             </View>
-          )}
+          ) : null}
         </View>
       </ScrollView>
 

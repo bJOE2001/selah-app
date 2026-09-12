@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,7 +20,7 @@ export default function CalendarTabScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
-  const { data: entries } = useRecentDevotionals(150);
+  const { data: entries, isLoading } = useRecentDevotionals(100);
   const { data: totalDevotionalCount = 0 } = useDevotionalCount();
   const deleteMutation = useDeleteDevotional();
   const [selectedDate, setSelectedDate] = useState<string>('');
@@ -353,7 +353,11 @@ export default function CalendarTabScreen() {
         ) : null}
 
         {/* All Entries Section (when no date is selected) */}
-        {!selectedDate && (entries || []).length > 0 ? (
+        {!selectedDate && isLoading && !entries ? (
+          <View style={styles.loadingPlaceholder}>
+            <ActivityIndicator size="small" color={colors.brandGreen} />
+          </View>
+        ) : !selectedDate && (entries || []).length > 0 ? (
           <View style={styles.allEntriesSection}>
             <View style={styles.allEntriesHeaderRow}>
               <Text style={[styles.allEntriesTitle, { color: colors.inkPrimary }]}>
@@ -653,5 +657,10 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.bodyBold,
     fontSize: 11,
     fontWeight: '700',
+  },
+  loadingPlaceholder: {
+    paddingVertical: SPACING.xl,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

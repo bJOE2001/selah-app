@@ -15,8 +15,6 @@ import {
   VerseList,
   TranslationPickerModal,
 } from '../../src/bible-reader';
-import { useDraftStore } from '../../src/devotional-core/store';
-import { useRecentDevotionals } from '../../src/devotional-core/hooks';
 import {
   useIsPremium,
   PaywallModal,
@@ -38,7 +36,6 @@ export default function BibleTabScreen() {
   const { setLastRead } = useReadingStore();
 
   const isPremium = useIsPremium();
-  const { data: recentEntries } = useRecentDevotionals(100);
 
   const { selectedTranslation, setTranslation } = useTranslationStore();
   const {

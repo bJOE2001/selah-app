@@ -3,13 +3,17 @@ import { getUserDatabase } from '../bible-data/db';
 import * as queries from './queries';
 import { DevotionalDraft, DevotionalSummary } from './types';
 
-export function useRecentDevotionals(limit: number = 50) {
+export const DEFAULT_DEVOTIONAL_LIMIT = 100;
+
+export function useRecentDevotionals(limit: number = DEFAULT_DEVOTIONAL_LIMIT) {
   return useQuery({
     queryKey: ['devotionals', 'recent', limit],
     queryFn: async () => {
       const db = await getUserDatabase();
       return queries.getRecentDevotionals(db, limit);
     },
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 30,
   });
 }
 
@@ -21,6 +25,8 @@ export function useDevotional(id: string | null) {
       const db = await getUserDatabase();
       return queries.getDevotionalById(db, id);
     },
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 30,
     enabled: !!id,
   });
 }
@@ -82,5 +88,7 @@ export function useDevotionalCount() {
       const db = await getUserDatabase();
       return queries.getDevotionalCount(db);
     },
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 30,
   });
 }

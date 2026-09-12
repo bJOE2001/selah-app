@@ -23,6 +23,8 @@ import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useState } from "react";
 import "react-native-get-random-values";
+import { Ionicons } from "@expo/vector-icons";
+import { Asset } from "expo-asset";
 
 import { NavigationBar, setStyle as setNavigationBarStyle } from "expo-navigation-bar";
 import * as SystemUI from "expo-system-ui";
@@ -60,7 +62,8 @@ if (__DEV__) {
   };
 }
 
-import { initDatabase } from "../src/bible-data/db";
+import { initDatabase, getUserDatabase } from "../src/bible-data/db";
+import { getRecentDevotionals, getDevotionalCount } from "../src/devotional-core/queries";
 import {
     PromptModal,
     ToastNotificationContainer,
@@ -79,6 +82,8 @@ const queryClient = new QueryClient({
     queries: {
       retry: 1,
       refetchOnWindowFocus: false,
+      staleTime: 1000 * 60 * 5,
+      gcTime: 1000 * 60 * 30,
     },
   },
 });
@@ -88,6 +93,7 @@ export default function RootLayout() {
   const [isOpeningComplete, setIsOpeningComplete] = useState(false);
 
   const [fontsLoaded, fontError] = useFonts({
+    ...Ionicons.font,
     CormorantGaramond_400Regular,
     CormorantGaramond_400Regular_Italic,
     CormorantGaramond_600SemiBold,
@@ -132,7 +138,29 @@ export default function RootLayout() {
         } else if (Platform.OS === "web" && typeof document !== "undefined") {
           document.body.style.backgroundColor = colors.paperBg;
         }
+
+        // Initialize SQLite databases
         await initDatabase();
+        const userDb = await getUserDatabase();
+
+        // Preload devotional queries & essential mascot images simultaneously during opening screen
+        // This ensures Today, Journal, and Calendar tabs render with 100% real data on frame 1 without delay or layout pop-in
+        await Promise.allSettled([
+          queryClient.prefetchQuery({
+            queryKey: ['devotionals', 'recent', 100],
+            queryFn: () => getRecentDevotionals(userDb, 100),
+          }),
+          queryClient.prefetchQuery({
+            queryKey: ['devotionals', 'count'],
+            queryFn: () => getDevotionalCount(userDb),
+          }),
+          Asset.loadAsync([
+            require("../assets/images/mascot_waving_transparent.webp"),
+            require("../assets/images/mascot_whispering_transparent.webp"),
+            require("../assets/images/mascot-holding-bible-transparent.png"),
+          ]),
+        ]);
+
         initRevenueCat().catch((rcErr) => console.warn("RevenueCat init warning:", rcErr));
         setDbReady(true);
       } catch (e) {

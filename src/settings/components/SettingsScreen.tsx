@@ -25,7 +25,7 @@ import { TranslationPickerModal } from '../../bible-reader/components/Translatio
 import { EditJournalCoverModal, exportJournalToJson, importJournalFromJson } from '../../journal-history';
 import { DevotionalTimePickerModal } from './DevotionalTimePickerModal';
 import { getUserDatabase } from '../../bible-data/db';
-import { useRecentDevotionals } from '../../devotional-core/hooks';
+import { useDevotionalCount } from '../../devotional-core/hooks';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSettingsStore, ThemeMode } from '../store';
 import { useTheme, promptModal, toast, JournalToggle, ThemeSegmentedControl } from '../../design-system';
@@ -169,7 +169,7 @@ export function SettingsScreen() {
 
   // Devotionals stats
   const queryClient = useQueryClient();
-  const { data: entries } = useRecentDevotionals(200);
+  const { data: totalDevotionalCount = 0 } = useDevotionalCount();
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [isClearingDownloads, setIsClearingDownloads] = useState(false);
@@ -752,7 +752,7 @@ export function SettingsScreen() {
             {/* Storage Stats Row */}
             <View style={styles.statsOverviewRow}>
               <View style={styles.statMiniCard}>
-                <Text style={[styles.statMiniNumber, { color: colors.inkPrimary }]}>{(entries || []).length}</Text>
+                <Text style={[styles.statMiniNumber, { color: colors.inkPrimary }]}>{totalDevotionalCount}</Text>
                 <Text style={[styles.statMiniLabel, { color: colors.inkMuted }]}>Devotional Entries</Text>
               </View>
               <View style={[styles.statMiniDivider, { backgroundColor: colors.paperLine }]} />

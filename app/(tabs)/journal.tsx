@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -13,7 +13,7 @@ export default function JournalTabScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
-  const { data: entries } = useRecentDevotionals(100);
+  const { data: entries, isLoading } = useRecentDevotionals(100);
   const { data: totalDevotionalCount = 0 } = useDevotionalCount();
   const isPremium = useIsPremium();
   const [viewMode, setViewMode] = useState<'notebook' | 'timeline'>('notebook');
@@ -136,7 +136,11 @@ export default function JournalTabScreen() {
 
       {/* Main Journal View */}
       <View style={styles.mainViewArea}>
-        {viewMode === 'notebook' ? (
+        {isLoading && !entries ? (
+          <View style={[styles.loadingArea, { backgroundColor: colors.paperBg }]}>
+            <ActivityIndicator size="small" color={colors.brandGreen} />
+          </View>
+        ) : viewMode === 'notebook' ? (
           <NotebookBookView
             entries={entries || []}
             onSelectEntry={(id) => router.push(`/devotional/${id}` as any)}
@@ -264,5 +268,10 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.bodyBold,
     fontSize: 9,
     letterSpacing: 0.5,
+  },
+  loadingArea: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
