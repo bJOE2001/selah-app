@@ -23,9 +23,9 @@ interface TabConfig {
 const TAB_CONFIGS: Record<string, TabConfig> = {
   index: {
     name: 'index',
-    label: 'Home',
-    activeIcon: 'home',
-    inactiveIcon: 'home-outline',
+    label: 'Today',
+    activeIcon: 'sunny',
+    inactiveIcon: 'sunny-outline',
   },
   bible: {
     name: 'bible',

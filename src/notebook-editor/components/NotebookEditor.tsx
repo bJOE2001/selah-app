@@ -22,6 +22,7 @@ import { RADIUS, SHADOWS, SPACING } from "../../design-system/tokens/spacing";
 import { FONTS } from "../../design-system/tokens/typography";
 import {
   useSaveDevotional,
+  useDeleteDevotional,
 } from "../../devotional-core/hooks";
 import { useDraftStore } from "../../devotional-core/store";
 
@@ -82,8 +83,11 @@ export function NotebookEditor({ onSaveSuccess }: NotebookEditorProps) {
   const isKeyboardOpenRef = useRef<boolean>(false);
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState<number>(0);
+  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving'>('saved');
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const saveMutation = useSaveDevotional();
+  const deleteMutation = useDeleteDevotional();
 
   /**
    * Smoothly keeps the active typing cursor in view with generous breathing room above the keyboard.
@@ -162,6 +166,11 @@ export function NotebookEditor({ onSaveSuccess }: NotebookEditorProps) {
 
   const handleNotesChange = (text: string) => {
     setNotes(text);
+    setSaveStatus('saving');
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    saveTimeoutRef.current = setTimeout(() => {
+      setSaveStatus('saved');
+    }, 700);
     requestAnimationFrame(() => {
       scrollToCursor(selectionRef.current.start, false);
     });
@@ -280,9 +289,19 @@ export function NotebookEditor({ onSaveSuccess }: NotebookEditorProps) {
           </Pressable>
 
           <View style={styles.centerTitleGroup}>
-            <Text style={[styles.centerTitleText, { color: colors.inkMuted }]}>
+            <Text style={[styles.centerTitleText, { color: colors.inkPrimary }]}>
               {editingDevotionalId ? 'EDIT ENTRY' : 'DEVOTIONAL'}
             </Text>
+            <View style={styles.autoSaveRow}>
+              <Ionicons
+                name={saveStatus === 'saved' ? "shield-checkmark-outline" : "ellipse"}
+                size={8}
+                color={saveStatus === 'saved' ? colors.brandGreen : colors.brandGold}
+              />
+              <Text style={[styles.autoSaveText, { color: colors.inkMuted }]}>
+                {saveStatus === 'saved' ? 'Saved locally' : 'Saving...'}
+              </Text>
+            </View>
           </View>
 
           <View style={styles.topRightActions}>
@@ -304,6 +323,44 @@ export function NotebookEditor({ onSaveSuccess }: NotebookEditorProps) {
                 <Text style={[styles.dismissKeyText, { color: colors.inkSecondary }]}>
                   Done
                 </Text>
+              </Pressable>
+            ) : null}
+
+            {editingDevotionalId ? (
+              <Pressable
+                onPress={() => {
+                  try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); } catch {}
+                  promptModal.confirm({
+                    title: "Delete Devotional?",
+                    message: "Are you sure you want to delete this devotional reflection? This action cannot be undone.",
+                    confirmText: "Delete",
+                    cancelText: "Keep Writing",
+                    isDestructive: true,
+                    onConfirm: async () => {
+                      try {
+                        await deleteMutation.mutateAsync(editingDevotionalId);
+                        reset();
+                        toast.success("Entry Deleted", "The devotional reflection was removed.");
+                        router.replace('/(tabs)/journal');
+                      } catch {
+                        toast.error("Error", "Could not delete entry.");
+                      }
+                    },
+                  });
+                }}
+                style={({ pressed }) => [
+                  styles.deletePillBtn,
+                  {
+                    backgroundColor: colors.cardBg,
+                    borderColor: colors.paperLine,
+                  },
+                  pressed && { opacity: 0.7 },
+                ]}
+                hitSlop={6}
+                accessibilityRole="button"
+                accessibilityLabel="Delete devotional entry"
+              >
+                <Ionicons name="trash-outline" size={15} color={colors.tapeRhema} />
               </Pressable>
             ) : null}
 
@@ -433,6 +490,17 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     letterSpacing: 1,
   },
+  autoSaveRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 2,
+  },
+  autoSaveText: {
+    fontFamily: FONTS.body,
+    fontSize: 9.5,
+    fontWeight: '500',
+  },
   topRightActions: {
     flexDirection: "row",
     alignItems: "center",
@@ -452,6 +520,15 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.bodyBold,
     fontSize: 11.5,
     fontWeight: "700",
+  },
+  deletePillBtn: {
+    paddingHorizontal: 9,
+    paddingVertical: 6,
+    borderRadius: RADIUS.pill,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...SHADOWS.subtle,
   },
   saveButton: {
     flexDirection: "row",

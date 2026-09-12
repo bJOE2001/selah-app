@@ -38,44 +38,45 @@ export function WeeklyStreakTracker({
               style={[
                 styles.iconCircle,
                 {
-                  backgroundColor: isDark ? 'rgba(230, 188, 92, 0.18)' : '#FFF7E6',
-                  borderColor: isDark ? 'rgba(230, 188, 92, 0.35)' : '#FFE3A8',
+                  backgroundColor: isDark ? 'rgba(82, 167, 82, 0.18)' : colors.brandGreenLight,
+                  borderColor: isDark ? 'rgba(82, 167, 82, 0.35)' : '#D0E6D4',
                 },
               ]}
             >
-              <Ionicons name="sparkles" size={11} color={colors.brandGold} />
+              <Ionicons name="leaf-outline" size={11} color={colors.brandGreen} />
             </View>
-            <Text style={[styles.title, { color: colors.inkPrimary }]}>Weekly Devotion</Text>
+            <View>
+              <Text style={[styles.title, { color: colors.inkPrimary }]}>Your rhythm this week</Text>
+              <Text style={[styles.subtitle, { color: colors.inkSecondary }]}>
+                Moments you've spent in Scripture
+              </Text>
+            </View>
           </View>
 
-          {/* Dynamic Streak Badge */}
+          {/* Devotional Rhythm Badge */}
           <View
             style={[
               styles.summaryBadgeContainer,
               {
-                backgroundColor: streakDays > 0
-                  ? (isDark ? 'rgba(255, 112, 67, 0.16)' : '#FFF3E0')
-                  : (isDark ? 'rgba(82, 167, 82, 0.16)' : '#EBF6ED'),
-                borderColor: streakDays > 0
-                  ? (isDark ? 'rgba(255, 112, 67, 0.35)' : '#FFE0B2')
-                  : (isDark ? 'rgba(82, 167, 82, 0.32)' : '#D0EBD5'),
+                backgroundColor: isDark ? 'rgba(82, 167, 82, 0.16)' : '#EBF6ED',
+                borderColor: isDark ? 'rgba(82, 167, 82, 0.32)' : '#D0EBD5',
               },
             ]}
           >
             <Ionicons
-              name={streakDays > 0 ? 'flame' : 'leaf-outline'}
+              name={completedCount > 0 ? 'leaf' : 'flower-outline'}
               size={12}
-              color={streakDays > 0 ? colors.flameOrange : colors.brandGreen}
+              color={colors.brandGreen}
             />
             <Text
               style={[
                 styles.summaryBadgeText,
-                { color: streakDays > 0 ? colors.flameOrange : colors.brandGreen },
+                { color: colors.brandGreen },
               ]}
             >
-              {streakDays > 0
-                ? `${streakDays} ${streakDays === 1 ? 'Day' : 'Days'} Consistent`
-                : 'Start your streak'}
+              {completedCount > 0
+                ? `${completedCount} of 7 days paused`
+                : 'A quiet space to pause'}
             </Text>
           </View>
         </View>
@@ -176,8 +177,8 @@ export function WeeklyStreakTracker({
               ]}
             />
           </View>
-          <Text style={[styles.progressText, { color: colors.inkMuted }]}>
-            {completedCount}/7 Days Completed
+          <Text style={[styles.progressText, { color: colors.inkSecondary, fontStyle: 'italic' }]}>
+            “Every pause is a step of faith.”
           </Text>
         </View>
       </View>
@@ -219,6 +220,11 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.sectionHeader,
     fontSize: 13.5,
     fontWeight: '700',
+  },
+  subtitle: {
+    fontFamily: FONTS.body,
+    fontSize: 10.5,
+    marginTop: 1,
   },
   summaryBadgeContainer: {
     flexDirection: 'row',

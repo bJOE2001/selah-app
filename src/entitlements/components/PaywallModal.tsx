@@ -335,14 +335,21 @@ export function PaywallModal({ visible, onClose, triggerFeature }: PaywallModalP
             <View style={styles.devSection}>
               <Pressable
                 onPress={() => {
-                  const current = useEntitlementStore.getState().devOverride;
-                  useEntitlementStore.getState().setDevOverride(!current);
-                  toast.info('[DEV]', `Selah Grace override: ${!current ? 'ACTIVE' : 'DISABLED'}`);
+                  const store = useEntitlementStore.getState();
+                  const isCurrentlyUnlocked = store.isSelahGrace();
+                  if (isCurrentlyUnlocked) {
+                    store.setDevOverride(false);
+                    store.clearEntitlement();
+                    toast.info('[DEV] Mode', 'Returned to Free Tier (30-entry limit active)');
+                  } else {
+                    store.setDevOverride(true);
+                    toast.info('[DEV] Mode', 'Unlocked Selah Grace (Unlimited entries active)');
+                  }
                 }}
                 style={styles.devButton}
               >
                 <Text style={styles.devButtonText}>
-                  [DEV] Toggle Selah Grace Override ({isGraceUnlocked ? 'ON' : 'OFF'})
+                  [DEV] Toggle Selah Grace ({isGraceUnlocked ? 'ON (Tap for Free)' : 'OFF (Tap for Grace)'})
                 </Text>
               </Pressable>
             </View>

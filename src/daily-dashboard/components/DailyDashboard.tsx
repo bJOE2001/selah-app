@@ -14,7 +14,7 @@ import { useSettingsStore } from '../../settings/store';
 import { RhemaGuideModal } from '../../devotional-guide';
 import { useReadingStore } from '../../bible-data/readingStore';
 import { MilestoneCelebrationCard } from './MilestoneCelebrationCard';
-import { useIsPremium, PaywallModal } from '../../entitlements';
+import { useIsPremium, PaywallModal, canCreateDevotional } from '../../entitlements';
 import { useTheme } from '../../design-system';
 import { FONTS } from '../../design-system/tokens/typography';
 import { SPACING, RADIUS, SHADOWS } from '../../design-system/tokens/spacing';
@@ -153,7 +153,7 @@ export function DailyDashboard() {
         {/* 3. Bento Action Hub: Begin Devotion & Holy Scripture (Dynamic Resume) + Rhema Method Guide */}
         <QuickEntry
           onStartDevotion={() => {
-            if (!isPremium && totalDevotionalCount >= 30) {
+            if (!canCreateDevotional(totalDevotionalCount, isPremium)) {
               setPaywallFeature('Unlimited Devotional Pages');
               setIsPaywallOpen(true);
               return;
@@ -182,28 +182,28 @@ export function DailyDashboard() {
         />
 
         {/* 5. Spiritual Milestone Celebration (Free users only) */}
-        {!isPremium && (entries || []).length > 0 ? (
+        {!isPremium && totalDevotionalCount > 0 ? (
           <MilestoneCelebrationCard
-            totalEntries={(entries || []).length}
+            totalEntries={totalDevotionalCount}
             streakDays={currentWeekDays.length}
             onUpgrade={() => {
-              setPaywallFeature('Milestone: Unlimited Devotional Pages');
+              setPaywallFeature('Unlimited Devotional Pages');
               setIsPaywallOpen(true);
             }}
           />
         ) : null}
 
-        {/* 6. Recent Devotions Section (Latest 3) */}
-        {(entries || []).length > 0 ? (
-          <View style={styles.recentSection}>
-            <View style={styles.sectionHeaderRow}>
-              <View style={styles.sectionTitleGroup}>
-                <Ionicons name="journal-outline" size={15} color={colors.tapeRhema} />
-                <Text style={[styles.sectionTitle, { color: colors.inkPrimary }]}>
-                  Recent Devotions
-                </Text>
-              </View>
+        {/* 6. Recent Reflections Section */}
+        <View style={styles.recentSection}>
+          <View style={styles.sectionHeaderRow}>
+            <View style={styles.sectionTitleGroup}>
+              <Ionicons name="journal-outline" size={15} color={colors.brandGreen} />
+              <Text style={[styles.sectionTitle, { color: colors.inkPrimary }]}>
+                Recent reflections
+              </Text>
+            </View>
 
+            {(entries || []).length > 0 && (
               <Pressable
                 onPress={() => router.push('/(tabs)/journal')}
                 style={styles.viewAllButton}
@@ -213,17 +213,68 @@ export function DailyDashboard() {
                   View all →
                 </Text>
               </Pressable>
-            </View>
+            )}
+          </View>
 
-            {(entries || []).slice(0, 3).map((entry) => (
+          {(entries || []).length > 0 ? (
+            (entries || []).slice(0, 3).map((entry) => (
               <EntryCard
                 key={entry.id}
                 entry={entry}
                 onPress={() => router.push(`/devotional/${entry.id}` as any)}
               />
-            ))}
-          </View>
-        ) : null}
+            ))
+          ) : (
+            <View
+              style={[
+                styles.emptyCard,
+                {
+                  backgroundColor: colors.cardBg,
+                  borderColor: colors.paperLine,
+                },
+              ]}
+            >
+              <View
+                style={[
+                  styles.emptyIconCircle,
+                  {
+                    backgroundColor: isDark ? 'rgba(82, 167, 82, 0.16)' : colors.brandGreenLight,
+                    borderColor: isDark ? 'rgba(82, 167, 82, 0.3)' : '#D0E6D4',
+                  },
+                ]}
+              >
+                <Ionicons name="leaf-outline" size={20} color={colors.brandGreen} />
+              </View>
+              <Text style={[styles.emptyTitle, { color: colors.inkPrimary }]}>
+                Your first reflection is waiting.
+              </Text>
+              <Text style={[styles.emptySubtitle, { color: colors.inkSecondary }]}>
+                Take a quiet moment to read Scripture and capture what God is placing on your heart today.
+              </Text>
+              <Pressable
+                onPress={() => {
+                  if (!canCreateDevotional(totalDevotionalCount, isPremium)) {
+                    setPaywallFeature('Unlimited Devotional Pages');
+                    setIsPaywallOpen(true);
+                    return;
+                  }
+                  reset();
+                  router.push('/devotional/new');
+                }}
+                style={({ pressed }) => [
+                  styles.emptyButton,
+                  {
+                    backgroundColor: colors.brandGreen,
+                  },
+                  pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] },
+                ]}
+              >
+                <Ionicons name="create-outline" size={14} color="#FFFFFF" />
+                <Text style={styles.emptyButtonText}>Begin Devotion</Text>
+              </Pressable>
+            </View>
+          )}
+        </View>
       </ScrollView>
 
       {/* Selah Grace Paywall Modal */}
@@ -350,5 +401,52 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.bodyBold,
     fontSize: 11.5,
     fontWeight: '700',
+  },
+  emptyCard: {
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    padding: SPACING.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    textAlign: 'center',
+    ...SHADOWS.card,
+  },
+  emptyIconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: SPACING.sm,
+  },
+  emptyTitle: {
+    fontFamily: FONTS.sectionHeader,
+    fontSize: 15,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: 6,
+  },
+  emptySubtitle: {
+    fontFamily: FONTS.body,
+    fontSize: 12.5,
+    lineHeight: 18,
+    textAlign: 'center',
+    maxWidth: 280,
+    marginBottom: SPACING.base,
+  },
+  emptyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: RADIUS.pill,
+  },
+  emptyButtonText: {
+    fontFamily: FONTS.bodyBold,
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
 });

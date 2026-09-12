@@ -91,8 +91,8 @@ export function MilestoneCelebrationCard({
     : `${totalEntries} ${totalEntries === 1 ? 'Devotion' : 'Devotions'} Recorded`;
 
   const milestoneSubtitle = isStreak
-    ? 'You are building a consistent, sacred habit. Keep your prayers and devotional walk protected forever.'
-    : 'Your journal is becoming a precious spiritual archive. Ensure you never lose a single entry if you switch phones.';
+    ? 'You are building a quiet, faithful rhythm in Scripture. Unlock unlimited devotional pages with Selah Grace.'
+    : 'Your journal is growing into a treasured spiritual archive. Continue recording every reflection with Selah Grace.';
 
   return (
     <View style={styles.container}>
@@ -158,8 +158,8 @@ export function MilestoneCelebrationCard({
             pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] },
           ]}
         >
-          <Ionicons name="shield-checkmark" size={14} color="#FFFFFF" />
-          <Text style={styles.ctaButtonText}>Protect My Journal with Cloud Backup</Text>
+          <Ionicons name="sparkles" size={14} color="#FFFFFF" />
+          <Text style={styles.ctaButtonText}>Unlock Unlimited Devotions</Text>
           <Ionicons name="arrow-forward" size={13} color="#FFFFFF" />
         </Pressable>
       </View>

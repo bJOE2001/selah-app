@@ -3,16 +3,17 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { DevotionalSummary } from '../../devotional-core/types';
-import { useTheme } from '../../design-system';
+import { promptModal, useTheme } from '../../design-system';
 import { FONTS } from '../../design-system/tokens/typography';
 import { SPACING, RADIUS, SHADOWS } from '../../design-system/tokens/spacing';
 
 export interface EntryCardProps {
   entry: DevotionalSummary;
   onPress: () => void;
+  onDelete?: (id: string) => void;
 }
 
-export function EntryCard({ entry, onPress }: EntryCardProps) {
+export function EntryCard({ entry, onPress, onDelete }: EntryCardProps) {
   const { colors, isDark } = useTheme();
   const dateObj = new Date(entry.createdAt);
   const formattedDate = dateObj.toLocaleDateString('en-US', {
@@ -32,6 +33,24 @@ export function EntryCard({ entry, onPress }: EntryCardProps) {
     onPress();
   };
 
+  const handleDelete = () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    } catch {}
+    if (onDelete) {
+      promptModal.confirm({
+        title: "Delete Devotional?",
+        message: "Are you sure you want to delete this devotional reflection? This action cannot be undone.",
+        confirmText: "Delete",
+        cancelText: "Keep Entry",
+        isDestructive: true,
+        onConfirm: () => {
+          onDelete(entry.id);
+        },
+      });
+    }
+  };
+
   const fullText = (entry.notes || entry.notesPreview || '').trim();
   const rawLines = fullText.split('\n').map((l) => l.trim()).filter(Boolean);
   const hasMultipleLines = rawLines.length > 1;
@@ -44,6 +63,7 @@ export function EntryCard({ entry, onPress }: EntryCardProps) {
   return (
     <Pressable
       onPress={handlePress}
+      onLongPress={onDelete ? handleDelete : undefined}
       style={({ pressed }) => [
         styles.card,
         {
@@ -84,6 +104,21 @@ export function EntryCard({ entry, onPress }: EntryCardProps) {
             </View>
           ) : null}
         </View>
+
+        {onDelete ? (
+          <Pressable
+            onPress={handleDelete}
+            style={({ pressed }) => [
+              styles.deleteBtn,
+              pressed && { opacity: 0.6 },
+            ]}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Delete reflection"
+          >
+            <Ionicons name="trash-outline" size={14} color={colors.inkMuted} />
+          </Pressable>
+        ) : null}
       </View>
 
       <Text
@@ -177,5 +212,9 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.bodyBold,
     fontSize: 9,
     fontWeight: '700',
+  },
+  deleteBtn: {
+    padding: 4,
+    borderRadius: RADIUS.pill,
   },
 });

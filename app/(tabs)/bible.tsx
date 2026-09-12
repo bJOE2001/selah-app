@@ -156,29 +156,57 @@ export default function BibleTabScreen() {
           </View>
         </View>
       ) : (
-        /* Minimal Breadcrumb Bar in Reading / Chapter View */
+        /* Editorial Hierarchical Breadcrumb Bar */
         <View style={styles.breadcrumbBar}>
-          <Pressable
-            onPress={handleBack}
-            style={({ pressed }) => [
-              styles.backButton,
-              pressed && { opacity: 0.7 },
-            ]}
-            hitSlop={8}
-          >
-            <Ionicons name="chevron-back" size={18} color={colors.brandGreen} />
-            <Text style={[styles.backButtonText, { color: colors.brandGreen }]}>
-              {selectedChapter !== null ? selectedBook.name : 'Books'}
-            </Text>
-          </Pressable>
+          <View style={styles.breadcrumbRow}>
+            <Pressable
+              onPress={() => {
+                try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+                setSelectedChapter(null);
+                setSelectedBook(null);
+              }}
+              style={({ pressed }) => [styles.breadcrumbItem, pressed && { opacity: 0.7 }]}
+              hitSlop={6}
+              accessibilityRole="button"
+              accessibilityLabel="Back to Books"
+            >
+              <Ionicons name="chevron-back" size={15} color={colors.brandGreen} style={{ marginRight: 2 }} />
+              <Text style={[styles.breadcrumbLink, { color: colors.brandGreen }]}>Books</Text>
+            </Pressable>
+
+            <Ionicons name="chevron-forward" size={11} color={colors.inkMuted} style={{ marginHorizontal: 2 }} />
+
+            <Pressable
+              onPress={() => {
+                try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+                setSelectedChapter(null);
+              }}
+              style={({ pressed }) => [styles.breadcrumbItem, pressed && { opacity: 0.7 }]}
+              hitSlop={6}
+              accessibilityRole="button"
+              accessibilityLabel={`Select chapter in ${selectedBook.name}`}
+            >
+              <Text
+                style={[
+                  selectedChapter !== null ? styles.breadcrumbLink : styles.breadcrumbCurrent,
+                  { color: selectedChapter !== null ? colors.brandGreen : colors.inkPrimary },
+                ]}
+              >
+                {selectedBook.name}
+              </Text>
+            </Pressable>
+
+            {selectedChapter !== null ? (
+              <>
+                <Ionicons name="chevron-forward" size={11} color={colors.inkMuted} style={{ marginHorizontal: 2 }} />
+                <Text style={[styles.breadcrumbCurrent, { color: colors.inkPrimary }]}>
+                  Ch. {selectedChapter}
+                </Text>
+              </>
+            ) : null}
+          </View>
 
           <View style={styles.rightHeaderGroup}>
-            {selectedChapter !== null ? (
-              <Text style={[styles.breadcrumbTitle, { color: colors.inkMuted }]}>
-                Ch. {selectedChapter}
-              </Text>
-            ) : null}
-
             {/* Translation Pill in Chapter View */}
             <Pressable
               onPress={() => {
@@ -191,6 +219,8 @@ export default function BibleTabScreen() {
                 pressed && { opacity: 0.8 },
               ]}
               hitSlop={6}
+              accessibilityRole="button"
+              accessibilityLabel={`Current translation: ${selectedTranslation.code}. Tap to switch.`}
             >
               <Text style={[styles.chapterVersionText, { color: colors.brandGreen }]}>{selectedTranslation.code}</Text>
               <Ionicons name="chevron-down" size={10} color={colors.brandGreen} />
@@ -297,6 +327,7 @@ export default function BibleTabScreen() {
             setLastRead(targetBook.id, targetBook.name, targetChapter);
           }}
           onOpenTranslationPicker={() => setIsTranslationPickerOpen(true)}
+          onOpenPaywall={() => setIsPaywallOpen(true)}
         />
       )}
 
@@ -385,14 +416,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 2,
     marginBottom: SPACING.xs,
   },
-  backButton: {
+  breadcrumbRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
+    flex: 1,
+    flexWrap: 'nowrap',
   },
-  backButtonText: {
+  breadcrumbItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  breadcrumbLink: {
     fontFamily: FONTS.bodyBold,
-    fontSize: 14,
+    fontSize: 13.5,
+    fontWeight: '700',
+  },
+  breadcrumbCurrent: {
+    fontFamily: FONTS.sectionHeader,
+    fontSize: 13.5,
     fontWeight: '700',
   },
   rightHeaderGroup: {

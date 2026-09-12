@@ -5,14 +5,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Calendar } from 'react-native-calendars';
-import { useRecentDevotionals, useDevotionalCount } from '../../src/devotional-core/hooks';
+import { useRecentDevotionals, useDevotionalCount, useDeleteDevotional } from '../../src/devotional-core/hooks';
 import { EntryCard } from '../../src/journal-history/components/EntryCard';
-import { useTheme } from '../../src/design-system';
+import { useTheme, toast } from '../../src/design-system';
 import { FONTS } from '../../src/design-system/tokens/typography';
 import { SPACING, RADIUS, SHADOWS } from '../../src/design-system/tokens/spacing';
 import {
   useIsPremium,
   PaywallModal,
+  canCreateDevotional,
 } from '../../src/entitlements';
 
 export default function CalendarTabScreen() {
@@ -21,13 +22,23 @@ export default function CalendarTabScreen() {
   const { colors, isDark } = useTheme();
   const { data: entries } = useRecentDevotionals(150);
   const { data: totalDevotionalCount = 0 } = useDevotionalCount();
+  const deleteMutation = useDeleteDevotional();
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [activeFilter, setActiveFilter] = useState<'all' | 'bookmarked'>('all');
   const [isPaywallOpen, setIsPaywallOpen] = useState(false);
 
   const isPremium = useIsPremium();
   const totalEntriesCount = (entries || []).length;
-  const isPageLimitReached = !isPremium && totalDevotionalCount >= 30;
+  const isPageLimitReached = !canCreateDevotional(totalDevotionalCount, isPremium);
+
+  const handleDeleteEntry = async (id: string) => {
+    try {
+      await deleteMutation.mutateAsync(id);
+      toast.success('Devotional Deleted', 'Your reflection was removed.');
+    } catch (err) {
+      toast.error('Error', 'Could not delete devotional entry.');
+    }
+  };
 
   const handleStartNew = () => {
     try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
@@ -60,7 +71,7 @@ export default function CalendarTabScreen() {
     todayTextColor: colors.brandGreen,
     dayTextColor: colors.inkPrimary,
     textDisabledColor: colors.inkPlaceholder,
-    dotColor: colors.tapeRhema,
+    dotColor: colors.brandGreen,
     selectedDotColor: '#FFFFFF',
     arrowColor: colors.brandGreen,
     disabledArrowColor: colors.inkPlaceholder,
@@ -123,7 +134,7 @@ export default function CalendarTabScreen() {
     },
   }), [colors]);
 
-  // Build marked dates for calendar
+  // Build marked dates for calendar with serene sanctuary green dots
   const markedDates = useMemo(() => {
     const marks: Record<string, any> = {};
 
@@ -132,7 +143,7 @@ export default function CalendarTabScreen() {
       if (dateKey) {
         marks[dateKey] = {
           marked: true,
-          dotColor: colors.tapeRhema,
+          dotColor: colors.brandGreen,
         };
       }
     }
@@ -295,6 +306,7 @@ export default function CalendarTabScreen() {
                     key={entry.id}
                     entry={entry}
                     onPress={() => router.push(`/devotional/${entry.id}` as any)}
+                    onDelete={handleDeleteEntry}
                   />
                 ))}
               </View>
@@ -316,13 +328,13 @@ export default function CalendarTabScreen() {
                     },
                   ]}
                 >
-                  <Ionicons name="book-outline" size={22} color={colors.brandGreen} />
+                  <Ionicons name="leaf-outline" size={22} color={colors.brandGreen} />
                 </View>
                 <Text style={[styles.emptySelectedTitle, { color: colors.inkPrimary }]}>
-                  No Devotional on this Day
+                  No devotions on this day
                 </Text>
                 <Text style={[styles.emptySelectedText, { color: colors.inkSecondary }]}>
-                  Spend a peaceful moment in the Word and record what God speaks to you.
+                  There is always room for a quiet moment. Take time to rest in His word and capture your prayer.
                 </Text>
                 <Pressable
                   onPress={handleStartNew}
@@ -333,7 +345,7 @@ export default function CalendarTabScreen() {
                   ]}
                 >
                   <Ionicons name="create-outline" size={15} color="#FFFFFF" />
-                  <Text style={styles.writeEntryBtnText}>Write Devotion</Text>
+                  <Text style={styles.writeEntryBtnText}>Begin Devotion</Text>
                 </Pressable>
               </View>
             )}
@@ -416,6 +428,7 @@ export default function CalendarTabScreen() {
                 key={entry.id}
                 entry={entry}
                 onPress={() => router.push(`/devotional/${entry.id}` as any)}
+                onDelete={handleDeleteEntry}
               />
             ))}
           </View>

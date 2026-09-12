@@ -258,7 +258,7 @@ export function DashboardHeader({ onOpenGuide }: DashboardHeaderProps) {
 
                   {/* Main Headline */}
                   <Text style={[styles.headline, { color: colors.inkPrimary }]}>
-                    Quiet Time with God
+                    Take a moment to be still.
                   </Text>
 
                   {/* Inspiring Scripture Whisper */}
@@ -377,19 +377,22 @@ export function DashboardHeader({ onOpenGuide }: DashboardHeaderProps) {
                 </Text>
               </View>
 
-              {/* Hint badge before first tap */}
+              {/* Gentle whisper hint before first interaction */}
               {!hasInteracted && !showWhisper && (
                 <View
                   style={[
                     styles.tapHintBadge,
                     {
-                      backgroundColor: isDark ? '#F59E0B' : '#E6A23C',
+                      backgroundColor: isDark ? 'rgba(212, 175, 55, 0.28)' : 'rgba(230, 162, 60, 0.2)',
+                      borderColor: isDark ? 'rgba(212, 175, 55, 0.45)' : 'rgba(230, 162, 60, 0.4)',
                     },
                   ]}
                 >
                   <View style={styles.tapHintContent}>
-                    <Ionicons name="sparkles" size={9} color="#FFFFFF" />
-                    <Text style={styles.tapHintText}>Tap me!</Text>
+                    <Ionicons name="sparkles" size={8} color={isDark ? '#F5D061' : '#B45309'} />
+                    <Text style={[styles.tapHintText, { color: isDark ? '#F5D061' : '#B45309' }]}>
+                      Pause
+                    </Text>
                   </View>
                 </View>
               )}
@@ -531,93 +534,93 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   mascotArea: {
-    width: 124,
-    height: 124,
+    width: 96,
+    height: 96,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
-    marginLeft: 2,
+    marginLeft: 4,
   },
   outerAura: {
     position: 'absolute',
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 92,
+    height: 92,
+    borderRadius: 46,
     borderWidth: 1,
   },
   meadowPod: {
     position: 'absolute',
-    width: 104,
-    height: 104,
-    borderRadius: 52,
-    borderWidth: 1.5,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 1.2,
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
   },
   sunbeamCircle: {
     position: 'absolute',
-    width: 86,
-    height: 86,
-    borderRadius: 43,
-    borderWidth: 1,
-    top: 4,
+    width: 66,
+    height: 66,
+    borderRadius: 33,
+    borderWidth: 0.8,
+    top: 3,
   },
   pastoralPedestal: {
     position: 'absolute',
-    bottom: -8,
-    width: 110,
-    height: 34,
-    borderRadius: 17,
+    bottom: -6,
+    width: 84,
+    height: 26,
+    borderRadius: 13,
   },
   sparkleTopRight: {
     position: 'absolute',
-    top: 2,
-    right: 6,
+    top: 0,
+    right: 4,
     zIndex: 2,
   },
   sparkleTopLeft: {
     position: 'absolute',
-    top: 8,
-    left: 8,
+    top: 6,
+    left: 4,
     zIndex: 2,
   },
   mascotImage: {
-    width: 106,
-    height: 106,
+    width: 82,
+    height: 82,
     zIndex: 3,
   },
   nameRibbon: {
     position: 'absolute',
-    bottom: -2,
+    bottom: -4,
     alignSelf: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 1.5,
+    paddingHorizontal: 7,
+    paddingVertical: 1,
     borderRadius: RADIUS.pill,
-    borderWidth: 1,
+    borderWidth: 0.8,
     zIndex: 4,
     ...SHADOWS.subtle,
   },
   nameRibbonText: {
     fontFamily: FONTS.bodyBold,
-    fontSize: 9,
+    fontSize: 8.5,
     fontWeight: '700',
     letterSpacing: 0.3,
   },
   tapHintBadge: {
     position: 'absolute',
-    top: -4,
+    top: -6,
     right: -2,
     paddingHorizontal: 6,
-    paddingVertical: 2,
+    paddingVertical: 1.5,
     borderRadius: RADIUS.pill,
+    borderWidth: 0.8,
     zIndex: 6,
     ...SHADOWS.subtle,
   },
   tapHintText: {
-    color: '#FFFFFF',
     fontFamily: FONTS.bodyBold,
-    fontSize: 8,
+    fontSize: 7.5,
     fontWeight: '800',
   },
   tapHintContent: {

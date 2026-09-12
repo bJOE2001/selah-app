@@ -1,7 +1,14 @@
-import React from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import React, { useRef, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Animated,
+  PanResponder,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { usePromptStore, ToastItem } from '../promptStore';
 import { useTheme } from '../theme/useTheme';
 import { FONTS } from '../tokens/typography';
@@ -32,6 +39,123 @@ export function ToastNotificationContainer() {
 
 function ToastCard({ toast, onDismiss }: { toast: ToastItem; onDismiss: () => void }) {
   const { colors, isDark } = useTheme();
+  const pan = useRef(new Animated.ValueXY({ x: 0, y: -50 })).current;
+  const opacity = useRef(new Animated.Value(0)).current;
+  const isDismissing = useRef(false);
+
+  // Gentle entrance slide-down animation
+  useEffect(() => {
+    Animated.parallel([
+      Animated.spring(pan.y, {
+        toValue: 0,
+        damping: 18,
+        stiffness: 240,
+        useNativeDriver: true,
+      }),
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 180,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
+  const panResponder = useRef(
+    PanResponder.create({
+      // Must return true on start so Android and iOS immediately register touch targets
+      onStartShouldSetPanResponder: () => true,
+      onStartShouldSetPanResponderCapture: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponderCapture: () => true,
+      onPanResponderTerminationRequest: () => false,
+
+      onPanResponderGrant: () => {
+        if (isDismissing.current) return;
+        pan.stopAnimation();
+        opacity.stopAnimation();
+      },
+      onPanResponderMove: (_, gestureState) => {
+        if (isDismissing.current) return;
+        pan.setValue({ x: gestureState.dx, y: gestureState.dy });
+        const distance = Math.sqrt(gestureState.dx * gestureState.dx + gestureState.dy * gestureState.dy);
+        opacity.setValue(Math.max(0.1, 1 - distance / 160));
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        if (isDismissing.current) return;
+
+        const { dx, dy, vx, vy } = gestureState;
+
+        // Check if swiped in ANY direction
+        const isSwipedUp = dy < -18 || vy < -0.3;
+        const isSwipedDown = dy > 30 || vy > 0.35;
+        const isSwipedLeft = dx < -30 || vx < -0.35;
+        const isSwipedRight = dx > 30 || vx > 0.35;
+
+        if (isSwipedUp) {
+          isDismissing.current = true;
+          try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+          Animated.parallel([
+            Animated.timing(pan.y, { toValue: -180, duration: 160, useNativeDriver: true }),
+            Animated.timing(opacity, { toValue: 0, duration: 160, useNativeDriver: true }),
+          ]).start(() => onDismiss());
+        } else if (isSwipedLeft) {
+          isDismissing.current = true;
+          try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+          Animated.parallel([
+            Animated.timing(pan.x, { toValue: -450, duration: 160, useNativeDriver: true }),
+            Animated.timing(opacity, { toValue: 0, duration: 160, useNativeDriver: true }),
+          ]).start(() => onDismiss());
+        } else if (isSwipedRight) {
+          isDismissing.current = true;
+          try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+          Animated.parallel([
+            Animated.timing(pan.x, { toValue: 450, duration: 160, useNativeDriver: true }),
+            Animated.timing(opacity, { toValue: 0, duration: 160, useNativeDriver: true }),
+          ]).start(() => onDismiss());
+        } else if (isSwipedDown) {
+          isDismissing.current = true;
+          try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+          Animated.parallel([
+            Animated.timing(pan.y, { toValue: 200, duration: 160, useNativeDriver: true }),
+            Animated.timing(opacity, { toValue: 0, duration: 160, useNativeDriver: true }),
+          ]).start(() => onDismiss());
+        } else {
+          // Rebound back to resting center if movement was just a stationary tap
+          Animated.parallel([
+            Animated.spring(pan, {
+              toValue: { x: 0, y: 0 },
+              damping: 18,
+              stiffness: 280,
+              useNativeDriver: true,
+            }),
+            Animated.spring(opacity, {
+              toValue: 1,
+              damping: 18,
+              stiffness: 280,
+              useNativeDriver: true,
+            }),
+          ]).start();
+        }
+      },
+      onPanResponderTerminate: () => {
+        if (isDismissing.current) return;
+        Animated.parallel([
+          Animated.spring(pan, {
+            toValue: { x: 0, y: 0 },
+            damping: 18,
+            stiffness: 280,
+            useNativeDriver: true,
+          }),
+          Animated.spring(opacity, {
+            toValue: 1,
+            damping: 18,
+            stiffness: 280,
+            useNativeDriver: true,
+          }),
+        ]).start();
+      },
+    })
+  ).current;
 
   const getVisual = (type: ToastItem['type']) => {
     switch (type) {
@@ -74,15 +198,20 @@ function ToastCard({ toast, onDismiss }: { toast: ToastItem; onDismiss: () => vo
   const visual = getVisual(toast.type);
 
   return (
-    <Pressable
-      onPress={onDismiss}
+    <Animated.View
+      {...panResponder.panHandlers}
+      pointerEvents="auto"
       style={[
         styles.toastCard,
         {
           backgroundColor: visual.bgColor,
           borderColor: visual.borderColor,
+          opacity,
+          transform: pan.getTranslateTransform(),
         },
       ]}
+      accessibilityRole="alert"
+      accessibilityLabel={`${toast.title}: ${toast.message || ''}`}
     >
       <View style={[styles.iconCircle, { backgroundColor: visual.badgeBg }]}>
         <Ionicons name={visual.icon} size={18} color={visual.iconColor} />
@@ -96,11 +225,7 @@ function ToastCard({ toast, onDismiss }: { toast: ToastItem; onDismiss: () => vo
           </Text>
         ) : null}
       </View>
-
-      <Pressable onPress={onDismiss} style={styles.dismissBtn} hitSlop={8}>
-        <Ionicons name="close" size={16} color={colors.inkPlaceholder} />
-      </Pressable>
-    </Pressable>
+    </Animated.View>
   );
 }
 
@@ -109,8 +234,10 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: SPACING.base,
     right: SPACING.base,
-    zIndex: 99999,
+    zIndex: 999999,
+    elevation: 999999,
     alignItems: 'center',
+    overflow: 'visible',
     gap: 8,
   },
   toastCard: {
@@ -121,8 +248,8 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     borderWidth: 1.2,
     paddingVertical: 10,
-    paddingHorizontal: 12,
-    gap: 10,
+    paddingHorizontal: 14,
+    gap: 12,
     ...SHADOWS.card,
   },
   iconCircle: {
@@ -145,8 +272,5 @@ const styles = StyleSheet.create({
     fontSize: 11,
     marginTop: 1,
     lineHeight: 15,
-  },
-  dismissBtn: {
-    padding: 4,
   },
 });

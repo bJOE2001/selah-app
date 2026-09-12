@@ -35,6 +35,7 @@ import { SPACING, RADIUS, SHADOWS } from '../../design-system/tokens/spacing';
 import {
   useIsPremium,
   useCurrentTier,
+  useEntitlementStore,
   restorePurchases,
   PaywallModal,
 } from '../../entitlements';
@@ -445,6 +446,44 @@ export function SettingsScreen() {
               </View>
               <Ionicons name="chevron-forward" size={16} color={colors.inkMuted} />
             </Pressable>
+
+            {/* Dev Mode Quick Switcher Row */}
+            {__DEV__ && (
+              <>
+                <View style={[styles.divider, { backgroundColor: colors.paperLine }]} />
+                <Pressable
+                  onPress={() => {
+                    try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+                    const store = useEntitlementStore.getState();
+                    const isCurrentlyActive = store.isSelahGrace();
+                    if (isCurrentlyActive) {
+                      store.setDevOverride(false);
+                      store.clearEntitlement();
+                      toast.info('[DEV] Free Mode', 'Returned to Free Tier (30-entry limit active)');
+                    } else {
+                      store.setDevOverride(true);
+                      toast.info('[DEV] Selah Grace', 'Unlocked Selah Grace (Unlimited entries active)');
+                    }
+                  }}
+                  style={styles.rowItem}
+                >
+                  <View style={styles.rowLeft}>
+                    <View style={[styles.iconBox, { backgroundColor: isDark ? '#2A2520' : '#F5EFE6' }]}>
+                      <Ionicons name="construct-outline" size={17} color={colors.brandGold} />
+                    </View>
+                    <View style={styles.rowTextCol}>
+                      <Text style={[styles.rowTitle, { color: colors.inkPrimary }]}>
+                        [DEV] Switch to {isPremium ? 'Free Mode' : 'Selah Grace'}
+                      </Text>
+                      <Text style={[styles.rowSubtitle, { color: colors.inkSecondary }]}>
+                        Current: {isPremium ? 'Selah Grace (Unlocked)' : 'Free Mode (Locked)'} • Tap to switch
+                      </Text>
+                    </View>
+                  </View>
+                  <Ionicons name="swap-horizontal" size={16} color={colors.brandGold} />
+                </Pressable>
+              </>
+            )}
           </View>
         </View>
 
@@ -790,7 +829,7 @@ export function SettingsScreen() {
                   {isImporting ? (
                     <ActivityIndicator size="small" color={colors.brandGreen} />
                   ) : (
-                    <Ionicons name="cloud-upload-outline" size={17} color={colors.inkPrimary} />
+                    <Ionicons name="document-text-outline" size={17} color={colors.inkPrimary} />
                   )}
                 </View>
                 <View style={styles.rowTextCol}>

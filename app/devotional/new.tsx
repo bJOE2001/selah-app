@@ -3,7 +3,7 @@ import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { NotebookEditor } from '../../src/notebook-editor';
 import { useTheme } from '../../src/design-system';
-import { useIsPremium, PaywallModal } from '../../src/entitlements';
+import { useIsPremium, PaywallModal, canCreateDevotional } from '../../src/entitlements';
 import { useDevotionalCount } from '../../src/devotional-core/hooks';
 
 export default function NewDevotionalScreen() {
@@ -14,7 +14,7 @@ export default function NewDevotionalScreen() {
   const [isPaywallOpen, setIsPaywallOpen] = useState(false);
 
   useEffect(() => {
-    if (!isPremium && totalCount >= 30) {
+    if (!canCreateDevotional(totalCount, isPremium)) {
       setIsPaywallOpen(true);
     }
   }, [isPremium, totalCount]);
@@ -31,7 +31,7 @@ export default function NewDevotionalScreen() {
         visible={isPaywallOpen}
         onClose={() => {
           setIsPaywallOpen(false);
-          if (!isPremium && totalCount >= 30) {
+          if (!canCreateDevotional(totalCount, isPremium)) {
             router.back();
           }
         }}

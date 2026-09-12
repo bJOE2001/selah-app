@@ -31,6 +31,24 @@ export type PremiumFeature =
  */
 
 /**
+ * Free devotional entry capacity limit.
+ * Free tier users can create up to 30 devotionals.
+ * Existing entries remain 100% readable, editable, bookmarkable, and exportable.
+ */
+export const FREE_DEVOTIONAL_LIMIT = 30;
+
+/**
+ * Evaluates whether a new devotional can be created.
+ * Returns true if user has Selah Grace, or if entry count is under 30.
+ */
+export function canCreateDevotional(totalCount: number, isPremium: boolean): boolean {
+  if (isPremium) {
+    return true;
+  }
+  return totalCount < FREE_DEVOTIONAL_LIMIT;
+}
+
+/**
  * Evaluates whether a given feature is accessible given the user's Selah Grace status.
  * With Selah Grace (Lifetime one-time purchase), all premium features are unlocked permanently.
  */

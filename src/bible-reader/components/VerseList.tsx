@@ -11,10 +11,14 @@ import * as Haptics from 'expo-haptics';
 import * as Speech from 'expo-speech';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { Verse, Book } from '../../bible-data/types';
 import { CANONICAL_BOOKS } from '../../bible-data/constants';
 import { useTranslationStore } from '../../bible-data/translationStore';
 import { useChapterHighlights, HIGHLIGHT_COLORS, getHighlightStyle } from '../../bible-data/highlights';
+import { useDraftStore } from '../../devotional-core/store';
+import { useDevotionalCount } from '../../devotional-core/hooks';
+import { useIsPremium, PaywallModal, canCreateDevotional } from '../../entitlements';
 import { useSettingsStore } from '../../settings/store';
 import { useTheme, toast } from '../../design-system';
 import { FONTS } from '../../design-system/tokens/typography';
@@ -27,6 +31,7 @@ export interface VerseListProps {
   onChapterChange?: (chapter: number) => void;
   onNavigate?: (book: Book, chapter: number) => void;
   onOpenTranslationPicker?: () => void;
+  onOpenPaywall?: () => void;
 }
 
 /**
@@ -67,12 +72,17 @@ export function VerseList({
   onChapterChange,
   onNavigate,
   onOpenTranslationPicker,
+  onOpenPaywall,
 }: VerseListProps) {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
   const fontSize = useSettingsStore((s) => s.fontSize);
   const setFontSize = useSettingsStore((s) => s.setFontSize);
   const selectedTranslation = useTranslationStore((s) => s.selectedTranslation);
+  const isPremium = useIsPremium();
+  const { data: totalDevotionalCount = 0 } = useDevotionalCount();
+  const [isPaywallOpen, setIsPaywallOpen] = useState(false);
 
   // Previous and Next navigation targets across all 66 canonical books
   const prevTarget = useMemo<{ book: Book; chapter: number; label: string } | null>(() => {
@@ -255,6 +265,26 @@ export function VerseList({
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } catch {}
     setSelectedVerseIds([]);
+  };
+
+  const handleReflect = () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    } catch {}
+
+    if (!canCreateDevotional(totalDevotionalCount, isPremium)) {
+      if (onOpenPaywall) {
+        onOpenPaywall();
+      } else {
+        setIsPaywallOpen(true);
+      }
+      return;
+    }
+
+    const scriptureBlock = `## Scripture\n"${combinedSelectionText}" — ${selectionReference}\n\n## Observation\n\n\n## Application\n\n\n## Prayer\n\n`;
+    useDraftStore.getState().setNotes(scriptureBlock);
+    handleClearSelection();
+    router.push('/devotional/new');
   };
 
 
@@ -573,29 +603,58 @@ export function VerseList({
                 ) : null}
               </View>
 
-              {/* Copy Selection CTA */}
-              <Pressable
-                onPress={() => {
-                  try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); } catch {}
-                  const copyText = `"${combinedSelectionText}" — ${selectionReference}`;
-                  Clipboard.setStringAsync(copyText);
-                  toast.success('Verses Copied', selectionReference);
-                  handleClearSelection();
-                }}
-                style={({ pressed }) => [
-                  styles.journalRhemaBtn,
-                  { backgroundColor: colors.brandGreen },
-                  pressed && { opacity: 0.88 },
-                ]}
-                hitSlop={6}
-              >
-                <Ionicons name="copy-outline" size={14} color="#FFFFFF" />
-                <Text style={styles.journalRhemaBtnText}>Copy</Text>
-              </Pressable>
+              {/* Action Buttons: Copy & Reflect */}
+              <View style={styles.actionButtonsRow}>
+                <Pressable
+                  onPress={() => {
+                    try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+                    const copyText = `"${combinedSelectionText}" — ${selectionReference}`;
+                    Clipboard.setStringAsync(copyText);
+                    toast.success('Verses Copied', selectionReference);
+                    handleClearSelection();
+                  }}
+                  style={({ pressed }) => [
+                    styles.copyBtn,
+                    {
+                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                      borderColor: colors.paperLine,
+                    },
+                    pressed && { opacity: 0.75 },
+                  ]}
+                  hitSlop={6}
+                  accessibilityRole="button"
+                  accessibilityLabel="Copy verse selection"
+                >
+                  <Ionicons name="copy-outline" size={13} color={colors.inkSecondary} />
+                  <Text style={[styles.copyBtnText, { color: colors.inkSecondary }]}>Copy</Text>
+                </Pressable>
+
+                <Pressable
+                  onPress={handleReflect}
+                  style={({ pressed }) => [
+                    styles.reflectBtn,
+                    { backgroundColor: colors.brandGreen },
+                    pressed && { opacity: 0.88, transform: [{ scale: 0.98 }] },
+                  ]}
+                  hitSlop={6}
+                  accessibilityRole="button"
+                  accessibilityLabel="Reflect on verses in journal"
+                >
+                  <Ionicons name="create-outline" size={14} color="#FFFFFF" />
+                  <Text style={styles.reflectBtnText}>Reflect</Text>
+                </Pressable>
+              </View>
             </View>
           </View>
         </View>
       ) : null}
+
+      {/* Selah Grace Paywall Modal (if triggered directly from VerseList) */}
+      <PaywallModal
+        visible={isPaywallOpen}
+        onClose={() => setIsPaywallOpen(false)}
+        triggerFeature="Unlimited Devotional Pages"
+      />
     </View>
   );
 }
@@ -817,16 +876,35 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  journalRhemaBtn: {
+  actionButtonsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  copyBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: RADIUS.pill,
+    borderWidth: 1,
+  },
+  copyBtnText: {
+    fontFamily: FONTS.bodyBold,
+    fontSize: 11.5,
+    fontWeight: '700',
+  },
+  reflectBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
     paddingHorizontal: 12,
-    paddingVertical: 7,
+    paddingVertical: 6.5,
     borderRadius: RADIUS.pill,
     ...SHADOWS.subtle,
   },
-  journalRhemaBtnText: {
+  reflectBtnText: {
     color: '#FFFFFF',
     fontFamily: FONTS.bodyBold,
     fontSize: 12,

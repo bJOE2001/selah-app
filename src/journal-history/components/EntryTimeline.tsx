@@ -12,9 +12,10 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { DevotionalSummary } from '../../devotional-core/types';
+import { useDeleteDevotional } from '../../devotional-core/hooks';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { EntryCard } from './EntryCard';
-import { useTheme } from '../../design-system';
+import { useTheme, toast } from '../../design-system';
 import { FONTS } from '../../design-system/tokens/typography';
 import { SPACING, RADIUS, SHADOWS } from '../../design-system/tokens/spacing';
 
@@ -36,6 +37,16 @@ export function EntryTimeline({
   const { colors, isDark } = useTheme();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterMode, setFilterMode] = useState<'all' | 'bookmarked'>('all');
+  const deleteMutation = useDeleteDevotional();
+
+  const handleDeleteEntry = async (id: string) => {
+    try {
+      await deleteMutation.mutateAsync(id);
+      toast.success('Devotional Deleted', 'Your reflection was removed.');
+    } catch (err) {
+      toast.error('Error', 'Could not delete devotional entry.');
+    }
+  };
 
   const bookmarkedCount = entries.filter((e) => e.isBookmarked).length;
 
@@ -334,6 +345,7 @@ export function EntryTimeline({
           <EntryCard
             entry={item}
             onPress={() => onSelectEntry(item.id)}
+            onDelete={handleDeleteEntry}
           />
         )}
         ListEmptyComponent={

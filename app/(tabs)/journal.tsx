@@ -7,7 +7,7 @@ import * as Haptics from 'expo-haptics';
 import { useRecentDevotionals, useDevotionalCount } from '../../src/devotional-core/hooks';
 import { EntryTimeline, NotebookBookView } from '../../src/journal-history';
 import { useTheme, FONTS, RADIUS, SHADOWS, SPACING } from '../../src/design-system';
-import { useIsPremium, PaywallModal } from '../../src/entitlements';
+import { useIsPremium, PaywallModal, canCreateDevotional } from '../../src/entitlements';
 
 export default function JournalTabScreen() {
   const router = useRouter();
@@ -20,7 +20,7 @@ export default function JournalTabScreen() {
   const [isPaywallOpen, setIsPaywallOpen] = useState(false);
 
   const handleStartNew = () => {
-    if (!isPremium && totalDevotionalCount >= 30) {
+    if (!canCreateDevotional(totalDevotionalCount, isPremium)) {
       setIsPaywallOpen(true);
       return;
     }
